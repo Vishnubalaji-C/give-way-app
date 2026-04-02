@@ -2,7 +2,7 @@ import { useWs } from '../context/WsContext';
 import { User, Activity, Navigation, Zap, Cpu, BellRing, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export default function DashboardPage() {
+export default function DashboardPage({ user }) {
   const { state, alerts } = useWs();
   const [greeting, setGreeting] = useState('');
 
@@ -25,7 +25,7 @@ export default function DashboardPage() {
             <User size={16} /> {state?.junction?.zone || 'GiveWay Network'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[var(--text-main)] tracking-tight">
-            {greeting}, Officer <span className="text-[var(--cyan)]">942</span>
+            {greeting}, <span className="text-[var(--cyan)]">{user?.name || 'Officer'}</span>
           </h1>
           <p className="text-[var(--text-muted)] mt-2 text-sm sm:text-base max-w-xl">
             Monitoring <span className="text-cyan-400 font-semibold">{state?.junction?.name || 'junction'}</span> — {state?.junction?.address || 'AI processing is prioritizing emergency and high-throughput lanes.'}

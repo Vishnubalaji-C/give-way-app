@@ -52,8 +52,8 @@ export default function App() {
   // Intercept routing with Auth Lock
   if (!user) {
     return <AuthPage onLogin={(userData) => {
-      // Set validity for 7 days
-      const authObj = { ...userData, expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 };
+      // Set validity for 10 days
+      const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
       localStorage.setItem('giveway_user', JSON.stringify(authObj));
       setUser(authObj);
       setTab('dashboard'); // Default
@@ -98,7 +98,7 @@ export default function App() {
         <Navbar tab={tab} setTab={setTab} user={user} onLogout={logout} theme={theme} onChangeTheme={handleSetTheme} />
 
         <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
-          <Page />
+          <Page user={user} />
         </main>
 
         {user.role === 'police' && <BottomNav tab={tab} setTab={setTab} />}

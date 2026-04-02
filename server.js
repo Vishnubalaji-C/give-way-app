@@ -528,7 +528,11 @@ app.post('/api/auth/register', async (req, res) => {
   if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
   
   if (db.users.find(u => u.id === id)) {
-    return res.status(409).json({ error: 'Unique ID already registered to another officer/admin.' });
+    return res.status(409).json({ error: 'Unique ID already registered in the system.' });
+  }
+
+  if (role === 'police' && badge && db.users.find(u => u.meta?.badge === badge)) {
+    return res.status(409).json({ error: 'Badge Number already assigned to another officer.' });
   }
 
   const token = uuidv4() + '-' + Date.now().toString(36);

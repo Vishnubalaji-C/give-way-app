@@ -45,6 +45,15 @@ export default function AuthPage({ onLogin }) {
         throw new Error(data.error || 'Failed to authenticate securely against root server.');
       }
 
+      if (!isLogin) {
+        setIsLogin(true);
+        setPin('');
+        setError('');
+        // Show success splash for new users
+        alert('👮 Success: Secure Identity Created. Please authorize access below.');
+        return;
+      }
+
       onLogin({
         ...data.user,
         token: data.token
