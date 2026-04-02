@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build --prefix client",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://give-way-app.onrender.com/api/$1"
+    },
+    {
+      "source": "/(?!api/)(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
