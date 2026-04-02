@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* DEFAULT DARK THEME VARIABLES */
+    --green: #00e07a;
+    --cyan:  #00d2eb;
+    --amber: #f5aa00;
+    --red:   #f43f5e;
+    --purple:#9333ea;
+    
+    --bg: #090e17; /* Deeper navy space */
+    --surface: rgba(17, 24, 39, 0.9);
+    --border: rgba(0, 210, 235, 0.2);
+    
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    
+    --glass-bg: rgba(17, 25, 40, 0.85);
+    --glass-border: rgba(0, 210, 235, 0.25);
+    --glass-shadow: rgba(0, 210, 235, 0.05);
+    
+    --input-bg: rgba(15, 23, 42, 0.8);
+    --input-border: rgba(51, 65, 85, 0.8);
+  }
+
+  :root.light-mode {
+    /* TRUE LIGHT THEME VARIABLES */
+    --green: #059669;
+    --cyan:  #0284c7;
+    --amber: #d97706;
+    --red:   #e11d48;
+    --purple:#7e22ce;
+    
+    --bg: #f8fafc; /* Crisp blueish white */
+    --surface: rgba(255, 255, 255, 0.95);
+    --border: rgba(2, 132, 199, 0.3);
+    
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(148, 163, 184, 0.4);
+    --glass-shadow: rgba(0, 0, 0, 0.08);
+    
+    --input-bg: rgba(255, 255, 255, 0.9);
+    --input-border: rgba(203, 213, 225, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: 'Inter', 'Outfit', sans-serif;
+    overflow-x: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+}
+
+/* ── Tailored Transitions ───────────────────────────────── */
+a, button, input {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Glass ──────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--glass-shadow);
+}
+
+/* ── Gradient text ──────────────────────────────────────── */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Signal lights ──────────────────────────────────────── */
+.sig-off-r { background: rgba(244, 63, 94, 0.1); border:2px solid rgba(244, 63, 94, 0.3); }
+.sig-off-y { background: rgba(245, 170, 0, 0.1); border:2px solid rgba(245, 170, 0, 0.3); }
+.sig-off-g { background: rgba(0, 224, 122, 0.1); border:2px solid rgba(0, 224, 122, 0.3); }
+
+.sig-on-r  { background: var(--red); border:2px solid rgba(244,63,94,0.6); box-shadow:0 0 20px var(--red),0 0 40px rgba(244,63,94,0.3); }
+.sig-on-y  { background: var(--amber); border:2px solid rgba(245,170,0,0.6); box-shadow:0 0 20px var(--amber),0 0 40px rgba(245,170,0,0.3); }
+.sig-on-g  { background: var(--green); border:2px solid rgba(0,224,122,0.6); box-shadow:0 0 20px var(--green),0 0 40px rgba(0,224,122,0.3); }
+
+/* ── Camera detection pulse ─────────────────────────────── */
+@keyframes detect-pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.5; }
+}
+.detect-box { animation: detect-pulse 1.2s ease-in-out infinite; }
+
+/* ── Scan line ──────────────────────────────────────────── */
+@keyframes scan {
+  0%   { top: -2px; }
+  100% { top: 100%; }
+}
+.scan-line::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  animation: scan 3s linear infinite;
+}
+
+/* ── Log scroll ─────────────────────────────────────────── */
+.log-scroll { max-height: 260px; overflow-y: auto; }
+
+/* ── Mobile bottom nav ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .mobile-hidden { display: none !important; }
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  main { padding-bottom: 72px !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav { display: none !important; }
+  .mobile-hidden { display: flex !important; }
+}
+
+/* ── Status badge pulse ─────────────────────────────────── */
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.4; }
+}
+.blink { animation: blink 1.5s ease-in-out infinite; }
+
+/* ── Touch targets ──────────────────────────────────────── */
+button { min-height: 36px; cursor: pointer; }
+@media (max-width:768px) { button { min-height: 44px; } }
+
+/* ── Background dynamic visuals ─────────────────────────── */
+.bg-glow-ring {
+  background-image: radial-gradient(circle at 50% 0%, var(--border) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(0,255,136,0.05) 0%, transparent 50%);
+}

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GiveWay — Adaptive Traffic Equity System</title>
+  <meta name="description" content="GiveWay: AI-Driven, PCE-Weighted Adaptive Traffic Management Framework for Smart Cities. Real-time junction simulation, starvation prevention, and police dashboard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────── -->
+<nav class="navbar" id="navbar">
+  <div class="nav-brand">
+    <div class="brand-icon">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="13" stroke="url(#brandGrad)" stroke-width="2"/>
+        <path d="M14 6v16M6 14h16" stroke="url(#brandGrad)" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="14" cy="14" r="4" fill="url(#brandGrad)" opacity="0.7"/>
+        <defs>
+          <linearGradient id="brandGrad" x1="0" y1="0" x2="28" y2="28">
+            <stop stop-color="#00e5ff"/>
+            <stop offset="1" stop-color="#00ff88"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <span class="brand-name">Give<span class="brand-accent">Way</span></span>
+    <span class="brand-tag">v2.6 SMART CITY</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-dashboard" onclick="switchTab('dashboard')">🏙️ Dashboard</button>
+    <button class="nav-tab" id="tab-simulation" onclick="switchTab('simulation')">🚦 Live Simulation</button>
+    <button class="nav-tab" id="tab-analytics" onclick="switchTab('analytics')">📊 Analytics</button>
+    <button class="nav-tab" id="tab-police" onclick="switchTab('police')">🚔 Control Room</button>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot pulse"></div>
+    <span class="status-text">SYSTEM ONLINE</span>
+    <div class="clock" id="liveClock">--:--:--</div>
+  </div>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────────────────────────── -->
+<section class="hero" id="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-particles" id="heroParticles"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      IEEE-Referenced ITS Framework · 2026
+    </div>
+    <h1 class="hero-title">
+      Give<span class="gradient-text">Way</span>
+    </h1>
+    <p class="hero-subtitle">Adaptive Traffic Equity System</p>
+    <p class="hero-desc">
+      Replacing rigid timer-based signals with AI-driven, PCE-weighted, starvation-proof
+      traffic logic — turning a ₹4,200 junction into a digital traffic officer.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="stat-val">90%</span>
+        <span class="stat-lbl">Software-Defined</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-val">₹4,200</span>
+        <span class="stat-lbl">Per Junction</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-val">&lt;120s</span>
+        <span class="stat-lbl">Fairness Cap</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-val">4</span>
+        <span class="stat-lbl">IEEE References</span>
+      </div>
+    </div>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="switchTab('simulation')">▶ Launch Simulation</button>
+      <button class="btn-ghost" onclick="switchTab('analytics')">View Analytics</button>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="junction-mini" id="heroJunction">
+      <div class="jm-road jm-north"></div>
+      <div class="jm-road jm-south"></div>
+      <div class="jm-road jm-east"></div>
+      <div class="jm-road jm-west"></div>
+      <div class="jm-center"></div>
+      <div class="jm-signal jm-sig-n" id="heroN"><div class="jm-light red active"></div><div class="jm-light yellow"></div><div class="jm-light green"></div></div>
+      <div class="jm-signal jm-sig-s" id="heroS"><div class="jm-light red"></div><div class="jm-light yellow"></div><div class="jm-light green active"></div></div>
+      <div class="jm-signal jm-sig-e" id="heroE"><div class="jm-light red active"></div><div class="jm-light yellow"></div><div class="jm-light green"></div></div>
+      <div class="jm-signal jm-sig-w" id="heroW"><div class="jm-light red active"></div><div class="jm-light yellow"></div><div class="jm-light green"></div></div>
+      <div class="jm-vehicles" id="heroVehicles"></div>
+    </div>
+    <div class="junction-labels">
+      <span class="jl north">NORTH</span>
+      <span class="jl south">SOUTH</span>
+      <span class="jl east">EAST</span>
+      <span class="jl west">WEST</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PAGES ─────────────────────────────────────────────────────── -->
+
+<!-- DASHBOARD PAGE -->
+<div class="page active" id="page-dashboard">
+
+  <!-- KPI Cards -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">System Overview</h2>
+      <span class="section-sub">Real-time junction intelligence metrics</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card" id="kpi-ambulance">
+        <div class="kpi-icon">🚑</div>
+        <div class="kpi-body">
+          <div class="kpi-val" id="kv-ambulance">0</div>
+          <div class="kpi-lbl">Ambulance Priorities</div>
+          <div class="kpi-sub">Instant Green Triggers Today</div>
+        </div>
+        <div class="kpi-spark" id="spark-ambulance"></div>
+      </div>
+      <div class="kpi-card" id="kpi-buses">
+        <div class="kpi-icon">🚌</div>
+        <div class="kpi-body">
+          <div class="kpi-val" id="kv-buses">0</div>
+          <div class="kpi-lbl">Buses Prioritized</div>
+          <div class="kpi-sub">PCE ≥ 20 vehicles served</div>
+        </div>
+        <div class="kpi-spark" id="spark-buses"></div>
+      </div>
+      <div class="kpi-card" id="kpi-saved">
+        <div class="kpi-icon">⛽</div>
+        <div class="kpi-body">
+          <div class="kpi-val" id="kv-saved">0L</div>
+          <div class="kpi-lbl">Fuel Saved (est.)</div>
+          <div class="kpi-sub">vs. fixed-timer baseline</div>
+        </div>
+        <div class="kpi-spark" id="spark-saved"></div>
+      </div>
+      <div class="kpi-card" id="kpi-co2">
+        <div class="kpi-icon">🌿</div>
+        <div class="kpi-body">
+          <div class="kpi-val" id="kv-co2">0kg</div>
+          <div class="kpi-lbl">CO₂ Reduced</div>
+          <div class="kpi-sub">Hotspot emission cut</div>
+        </div>
+        <div class="kpi-spark" id="spark-co2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PCE Logic + Formula -->
+  <section class="section">
+    <div class="two-col">
+      <div class="card glass">
+        <div class="card-header">
+          <span class="card-icon">⚖️</span>
+          <h3>PCE Priority Weights</h3>
+        </div>
+        <div class="pce-table">
+          <div class="pce-row header">
+            <span>Vehicle Type</span><span>PCE Score</span><span>Priority</span>
+          </div>
+          <div class="pce-row ambulance-row">
+            <span>🚑 Ambulance</span>
+            <span class="pce-score">100</span>
+            <div class="pce-bar-wrap"><div class="pce-bar" style="width:100%;background:var(--red-glow)"></div></div>
+          </div>
+          <div class="pce-row bus-row">
+            <span>🚌 Public Bus</span>
+            <span class="pce-score">20</span>
+            <div class="pce-bar-wrap"><div class="pce-bar" style="width:20%;background:var(--cyan)"></div></div>
+          </div>
+          <div class="pce-row car-row">
+            <span>🚗 Car / Auto</span>
+            <span class="pce-score">1</span>
+            <div class="pce-bar-wrap"><div class="pce-bar" style="width:5%;background:var(--green)"></div></div>
+          </div>
+          <div class="pce-row bike-row">
+            <span>🏍️ Bike</span>
+            <span class="pce-score">0.5</span>
+            <div class="pce-bar-wrap"><div class="pce-bar" style="width:2%;background:var(--green)"></div></div>
+          </div>
+        </div>
+        <div class="formula-box">
+          <div class="formula-label">Decision Formula</div>
+          <div class="formula-text">Final Priority = (Lane Density × Weight) + (Wait Time × Penalty Coefficient)</div>
+          <div class="formula-note">Exponential penalty after 90s → Fairness Cap at 120s</div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-header">
+          <span class="card-icon">🔄</span>
+          <h3>System Phases</h3>
+        </div>
+        <div class="phases">
+          <div class="phase" id="phase1">
+            <div class="phase-num">01</div>
+            <div class="phase-body">
+              <strong>Sense-Think Loop</strong>
+              <p>ESP32-CAM captures frame every 5s. Tiny-YOLO classifies vehicles on-chip. Sends only 1KB density score via Wi-Fi.</p>
+            </div>
+            <div class="phase-status active-phase">ACTIVE</div>
+          </div>
+          <div class="phase" id="phase2">
+            <div class="phase-num">02</div>
+            <div class="phase-body">
+              <strong>Decision Layer</strong>
+              <p>Arduino Mega receives PCE scores from all 4 lanes. Applies GiveWay Formula. Selects optimal green lane.</p>
+            </div>
+            <div class="phase-status active-phase">ACTIVE</div>
+          </div>
+          <div class="phase" id="phase3">
+            <div class="phase-num">03</div>
+            <div class="phase-body">
+              <strong>Starvation Prevention</strong>
+              <p>Wait-Clock monitors all red lanes. Exponential penalty after 90s. Hard Fairness Cap at 120s.</p>
+            </div>
+            <div class="phase-status active-phase">ACTIVE</div>
+          </div>
+          <div class="phase" id="phase4">
+            <div class="phase-num">04</div>
+            <div class="phase-body">
+              <strong>Command Dashboard</strong>
+              <p>Ghost Lane detection, manual override, Green-Wave handshake with adjacent signals.</p>
+            </div>
+            <div class="phase-status active-phase">ACTIVE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Cards -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Value-Added Intelligence</h2>
+      <span class="section-sub">Smart city features beyond basic signal control</span>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" id="feat-rain">
+        <div class="feat-icon">🌧️</div>
+        <h4>Rain-Safe Logic</h4>
+        <p>Automatically extends yellow transition time during rain to prevent skidding on wet roads.</p>
+        <div class="feat-status">
+          <span class="feat-badge enabled">ENABLED</span>
+        </div>
+      </div>
+      <div class="feature-card" id="feat-wave">
+        <div class="feat-icon">🌊</div>
+        <h4>Green-Wave Handshake</h4>
+        <p>Signal A notifies Signal B (1km away) about incoming heavy traffic for a coordinated "Green Carpet."</p>
+        <div class="feat-status">
+          <span class="feat-badge enabled">ENABLED</span>
+        </div>
+      </div>
+      <div class="feature-card" id="feat-night">
+        <div class="feat-icon">🌙</div>
+        <h4>Night-Saver Mode</h4>
+        <p>After 11 PM: All-Red by default. Green only where a vehicle is actually detected — saving fuel.</p>
+        <div class="feat-status">
+          <span class="feat-badge standby">STANDBY</span>
+        </div>
+      </div>
+      <div class="feature-card" id="feat-ped">
+        <div class="feat-icon">🚶</div>
+        <h4>Pedestrian Awareness</h4>
+        <p>Zebra-crossing group detection auto-extends crossing time for safe civilian passage.</p>
+        <div class="feat-status">
+          <span class="feat-badge enabled">ENABLED</span>
+        </div>
+      </div>
+      <div class="feature-card" id="feat-ghost">
+        <div class="feat-icon">👻</div>
+        <h4>Ghost Lane Detection</h4>
+        <p>High density + no movement during green → AI flags possible accident/breakdown for dispatch.</p>
+        <div class="feat-status">
+          <span class="feat-badge enabled">ENABLED</span>
+        </div>
+      </div>
+      <div class="feature-card" id="feat-edge">
+        <div class="feat-icon">⚡</div>
+        <h4>Edge Snapshot</h4>
+        <p>Local processing on pole. Only 1KB density score sent — no network overload, no 4K streaming.</p>
+        <div class="feat-status">
+          <span class="feat-badge enabled">ENABLED</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hardware Budget -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Hardware Architecture</h2>
+      <span class="section-sub">Prototype-scale BOM — ₹4,200 total</span>
+    </div>
+    <div class="card glass">
+      <div class="bom-table">
+        <div class="bom-header">
+          <span>Component</span><span>Qty</span><span>Cost (INR)</span><span>Purpose</span>
+        </div>
+        <div class="bom-row">
+          <span>🎥 ESP32-CAM AI-Thinker</span><span>4</span><span class="bom-cost">₹2,200</span><span>Edge Vision + Tiny-YOLO</span>
+        </div>
+        <div class="bom-row">
+          <span>🧠 Arduino Mega 2560</span><span>1</span><span class="bom-cost">₹750</span><span>Master Decision Engine</span>
+        </div>
+        <div class="bom-row">
+          <span>⚡ 4-Channel Relay Module</span><span>1</span><span class="bom-cost">₹350</span><span>LED Signal Switching</span>
+        </div>
+        <div class="bom-row">
+          <span>🚦 Signal LED Kit</span><span>4 sets</span><span class="bom-cost">₹200</span><span>R/Y/G Visual Output</span>
+        </div>
+        <div class="bom-row">
+          <span>🔌 Power Supply 5V 3A</span><span>1</span><span class="bom-cost">₹400</span><span>Central Power Source</span>
+        </div>
+        <div class="bom-row">
+          <span>📦 Casing & Wiring</span><span>1 set</span><span class="bom-cost">₹300</span><span>Assembly & Housing</span>
+        </div>
+        <div class="bom-total">
+          <span>TOTAL</span><span></span><span class="bom-total-cost">₹4,200</span><span>High Power / Low Cost</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SIMULATION PAGE -->
+<div class="page" id="page-simulation">
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Live Junction Simulation</h2>
+      <span class="section-sub">GiveWay PCE-weighted adaptive signal in action</span>
+    </div>
+
+    <div class="sim-layout">
+      <!-- Main Junction -->
+      <div class="sim-junction-wrap">
+        <div class="sim-junction" id="simJunction">
+          <!-- Roads -->
+          <div class="road road-v"></div>
+          <div class="road road-h"></div>
+          <div class="intersection-box"></div>
+
+          <!-- Lane markings -->
+          <div class="lane-mark lm-n-out"></div>
+          <div class="lane-mark lm-n-in"></div>
+          <div class="lane-mark lm-s-out"></div>
+          <div class="lane-mark lm-s-in"></div>
+
+          <!-- Signals -->
+          <div class="signal-pole sp-north" id="sig-N">
+            <div class="sig-label">NORTH</div>
+            <div class="sig-head">
+              <div class="sig-light sl-red" id="sl-N-r"></div>
+              <div class="sig-light sl-yellow" id="sl-N-y"></div>
+              <div class="sig-light sl-green" id="sl-N-g"></div>
+            </div>
+            <div class="sig-timer" id="st-N">--</div>
+          </div>
+          <div class="signal-pole sp-south" id="sig-S">
+            <div class="sig-label">SOUTH</div>
+            <div class="sig-head">
+              <div class="sig-light sl-red" id="sl-S-r"></div>
+              <div class="sig-light sl-yellow" id="sl-S-y"></div>
+              <div class="sig-light sl-green" id="sl-S-g"></div>
+            </div>
+            <div class="sig-timer" id="st-S">--</div>
+          </div>
+          <div class="signal-pole sp-east" id="sig-E">
+            <div class="sig-label">EAST</div>
+            <div class="sig-head">
+              <div class="sig-light sl-red" id="sl-E-r"></div>
+              <div class="sig-light sl-yellow" id="sl-E-y"></div>
+              <div class="sig-light sl-green" id="sl-E-g"></div>
+            </div>
+            <div class="sig-timer" id="st-E">--</div>
+          </div>
+          <div class="signal-pole sp-west" id="sig-W">
+            <div class="sig-label">WEST</div>
+            <div class="sig-head">
+              <div class="sig-light sl-red" id="sl-W-r"></div>
+              <div class="sig-light sl-yellow" id="sl-W-y"></div>
+              <div class="sig-light sl-green" id="sl-W-g"></div>
+            </div>
+            <div class="sig-timer" id="st-W">--</div>
+          </div>
+
+          <!-- Vehicles canvas -->
+          <canvas id="vehicleCanvas" width="500" height="500"></canvas>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="sim-panel">
+        <!-- Lane Scores -->
+        <div class="card glass sim-card">
+          <div class="card-header"><span class="card-icon">📡</span><h3>Lane Priority Scores</h3></div>
+          <div class="lane-scores">
+            <div class="ls-row" id="lsr-N">
+              <span class="ls-dir">N</span>
+              <div class="ls-bar-wrap"><div class="ls-bar" id="lsb-N"></div></div>
+              <span class="ls-val" id="lsv-N">0</span>
+            </div>
+            <div class="ls-row" id="lsr-S">
+              <span class="ls-dir">S</span>
+              <div class="ls-bar-wrap"><div class="ls-bar" id="lsb-S"></div></div>
+              <span class="ls-val" id="lsv-S">0</span>
+            </div>
+            <div class="ls-row" id="lsr-E">
+              <span class="ls-dir">E</span>
+              <div class="ls-bar-wrap"><div class="ls-bar" id="lsb-E"></div></div>
+              <span class="ls-val" id="lsv-E">0</span>
+            </div>
+            <div class="ls-row" id="lsr-W">
+              <span class="ls-dir">W</span>
+              <div class="ls-bar-wrap"><div class="ls-bar" id="lsb-W"></div></div>
+              <span class="ls-val" id="lsv-W">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wait Times -->
+        <div class="card glass sim-card">
+          <div class="card-header"><span class="card-icon">⏱️</span><h3>Wait-Time Penalty (WTP)</h3></div>
+          <div class="wtp-grid">
+            <div class="wtp-item" id="wtp-N">
+              <div class="wtp-dir">NORTH</div>
+              <div class="wtp-gauge-wrap">
+                <svg class="wtp-gauge" viewBox="0 0 80 40">
+                  <path d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="#1e293b" stroke-width="8"/>
+                  <path class="wtp-arc" id="wtp-arc-N" d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="110" stroke-dashoffset="110"/>
+                </svg>
+              </div>
+              <div class="wtp-val" id="wtp-val-N">0s</div>
+              <div class="wtp-label" id="wtp-status-N">OK</div>
+            </div>
+            <div class="wtp-item" id="wtp-S">
+              <div class="wtp-dir">SOUTH</div>
+              <div class="wtp-gauge-wrap">
+                <svg class="wtp-gauge" viewBox="0 0 80 40">
+                  <path d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="#1e293b" stroke-width="8"/>
+                  <path class="wtp-arc" id="wtp-arc-S" d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="110" stroke-dashoffset="110"/>
+                </svg>
+              </div>
+              <div class="wtp-val" id="wtp-val-S">0s</div>
+              <div class="wtp-label" id="wtp-status-S">OK</div>
+            </div>
+            <div class="wtp-item" id="wtp-E">
+              <div class="wtp-dir">EAST</div>
+              <div class="wtp-gauge-wrap">
+                <svg class="wtp-gauge" viewBox="0 0 80 40">
+                  <path d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="#1e293b" stroke-width="8"/>
+                  <path class="wtp-arc" id="wtp-arc-E" d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="110" stroke-dashoffset="110"/>
+                </svg>
+              </div>
+              <div class="wtp-val" id="wtp-val-E">0s</div>
+              <div class="wtp-label" id="wtp-status-E">OK</div>
+            </div>
+            <div class="wtp-item" id="wtp-W">
+              <div class="wtp-dir">WEST</div>
+              <div class="wtp-gauge-wrap">
+                <svg class="wtp-gauge" viewBox="0 0 80 40">
+                  <path d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="#1e293b" stroke-width="8"/>
+                  <path class="wtp-arc" id="wtp-arc-W" d="M5 38 A35 35 0 0 1 75 38" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="110" stroke-dashoffset="110"/>
+                </svg>
+              </div>
+              <div class="wtp-val" id="wtp-val-W">0s</div>
+              <div class="wtp-label" id="wtp-status-W">OK</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card glass sim-card">
+          <div class="card-header"><span class="card-icon">🎛️</span><h3>Simulation Controls</h3></div>
+          <div class="sim-controls">
+            <button class="btn-primary" id="btnStartSim" onclick="startSimulation()">▶ Start</button>
+            <button class="btn-ghost" id="btnPauseSim" onclick="pauseSimulation()">⏸ Pause</button>
+            <button class="btn-danger" id="btnResetSim" onclick="resetSimulation()">↺ Reset</button>
+          </div>
+          <div class="inject-controls">
+            <div class="inject-label">Inject Event:</div>
+            <div class="inject-btns">
+              <button class="inject-btn" title="Ambulance" onclick="injectVehicle('ambulance')">🚑</button>
+              <button class="inject-btn" title="Bus" onclick="injectVehicle('bus')">🚌</button>
+              <button class="inject-btn" title="Car" onclick="injectVehicle('car')">🚗</button>
+              <button class="inject-btn" title="Bike" onclick="injectVehicle('bike')">🏍️</button>
+            </div>
+          </div>
+          <div class="mode-switches">
+            <div class="mode-sw">
+              <span>🌧️ Rain Mode</span>
+              <label class="toggle"><input type="checkbox" id="sw-rain" onchange="toggleMode('rain')"><span class="slider"></span></label>
+            </div>
+            <div class="mode-sw">
+              <span>🌙 Night Mode</span>
+              <label class="toggle"><input type="checkbox" id="sw-night" onchange="toggleMode('night')"><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="card glass" style="margin-top:1.5rem;">
+      <div class="card-header"><span class="card-icon">📋</span><h3>System Event Log</h3><span class="log-live">● LIVE</span></div>
+      <div class="event-log" id="eventLog">
+        <div class="log-entry info">System initialized. Awaiting start command...</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ANALYTICS PAGE -->
+<div class="page" id="page-analytics">
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Traffic Analytics</h2>
+      <span class="section-sub">Historical heatmaps & optimization insights</span>
+    </div>
+
+    <div class="analytics-grid">
+      <!-- Throughput Chart -->
+      <div class="card glass analytics-card">
+        <div class="card-header"><span class="card-icon">📈</span><h3>Hourly Throughput</h3></div>
+        <canvas id="throughputChart" height="180"></canvas>
+      </div>
+
+      <!-- Vehicle Mix -->
+      <div class="card glass analytics-card">
+        <div class="card-header"><span class="card-icon">🥧</span><h3>Vehicle Mix Distribution</h3></div>
+        <canvas id="mixChart" height="180"></canvas>
+      </div>
+
+      <!-- Wait Time Trend -->
+      <div class="card glass analytics-card" style="grid-column: span 2;">
+        <div class="card-header">
+          <span class="card-icon">⏳</span>
+          <h3>Avg Wait Time: GiveWay vs Fixed-Timer Baseline</h3>
+        </div>
+        <canvas id="compareChart" height="160"></canvas>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="card glass analytics-card" style="grid-column: span 2;">
+        <div class="card-header"><span class="card-icon">🗺️</span><h3>Junction Congestion Heatmap (Live)</h3></div>
+        <div class="heatmap-container">
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+          <div class="heatmap-legend">
+            <span class="hl-low">Low</span>
+            <div class="hl-bar"></div>
+            <span class="hl-high">High</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CO2 savings -->
+      <div class="card glass analytics-card">
+        <div class="card-header"><span class="card-icon">🌱</span><h3>Emissions Reduction</h3></div>
+        <div class="emissions-display">
+          <div class="em-circle" id="emCircle">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1e293b" stroke-width="12"/>
+              <circle id="emArc" cx="60" cy="60" r="50" fill="none" stroke="url(#emGrad)" stroke-width="12"
+                stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+              <defs><linearGradient id="emGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#00ff88"/><stop offset="1" stop-color="#00e5ff"/>
+              </linearGradient></defs>
+            </svg>
+            <div class="em-text">
+              <span class="em-val" id="emVal">0%</span>
+              <span class="em-lbl">Reduction</span>
+            </div>
+          </div>
+          <div class="em-stats">
+            <div class="em-row"><span>CO₂ Avoided</span><span id="co2Avoided">0 kg</span></div>
+            <div class="em-row"><span>Fuel Saved</span><span id="fuelSaved">0 L</span></div>
+            <div class="em-row"><span>Idle Time Cut</span><span id="idleCut">0 min</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Academic References -->
+      <div class="card glass analytics-card">
+        <div class="card-header"><span class="card-icon">📚</span><h3>IEEE References</h3></div>
+        <div class="refs-list">
+          <div class="ref-item">
+            <div class="ref-badge">IEEE Access 2025</div>
+            <p>Edge-Deployed Real-Time Adaptive Traffic Light Control Using YOLO-Based Vehicle Detection and PCE-Aware Density Estimation</p>
+          </div>
+          <div class="ref-item">
+            <div class="ref-badge">IJSDR 2025</div>
+            <p>Smart Traffic Management System using ESP32-CAM and YOLOv5 Nano</p>
+          </div>
+          <div class="ref-item">
+            <div class="ref-badge">IEEE Xplore 2025</div>
+            <p>IoT-Based Smart Signal System for Traffic Density and Emergency Priority</p>
+          </div>
+          <div class="ref-item">
+            <div class="ref-badge">IEEE Access 2024</div>
+            <p>Edge ML Technique for Smart Traffic Management in ITS</p>
+          </div>
+          <div class="ref-item">
+            <div class="ref-badge">ResearchGate 2025</div>
+            <p>AI-Powered Adaptive Traffic Control for Indian Road Context</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- POLICE / CONTROL ROOM PAGE -->
+<div class="page" id="page-police">
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">🚔 Control Room Dashboard</h2>
+      <span class="section-sub">Police override, VIP corridors, and incident management</span>
+    </div>
+
+    <div class="police-layout">
+      <!-- Alert Panel -->
+      <div class="card glass police-card">
+        <div class="card-header"><span class="card-icon">🚨</span><h3>Active Alerts</h3></div>
+        <div class="alert-list" id="alertList">
+          <div class="alert-item warning">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-body">
+              <strong>East Lane</strong>: High density detected. Possible slow-down.
+              <span class="alert-time">2 min ago</span>
+            </div>
+          </div>
+          <div class="alert-item info">
+            <div class="alert-icon">🚌</div>
+            <div class="alert-body">
+              <strong>North Lane</strong>: 3 buses queued — priority assigned.
+              <span class="alert-time">5 min ago</span>
+            </div>
+          </div>
+          <div class="alert-item success">
+            <div class="alert-icon">✅</div>
+            <div class="alert-body">
+              <strong>System</strong>: All lanes within fairness cap. No starvation.
+              <span class="alert-time">10 min ago</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-ghost" style="margin-top:1rem;width:100%" onclick="addFakeAlert()">+ Simulate Alert</button>
+      </div>
+
+      <!-- Override Panel -->
+      <div class="card glass police-card">
+        <div class="card-header"><span class="card-icon">🎮</span><h3>Manual Override</h3></div>
+        <div class="override-grid">
+          <div class="override-item" id="or-N">
+            <div class="or-dir">NORTH</div>
+            <div class="or-btns">
+              <button class="or-btn green" onclick="forceGreen('N')">🟢 Force Green</button>
+              <button class="or-btn red" onclick="forceRed('N')">🔴 Force Red</button>
+            </div>
+          </div>
+          <div class="override-item" id="or-S">
+            <div class="or-dir">SOUTH</div>
+            <div class="or-btns">
+              <button class="or-btn green" onclick="forceGreen('S')">🟢 Force Green</button>
+              <button class="or-btn red" onclick="forceRed('S')">🔴 Force Red</button>
+            </div>
+          </div>
+          <div class="override-item" id="or-E">
+            <div class="or-dir">EAST</div>
+            <div class="or-btns">
+              <button class="or-btn green" onclick="forceGreen('E')">🟢 Force Green</button>
+              <button class="or-btn red" onclick="forceRed('E')">🔴 Force Red</button>
+            </div>
+          </div>
+          <div class="override-item" id="or-W">
+            <div class="or-dir">WEST</div>
+            <div class="or-btns">
+              <button class="or-btn green" onclick="forceGreen('W')">🟢 Force Green</button>
+              <button class="or-btn red" onclick="forceRed('W')">🔴 Force Red</button>
+            </div>
+          </div>
+        </div>
+        <div class="override-modes">
+          <button class="mode-btn" id="mb-vip" onclick="activateMode('vip')">👑 VIP Corridor</button>
+          <button class="mode-btn" id="mb-festival" onclick="activateMode('festival')">🎉 Festival Mode</button>
+          <button class="mode-btn" id="mb-emergency" onclick="activateMode('emergency')">🚨 Emergency All-Stop</button>
+          <button class="mode-btn active-mode" id="mb-auto" onclick="activateMode('auto')">🤖 Auto (GiveWay AI)</button>
+        </div>
+      </div>
+
+      <!-- Ghost Lane Monitor -->
+      <div class="card glass police-card">
+        <div class="card-header"><span class="card-icon">👻</span><h3>Ghost Lane Monitor</h3></div>
+        <div class="ghost-grid">
+          <div class="ghost-lane" id="gl-N">
+            <div class="gl-dir">NORTH</div>
+            <div class="gl-status normal" id="gls-N">Normal Flow</div>
+            <div class="gl-indicator" id="gli-N"><div class="gl-dot"></div></div>
+          </div>
+          <div class="ghost-lane" id="gl-S">
+            <div class="gl-dir">SOUTH</div>
+            <div class="gl-status normal" id="gls-S">Normal Flow</div>
+            <div class="gl-indicator" id="gli-S"><div class="gl-dot"></div></div>
+          </div>
+          <div class="ghost-lane" id="gl-E">
+            <div class="gl-dir">EAST</div>
+            <div class="gl-status normal" id="gls-E">Normal Flow</div>
+            <div class="gl-indicator" id="gli-E"><div class="gl-dot"></div></div>
+          </div>
+          <div class="ghost-lane" id="gl-W">
+            <div class="gl-dir">WEST</div>
+            <div class="gl-status normal" id="gls-W">Normal Flow</div>
+            <div class="gl-indicator" id="gli-W"><div class="gl-dot"></div></div>
+          </div>
+        </div>
+        <button class="btn-danger" style="margin-top:1rem;width:100%" onclick="triggerGhost()">⚠️ Simulate Ghost Lane</button>
+      </div>
+
+      <!-- Green Wave Network -->
+      <div class="card glass police-card">
+        <div class="card-header"><span class="card-icon">🌊</span><h3>Green-Wave Network</h3></div>
+        <div class="wave-network" id="waveNetwork">
+          <div class="wave-junction wj-active" id="wj-A">
+            <div class="wj-label">Junction A</div>
+            <div class="wj-status">Active</div>
+          </div>
+          <div class="wave-link" id="wl-AB">
+            <div class="wave-pulse" id="wp-AB"></div>
+            <span class="wl-dist">1 km</span>
+          </div>
+          <div class="wave-junction" id="wj-B">
+            <div class="wj-label">Junction B</div>
+            <div class="wj-status" id="wjs-B">Standby</div>
+          </div>
+          <div class="wave-link" id="wl-BC">
+            <div class="wave-pulse" id="wp-BC"></div>
+            <span class="wl-dist">1.2 km</span>
+          </div>
+          <div class="wave-junction" id="wj-C">
+            <div class="wj-label">Junction C</div>
+            <div class="wj-status" id="wjs-C">Standby</div>
+          </div>
+        </div>
+        <button class="btn-primary" style="margin-top:1rem;width:100%" onclick="triggerGreenWave()">🌊 Trigger Green Wave</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── FOOTER ───────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <strong>GiveWay</strong> — Adaptive Traffic Equity System
+    </div>
+    <div class="footer-refs">
+      IEEE Access (2024–2025) · IJSDR · ResearchGate · 10/90 Architecture
+    </div>
+    <div class="footer-right">
+      Built for Smart Cities 2026 · ₹4,200/junction
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

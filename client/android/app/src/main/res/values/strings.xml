@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GiveWay</string>
+    <string name="title_activity_main">GiveWay</string>
+    <string name="package_name">com.giveway.app</string>
+    <string name="custom_url_scheme">com.giveway.app</string>
+</resources>

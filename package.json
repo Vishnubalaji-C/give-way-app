@@ -1,0 +1,23 @@
+{
+  "name": "giveway-root",
+  "version": "1.0.0",
+  "description": "GiveWay — Adaptive Traffic Equity System root",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "server": "node server.js",
+    "client": "npm run dev --prefix client",
+    "dev": "start \"GiveWay Backend\" cmd /k npm run server & start \"GiveWay Frontend\" cmd /k npm run client",
+    "build": "npm run build --prefix client",
+    "install:all": "npm install && npm install --prefix client"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "uuid": "^9.0.1",
+    "ws": "^8.16.0"
+  },
+  "keywords": ["smart-city", "traffic", "AI", "ITS", "PCE"],
+  "author": "GiveWay Team",
+  "license": "MIT"
+}

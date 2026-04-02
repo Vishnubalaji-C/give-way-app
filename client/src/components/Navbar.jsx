@@ -1,0 +1,196 @@
+import { useWs } from '../context/WsContext';
+import { Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, Map, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme }) {
+  const { connected } = useWs();
+  const [latency, setLatency] = useState(0);
+
+  // Simulate latency
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLatency(Math.floor(Math.random() * (150 - 45 + 1) + 45)); // random between 45ms and 150ms
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  const cycleTheme = () => {
+    if (theme === 'auto') onChangeTheme('light');
+    else if (theme === 'light') onChangeTheme('dark');
+    else onChangeTheme('auto');
+  };
+
+  const ThemeIcon = theme === 'light' ? Sun : (theme === 'dark' ? Moon : Sparkles);
+
+  return (
+    <>
+      {/* ----------------------------------------------------- */}
+      {/* 1. MOBILE APP NAVIGATION BAR (For On-Ground Police) */}
+      {/* ----------------------------------------------------- */}
+      {user?.role === 'police' && (
+      <nav className="sticky top-0 z-50 bg-[#02050a]/95 backdrop-blur-2xl border-b border-cyan-500/10">
+        {/* A. Status & Identity Bar (The Top Header) */}
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Left Side: Circular Avatar + Pulse Indicator */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border border-slate-700 shadow-inner">
+              <User size={20} className="text-slate-400" />
+              <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#02050a] flex items-center justify-center ${connected ? 'bg-green-500 shadow-[0_0_8px_rgba(0,255,136,0.6)]' : 'bg-red-500'}`}>
+                {connected && <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />}
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Junction Name */}
+          <div className="text-center mx-2 flex-1">
+            <div className="text-sm font-black text-white tracking-wide">Anna Salai - Pole 04</div>
+            <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5 flex items-center justify-center gap-1">
+              <Activity size={10} /> Latency: {latency}ms
+            </div>
+            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">{user?.name}</div>
+          </div>
+
+          {/* Right Side: Theme, Config & Status */}
+          <div className="flex items-center gap-2">
+            <button onClick={cycleTheme} className="p-1.5 bg-slate-800/80 hover:bg-slate-700 rounded-full transition-colors text-amber-400">
+              <ThemeIcon size={14} />
+            </button>
+            <button onClick={onLogout} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-full transition-colors text-red-500 border border-red-500/20">
+              <LogOut size={14} />
+            </button>
+            <div className="p-1.5 bg-blue-500/10 rounded-full border border-blue-500/20 ml-1">
+              <CloudRain size={16} className="text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+            </div>
+          </div>
+        </div>
+
+        {/* B. The "Action Quick-Bar" */}
+        <div className="flex items-center justify-around px-3 pb-3 gap-2">
+          {tab !== 'dashboard' && (
+            <button onClick={() => setTab('dashboard')} className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition-all border border-transparent">
+              <ChevronLeft size={18} className="text-cyan-400" />
+              <span className="text-[10px] font-black mt-1 text-slate-300">BACK</span>
+            </button>
+          )}
+
+          <button onClick={() => setTab('camera')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 border-transparent'}`}>
+            <Video size={18} className={tab === 'camera' ? 'text-cyan-400' : 'text-slate-400'} />
+            <span className={`text-[10px] font-black mt-1 ${tab === 'camera' ? 'text-cyan-300' : 'text-slate-300'}`}>LIVE FEED</span>
+          </button>
+          
+          <button onClick={() => setTab('override')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.15)] relative overflow-hidden group ${tab === 'override' ? 'bg-red-500/30 border-red-500 text-red-400' : 'bg-red-500/10 border border-red-500/50 text-red-500'}`}>
+            <div className="absolute inset-0 bg-red-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+            <AlertTriangle size={18} className="relative z-10" />
+            <span className="text-[10px] font-black mt-1 relative z-10">OVERRIDE</span>
+          </button>
+          
+          <button onClick={() => setTab('incidents')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border relative transition-all ${tab === 'incidents' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-800/50 border-transparent text-slate-300'}`}>
+            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.8)] border border-[#02050a]">2</div>
+            <Siren size={18} className="text-amber-400" />
+            <span className="text-[10px] font-black mt-1">INCIDENTS</span>
+          </button>
+          
+          <button onClick={() => setTab('analytics')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all ${tab === 'analytics' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-300' : 'bg-slate-800/50 border-transparent text-slate-300'}`}>
+            <FileBarChart size={18} className={tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} />
+            <span className="text-[10px] font-black mt-1">ANALYTICS</span>
+          </button>
+        </div>
+      </nav>
+      )}
+
+      {/* ----------------------------------------------------- */}
+      {/* 2. WEB DASHBOARD NAVIGATION BAR (For Central Control Room) */}
+      {/* ----------------------------------------------------- */}
+      {user?.role === 'admin' && (
+      <nav className="sticky top-0 z-50 flex flex-col bg-[#02050a]/90 backdrop-blur-2xl border-b border-cyan-500/10 shadow-2xl">
+        {/* A. The Global Utility Bar (Top-Most) */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/50 bg-black/40 xl:gap-8 overflow-x-auto no-scrollbar">
+          {/* Logo */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,136,0.3)]">
+              <span className="text-black font-black text-xs">GW</span>
+            </div>
+            <span className="font-black text-xl brand-gradient tracking-tight drop-shadow-md">GiveWay</span>
+          </div>
+
+          {/* Global Search */}
+          <div className="flex-1 max-w-xl mx-4 xl:mx-8 relative min-w-[200px]">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input type="text" placeholder="Search Junction ID, Pole Number, or Officer Name..." 
+                   className="w-full bg-slate-900/60 border border-slate-700/80 rounded-full py-2 pl-11 pr-4 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 focus:bg-slate-900 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder:text-slate-500" />
+          </div>
+
+          {/* Emergency Broadcast & Role Switcher */}
+          <div className="flex items-center gap-4 xl:gap-6 shrink-0">
+            <button className="flex items-center gap-2 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-3 xl:px-4 py-2 rounded-full border border-amber-500/30 transition-all text-[10px] xl:text-xs font-black tracking-wide shrink-0 animate-[pulse_2s_ease-in-out_infinite]">
+              <Radio size={14} /> EMERGENCY BROADCAST
+            </button>
+            <div className="flex items-center gap-3 border-l border-slate-700/80 pl-4 xl:pl-6">
+              <div className="text-right leading-tight">
+                <div className="text-xs xl:text-sm font-bold text-slate-200">{user?.name}</div>
+                <div className="text-[9px] xl:text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{user?.id} ▾</div>
+              </div>
+              <div className="w-9 h-9 xl:w-10 xl:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shadow-inner group relative cursor-pointer">
+                <ShieldAlert size={16} className="text-cyan-400 xl:w-[18px]" />
+                <div className="absolute right-0 top-12 bg-slate-900 border border-cyan-500/20 rounded-xl p-2 hidden group-hover:flex flex-col gap-1 min-w-[200px] shadow-2xl">
+                    <button onClick={cycleTheme} className="flex items-center justify-between px-3 py-2 hover:bg-slate-800 rounded-lg text-xs font-bold text-slate-300 transition-colors">
+                      {theme === 'auto' ? 'Auto Theme (Time Sync)' : (theme === 'dark' ? 'Dark Mode Active' : 'Light Mode Active')}
+                      <ThemeIcon size={14} className="text-amber-400"/>
+                    </button>
+                    <button onClick={onLogout} className="flex items-center justify-between px-3 py-2 hover:bg-red-500/20 rounded-lg text-xs font-bold text-red-400 transition-colors">
+                      Log Out Securely
+                      <LogOut size={14} />
+                    </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* B. The "View-Mode" Tab Bar (Contextual Navigation) */}
+        <div className="flex flex-wrap items-center justify-between px-6 py-2.5 gap-2">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { id:'map', icon: <Map size={16}/>, label: 'Map View' },
+              { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Grid View' },
+              { id:'wave', icon: <Wind size={16}/>, label: 'Green-Wave Tool' },
+              { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
+            ].map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${
+                  tab === t.id
+                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,229,255,0.15)]'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
+                }`}>
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
+          </div>
+          
+          {/* Universal UX Safety Features */}
+          <div className="flex items-center gap-4 ml-auto">
+            {tab !== 'dashboard' && tab !== 'map' && (
+              <button onClick={() => setTab('dashboard')} className="flex items-center gap-1.5 text-[10px] xl:text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 rounded-md bg-slate-800/50 border border-slate-700 hover:border-slate-500 transition-all">
+                <ChevronLeft size={14}/> BACK TO SIGNAL CONTROL
+              </button>
+            )}
+            
+            <div className="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 gap-4">
+               <div className="flex items-center gap-1.5 text-[9px] xl:text-[10px] text-slate-400 font-mono tracking-wider">
+                 <AlertCircle size={10} className="text-slate-500 xl:w-3 xl:h-3"/>
+                 LATENCY: <span className={latency > 150 ? 'text-amber-500 font-bold' : 'text-emerald-400 font-bold'}>{latency}ms</span>
+               </div>
+               <div className={`flex items-center gap-1.5 text-[9px] xl:text-[10px] font-bold font-mono tracking-widest ${connected ? 'text-green-400' : 'text-red-400'}`}>
+                 {connected ? <span className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(0,255,136,0.8)] animate-[pulse_1.5s_ease-in-out_infinite]"/> : <WifiOff size={10} className="xl:w-3 xl:h-3"/>}
+                 {connected ? 'ACTIVE' : 'OFFLINE'}
+               </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      )}
+    </>
+  );
+}
