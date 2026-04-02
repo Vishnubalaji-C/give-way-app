@@ -13,6 +13,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   String _role = 'police';
   final _idCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   final _badgeCtrl = TextEditingController();
   final _stationCtrl = TextEditingController();
@@ -38,6 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
           station: _stationCtrl.text,
           dept: _deptCtrl.text,
           access: _access,
+          fullName: _nameCtrl.text,
         );
       }
       widget.onLogin({
@@ -188,6 +190,19 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 // Registration Extra Fields
                 if (!_isLogin) ...[
+                  const SizedBox(height: 16),
+                  
+                  // Full Name
+                  _buildInput(
+                    controller: _nameCtrl,
+                    label: 'Legal Full Name',
+                    hint: 'e.g. John Doe',
+                    icon: Icons.person,
+                    accent: accent,
+                  ),
+
+                  const SizedBox(height: 16),
+                  Divider(color: Colors.white.withOpacity(0.05)),
                   const SizedBox(height: 16),
                   Divider(color: Colors.white.withOpacity(0.05)),
                   const SizedBox(height: 8),

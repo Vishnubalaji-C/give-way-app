@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { ShieldAlert, Fingerprint, Lock, ShieldCheck } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 export default function AuthPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState('police');
+  const [fullName, setFullName] = useState('');
   const [uniqueId, setUniqueId] = useState('');
   const [pin, setPin] = useState('');
   
@@ -29,9 +31,9 @@ export default function AuthPage({ onLogin }) {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
         ? { id: uniqueId, pin }
-        : { id: uniqueId, pin, role, badge, station, dept, access };
+        : { id: uniqueId, pin, role, badge, station, dept, access, fullName };
 
-      const res = await fetch(`https://give-way-app.onrender.com${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -88,6 +90,16 @@ export default function AuthPage({ onLogin }) {
               <ShieldAlert size={14} /> Control Room
             </button>
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Legal Full Name</label>
+              <div className="relative mt-1">
+                <ShieldCheck size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${role === 'police' ? 'text-[var(--cyan)]' : 'text-[var(--amber)]'}`} />
+                <input value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="e.g. John Doe" className={`w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-3 pl-10 pr-4 text-sm text-[var(--text-main)] focus:outline-none transition-colors ${role === 'police' ? 'focus:border-[var(--cyan)]' : 'focus:border-[var(--amber)]'}`} />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-xs text-[var(--text-muted)] font-bold ml-1">{role === 'police' ? 'Officer Unique ID' : 'Admin System ID'}</label>

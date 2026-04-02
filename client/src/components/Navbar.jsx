@@ -3,7 +3,7 @@ import { Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Sea
 import { useState, useEffect } from 'react';
 
 export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme }) {
-  const { connected } = useWs();
+  const { connected, state, junctions, switchJunction } = useWs();
   const [latency, setLatency] = useState(0);
 
   // Simulate latency
@@ -41,13 +41,13 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             </div>
           </div>
 
-          {/* Center: Junction Name */}
+          {/* Center: Junction Name (Dynamic from Server State) */}
           <div className="text-center mx-2 flex-1">
-            <div className="text-sm font-black text-white tracking-wide">Anna Salai - Pole 04</div>
+            <div className="text-sm font-black text-white tracking-wide">{state?.junction?.name || 'Connecting...'}</div>
             <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5 flex items-center justify-center gap-1">
               <Activity size={10} /> Latency: {latency}ms
             </div>
-            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">{user?.name}</div>
+            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">{user?.name} · {state?.junction?.poleId || ''}</div>
           </div>
 
           {/* Right Side: Theme, Config & Status */}
@@ -67,32 +67,42 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
         {/* B. The "Action Quick-Bar" */}
         <div className="flex items-center justify-around px-3 pb-3 gap-2">
           {tab !== 'dashboard' && (
-            <button onClick={() => setTab('dashboard')} className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition-all border border-transparent">
+            <button onClick={() => setTab('dashboard')} className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-slate-800/50 hover:bg-slate-700 hover:scale-105 transition-all border border-transparent">
               <ChevronLeft size={18} className="text-cyan-400" />
               <span className="text-[10px] font-black mt-1 text-slate-300">BACK</span>
             </button>
           )}
 
-          <button onClick={() => setTab('camera')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 border-transparent'}`}>
-            <Video size={18} className={tab === 'camera' ? 'text-cyan-400' : 'text-slate-400'} />
-            <span className={`text-[10px] font-black mt-1 ${tab === 'camera' ? 'text-cyan-300' : 'text-slate-300'}`}>LIVE FEED</span>
+          <button onClick={() => setTab('camera')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 md:hover:shadow-lg relative overflow-hidden group ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-cyan-500/30 border-transparent'}`}>
+            <div className="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {state?.junction?.cameraNodes > 0 && (
+              <div className="absolute top-1 left-1 bg-cyan-500 text-[#02050a] text-[9px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.8)] z-20 group-hover:scale-110 transition-transform">
+                {state.junction.cameraNodes}
+              </div>
+            )}
+            <Video size={18} className={`relative z-10 ${tab === 'camera' ? 'text-cyan-400 group-hover:scale-110' : 'text-slate-400'} transition-transform`} />
+            <span className={`text-[10px] font-black mt-1 relative z-10 ${tab === 'camera' ? 'text-cyan-300' : 'text-slate-300'}`}>LIVE FEED</span>
           </button>
           
-          <button onClick={() => setTab('override')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(239,68,68,0.15)] relative overflow-hidden group ${tab === 'override' ? 'bg-red-500/30 border-red-500 text-red-400' : 'bg-red-500/10 border border-red-500/50 text-red-500'}`}>
-            <div className="absolute inset-0 bg-red-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <AlertTriangle size={18} className="relative z-10" />
+          <button onClick={() => setTab('override')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'override' ? 'bg-red-500/30 border-red-500 text-red-400 shadow-lg' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500'}`}>
+            <div className="absolute inset-0 bg-red-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <AlertTriangle size={18} className="relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-transform" />
             <span className="text-[10px] font-black mt-1 relative z-10">OVERRIDE</span>
           </button>
           
-          <button onClick={() => setTab('incidents')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border relative transition-all ${tab === 'incidents' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-800/50 border-transparent text-slate-300'}`}>
-            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.8)] border border-[#02050a]">2</div>
-            <Siren size={18} className="text-amber-400" />
-            <span className="text-[10px] font-black mt-1">INCIDENTS</span>
+          <button onClick={() => setTab('incidents')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border relative transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'incidents' ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-lg' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-amber-500/30 border-transparent text-slate-300'}`}>
+            <div className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.8)] z-20 group-hover:scale-110 transition-transform">
+              2
+            </div>
+            <Siren size={18} className={`relative z-10 ${tab === 'incidents' ? 'text-amber-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
+            <span className="text-[10px] font-black mt-1 relative z-10">INCIDENTS</span>
           </button>
           
-          <button onClick={() => setTab('analytics')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all ${tab === 'analytics' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-300' : 'bg-slate-800/50 border-transparent text-slate-300'}`}>
-            <FileBarChart size={18} className={tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} />
-            <span className="text-[10px] font-black mt-1">ANALYTICS</span>
+          <button onClick={() => setTab('analytics')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'analytics' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-300' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-purple-500/30 border-transparent text-slate-300'}`}>
+            <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <FileBarChart size={18} className={`relative z-10 ${tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
+            <span className="text-[10px] font-black mt-1 relative z-10">ANALYTICS</span>
           </button>
         </div>
       </nav>
@@ -142,6 +152,49 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
                       <LogOut size={14} />
                     </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Junction Location Strip */}
+        <div className="flex items-center justify-between px-6 py-2 border-b border-slate-800/50 bg-gradient-to-r from-cyan-950/30 via-transparent to-emerald-950/30">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${state?.junction?.status === 'online' ? 'bg-green-400 shadow-[0_0_8px_rgba(0,255,136,0.6)] animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-xs font-black text-slate-100">{state?.junction?.name || 'No Junction'}</span>
+            </div>
+            <div className="hidden md:flex items-center gap-3 text-[10px] font-mono text-slate-500">
+              <span className="px-2 py-0.5 bg-slate-800/60 rounded border border-slate-700/40">{state?.junction?.id || '---'}</span>
+              <span>📍 {state?.junction?.address || '---'}</span>
+              <span className="text-cyan-400/60">{state?.junction?.zone || ''}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden lg:inline text-[9px] text-slate-600 font-mono">
+              GPS: {state?.junction?.lat?.toFixed(4) || '---'}, {state?.junction?.lng?.toFixed(4) || '---'}
+            </span>
+            <div className="relative group">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/50 hover:border-cyan-500/40 text-[10px] font-bold text-slate-300 transition-all">
+                <Map size={12} className="text-cyan-400" /> Switch Junction ▾
+              </button>
+              <div className="absolute right-0 top-full mt-1 bg-slate-900 border border-cyan-500/20 rounded-xl p-2 hidden group-hover:flex flex-col gap-1 min-w-[280px] shadow-2xl z-50">
+                {(junctions || []).map(j => (
+                  <button key={j.id}
+                    onClick={() => switchJunction(j.id, user?.token)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs transition-colors text-left ${
+                      state?.junction?.id === j.id
+                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${j.status === 'online' ? 'bg-green-400' : 'bg-red-500'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold truncate">{j.name}</div>
+                      <div className="text-[10px] text-slate-600 font-mono">{j.id} · {j.zone}</div>
+                    </div>
+                    {state?.junction?.id === j.id && <span className="text-[9px] text-cyan-400 font-mono">ACTIVE</span>}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

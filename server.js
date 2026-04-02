@@ -8,9 +8,9 @@ const http    = require('http');
 const { WebSocketServer } = require('ws');
 const cors   = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const mongoose = require('mongoose');
 require('dotenv').config();
 const path    = require('path');
+const fs      = require('fs');
 
 const app    = express();
 const server = http.createServer(app);
@@ -22,29 +22,31 @@ app.use(express.json());
 // Serve Production React PWA (client/dist) unconditionally
 app.use(express.static(path.join(__dirname, 'client/dist')));
 
-// ─── Confidential Database Layer ──────────────────────────────────────────────
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/giveway')
-  .then(() => console.log('✅ Connected to MongoDB Backend!'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+// ─── Zero-Cost File-Sync Persistence Layer ─────────────────────────────────────
+const DB_FILE = path.join(__dirname, 'db.json');
+let db = {
+  users: [],
+  auditLog: [],
+  analytics: {
+    hourly: Array.from({length: 12}, (_, i) => ({
+      hour: `${String(8 + i).padStart(2, '0')}:00`, throughput: 0, giveway: 0, fixed: 0
+    })),
+    fuelSaved: 0, co2Reduced: 0, totalServed: 0,
+    vehicleMix: { ambulance: 0, bus: 0, car: 0, bike: 0 }
+  }
+};
 
-const UserSchema = new mongoose.Schema({
-  id: String,
-  pin: String,
-  role: String,
-  token: String,
-  name: String,
-  meta: Object,
-  createdAt: String
-});
-const UserModel = mongoose.model('User', UserSchema);
+try {
+  if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+} catch (err) { console.error('Could not read db.json:', err); }
 
-const AuditLogSchema = new mongoose.Schema({
-  id: String,
-  action: String,
-  details: String,
-  timestamp: Number
-});
-const AuditLogModel = mongoose.model('AuditLog', AuditLogSchema);
+let saveTimeout = null;
+function saveToDisk() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    fs.writeFile(DB_FILE, JSON.stringify(db, null, 2), err => { if (err) console.error('Save failed', err); });
+  }, 3000);
+}
 
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
 // Require valid Bearer token for API operations
@@ -54,7 +56,7 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Confidential Access: Missing or invalid token' });
   }
   const token = authHeader.split(' ')[1];
-  const user = await UserModel.findOne({ token });
+  const user = db.users.find(u => u.token === token);
   
   if (!user) {
     return res.status(403).json({ error: 'Access Denied: Invalid Unique credentials' });
@@ -74,10 +76,79 @@ const PHASE_GREEN   = 15;     // base green phase duration
 
 const PCE = { ambulance: 999, bus: 10, car: 1, bike: 0.5 };
 
+// ─── Multi-Junction Location Registry ─────────────────────────────────────────
+// Each deployed hardware set gets a unique junction entry with location metadata
+const junctions = {
+  'JN-001': {
+    id: 'JN-001',
+    name: 'Anna Salai - Mount Road',
+    zone: 'Zone A — Central Chennai',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    lat: 13.0604,
+    lng: 80.2496,
+    poleId: 'POLE-04',
+    address: 'Anna Salai & Cathedral Rd Junction, Teynampet',
+    status: 'online',
+    lastPing: Date.now(),
+    deployedAt: '2026-01-15',
+    cameraNodes: 4,
+  },
+  'JN-002': {
+    id: 'JN-002',
+    name: 'Kathipara Junction',
+    zone: 'Zone B — South Chennai',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    lat: 13.0109,
+    lng: 80.2078,
+    poleId: 'POLE-12',
+    address: 'Kathipara Flyover Junction, Alandur',
+    status: 'online',
+    lastPing: Date.now(),
+    deployedAt: '2026-02-20',
+    cameraNodes: 4,
+  },
+  'JN-003': {
+    id: 'JN-003',
+    name: 'Tidel Park Signal',
+    zone: 'Zone C — IT Corridor',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    lat: 12.9878,
+    lng: 80.2465,
+    poleId: 'POLE-07',
+    address: 'Rajiv Gandhi Salai (OMR), Taramani',
+    status: 'online',
+    lastPing: Date.now(),
+    deployedAt: '2026-03-10',
+    cameraNodes: 4,
+  },
+  'JN-004': {
+    id: 'JN-004',
+    name: 'Koyambedu Junction',
+    zone: 'Zone D — West Chennai',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    lat: 13.0694,
+    lng: 80.1948,
+    poleId: 'POLE-02',
+    address: 'Koyambedu CMBT Signal, Koyambedu',
+    status: 'offline',
+    lastPing: Date.now() - 600000,
+    deployedAt: '2026-03-25',
+    cameraNodes: 4,
+  },
+};
+
+let activeJunction = 'JN-001'; // Currently viewed junction
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let state = buildInitialState();
-let auditLog = [];
+let auditLog = db.auditLog;
 let worldTimer = null;
+let snapTimer = null;
+let simulationRunning = false;
 let overrideMode = 'auto'; // auto | vip | festival | emergency
 
 function buildInitialState() {
@@ -113,6 +184,7 @@ function buildInitialState() {
     mode: { rain: false, night: false, pedestrian: false },
     alerts: [],
     greenWave: { active: false, source: null, progress: 0 },
+    junction: junctions[activeJunction] || junctions['JN-001'],
   };
 }
 
@@ -246,6 +318,23 @@ function processEdgeData(laneId, vehicles) {
    
    computePriorities();
    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+}
+
+// ─── Traffic Simulation Generator (Demo / Dashboard Testing) ──────────────────
+function generateTraffic() {
+  if (!simulationRunning) return;
+
+  LANES.forEach(id => {
+    const lane = state.lanes[id];
+    // Generate realistic random vehicle counts for simulation
+    const vehicles = {
+      ambulance: Math.random() < 0.03 ? 1 : 0,   // 3% chance of ambulance
+      bus:       Math.floor(Math.random() * 3),     // 0-2 buses
+      car:       Math.floor(Math.random() * 12 + 1),// 1-12 cars
+      bike:      Math.floor(Math.random() * 8),     // 0-7 bikes
+    };
+    processEdgeData(id, vehicles);
+  });
 }
 
 // ─── World Clock Tick ─────────────────────────────────────────────────────────
@@ -423,61 +512,59 @@ function logAudit(action, details) {
   auditLog.unshift(entry);
   if (auditLog.length > 200) auditLog.pop();
   
-  // Save to persistent secure DB asynchronously
-  AuditLogModel.create(entry).catch(err => console.error("MongoDB Audit Log Error:", err));
+  // Save to persistent file DB asynchronously
+  db.auditLog.unshift(entry);
+  if (db.auditLog.length > 500) db.auditLog.pop();
+  saveToDisk();
 }
 
 function sanitizeState() {
   return JSON.parse(JSON.stringify(state));
 }
 
-// ─── Secure Mobile/Web Auth APIs ──────────────────────────────────────────────
+// ─── Secure Mobile/Web Auth APIs (JSON System) ────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
-  const { id, pin, role, badge, station, dept, access } = req.body;
+  const { id, pin, role, badge, station, dept, access, fullName } = req.body;
   if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
   
-  if (await UserModel.findOne({ id })) {
+  if (db.users.find(u => u.id === id)) {
     return res.status(409).json({ error: 'Unique ID already registered to another officer/admin.' });
   }
 
-  // Generate a confidential access token
   const token = uuidv4() + '-' + Date.now().toString(36);
-  
   const newUserParams = {
     id, pin, role, token,
-    name: role === 'police' ? `Officer ${id}` : `${dept} Admin`,
+    name: fullName ? fullName : (role === 'police' ? `Officer ${id}` : `${dept} Admin`),
     meta: role === 'police' ? { badge, station } : { dept, access },
     createdAt: new Date().toISOString()
   };
 
-  const newUser = await UserModel.create(newUserParams);
+  db.users.push(newUserParams);
+  saveToDisk();
   
-  logAudit('USER_REGISTER', `${newUser.name} registered into the system via ${role} terminal.`);
-  
-  const { pin: _p, _id, __v, ...safeUser } = newUser.toObject();
+  logAudit('USER_REGISTER', `${newUserParams.name} registered into the system via ${role} terminal.`);
+  const { pin: _p, ...safeUser } = newUserParams;
   res.json({ success: true, user: safeUser, token });
 });
 
 app.post('/api/auth/login', async (req, res) => {
   const { id, pin } = req.body;
-  const user = await UserModel.findOne({ id, pin });
+  const user = db.users.find(u => u.id === id && u.pin === pin);
   
   if (!user) {
     return res.status(401).json({ error: 'Authentication Failed: Invalid ID or PIN.' });
   }
 
-  // Rotate token on login for security
   user.token = uuidv4() + '-' + Date.now().toString(36);
-  await user.save();
+  saveToDisk();
 
   logAudit('USER_LOGIN', `${user.name} established a secure uplink.`);
-
-  const { pin: _p, _id, __v, ...safeUser } = user.toObject();
+  const { pin: _p, ...safeUser } = user;
   res.json({ success: true, user: safeUser, token: user.token });
 });
 
 app.get('/api/auth/verify', requireAuth, (req, res) => {
-  const { pin: _p, _id, __v, ...safeUser } = (req.user.toObject ? req.user.toObject() : req.user);
+  const { pin, ...safeUser } = req.user;
   res.json({ success: true, user: safeUser });
 });
 
@@ -487,36 +574,61 @@ app.get('/api/alerts', requireAuth, (req, res) => res.json(state.alerts));
 app.get('/api/audit', requireAuth, (req, res) => res.json(auditLog));
 
 app.get('/api/analytics', (req, res) => {
-  const hourly = Array.from({ length: 12 }, (_, i) => ({
-    hour: `${String(8 + i).padStart(2, '0')}:00`,
-    throughput: Math.floor(Math.random() * 400 + 100 + i * 20),
-    giveway: Math.floor(Math.random() * 30 + 15),
-    fixed: Math.floor(Math.random() * 50 + 40),
-  }));
   res.json({
-    hourly,
+    hourly: db.analytics.hourly,
     vehicleMix: {
-      ambulance: state.totalAmbulances,
-      bus: state.totalBuses,
-      car: Math.floor(state.totalVehiclesServed * 0.6),
-      bike: Math.floor(state.totalVehiclesServed * 0.3),
+      ambulance: state.totalAmbulances + (db.analytics.vehicleMix?.ambulance || 0),
+      bus: state.totalBuses + (db.analytics.vehicleMix?.bus || 0),
+      car: Math.floor(state.totalVehiclesServed * 0.6) + (db.analytics.vehicleMix?.car || 0),
+      bike: Math.floor(state.totalVehiclesServed * 0.3) + (db.analytics.vehicleMix?.bike || 0),
     },
-    fuelSaved: state.fuelSaved,
-    co2Reduced: state.co2Reduced,
-    totalServed: state.totalVehiclesServed,
+    fuelSaved: state.fuelSaved + (db.analytics.fuelSaved || 0),
+    co2Reduced: state.co2Reduced + (db.analytics.co2Reduced || 0),
+    totalServed: state.totalVehiclesServed + (db.analytics.totalServed || 0),
   });
 });
 
 app.post('/api/edge-data', (req, res) => {
-  // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
-  const { laneId, secret, vehicles } = req.body;
+  // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', junctionId: 'JN-001', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
+  const { laneId, secret, vehicles, junctionId } = req.body;
   if (secret !== 'GIVEWAY_NODE_KEY') return res.status(401).json({ error: 'Unauthorized Node' });
   if (!state.lanes[laneId]) return res.status(400).json({ error: 'Invalid Lane ID' });
+  
+  // Update junction heartbeat if junctionId provided
+  if (junctionId && junctions[junctionId]) {
+    junctions[junctionId].lastPing = Date.now();
+    junctions[junctionId].status = 'online';
+  }
   
   // Real-world integration logic routed through Antigravity Processor
   processEdgeData(laneId, vehicles);
   
-  res.json({ success: true, newScore: state.lanes[laneId].pceScore });
+  res.json({ success: true, newScore: state.lanes[laneId].pceScore, junction: junctionId });
+});
+
+// ─── Junction Location APIs ───────────────────────────────────────────────────
+app.get('/api/junctions', (req, res) => {
+  // Mark junctions as offline if no ping in 5 minutes
+  Object.values(junctions).forEach(j => {
+    if (Date.now() - j.lastPing > 300000) j.status = 'offline';
+  });
+  res.json(Object.values(junctions));
+});
+
+app.get('/api/junctions/:id', (req, res) => {
+  const junction = junctions[req.params.id];
+  if (!junction) return res.status(404).json({ error: 'Junction not found' });
+  res.json(junction);
+});
+
+app.post('/api/junctions/switch', requireAuth, (req, res) => {
+  const { junctionId } = req.body;
+  if (!junctions[junctionId]) return res.status(404).json({ error: 'Junction not found' });
+  activeJunction = junctionId;
+  state.junction = junctions[activeJunction];
+  broadcast({ type: 'JUNCTION_SWITCH', payload: { junction: junctions[activeJunction], state: sanitizeState() } });
+  logAudit('JUNCTION_SWITCH', `Switched monitoring to ${junctions[activeJunction].name} (${junctionId})`);
+  res.json({ success: true, junction: junctions[activeJunction] });
 });
 
 // ─── Frontend React Navigation Fallback ───────────────────────────────────────

@@ -51,7 +51,16 @@ export default function ControlRoomPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Shield size={22} className="text-cyan-400" />
-        <h2 className="text-2xl font-black text-slate-100 mr-auto">Police Control Room</h2>
+        <div className="mr-auto">
+          <h2 className="text-2xl font-black text-slate-100">Police Control Room</h2>
+          <div className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-2">
+            <span>📍 {state?.junction?.name || 'Junction'}</span>
+            <span className="text-slate-700">|</span>
+            <span>{state?.junction?.zone || ''}</span>
+            <span className="text-slate-700">|</span>
+            <span className="text-cyan-400/60">{state?.junction?.id || ''}</span>
+          </div>
+        </div>
         <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: OFFICER 942</span>
       </div>
 

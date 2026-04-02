@@ -22,14 +22,26 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-cyan-900/30 to-purple-900/10 border border-cyan-500/20 shadow-[0_8px_32px_rgba(0,229,255,0.05)]">
         <div>
           <div className="flex items-center gap-2 text-cyan-400 font-mono text-sm tracking-wide mb-2 uppercase">
-            <User size={16} /> District 4 Administrator
+            <User size={16} /> {state?.junction?.zone || 'GiveWay Network'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[var(--text-main)] tracking-tight">
             {greeting}, Officer <span className="text-[var(--cyan)]">942</span>
           </h1>
           <p className="text-[var(--text-muted)] mt-2 text-sm sm:text-base max-w-xl">
-            Your adaptive infrastructure is functioning optimally. AI processing is prioritizing emergency and high-throughput lanes.
+            Monitoring <span className="text-cyan-400 font-semibold">{state?.junction?.name || 'junction'}</span> — {state?.junction?.address || 'AI processing is prioritizing emergency and high-throughput lanes.'}
           </p>
+          {/* Junction Location Badge */}
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700/40 text-slate-400">
+              📍 {state?.junction?.city || '---'}, {state?.junction?.state || '---'}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700/40 text-slate-400">
+              🏷️ {state?.junction?.id || '---'} — {state?.junction?.poleId || '---'}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20 text-cyan-400">
+              🛰️ {state?.junction?.lat?.toFixed(4) || '---'}°N, {state?.junction?.lng?.toFixed(4) || '---'}°E
+            </div>
+          </div>
         </div>
         
         <div className="flex bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl p-4 gap-6 items-center flex-wrap shadow-sm">

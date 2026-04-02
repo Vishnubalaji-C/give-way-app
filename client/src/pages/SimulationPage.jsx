@@ -49,7 +49,7 @@ export default function SimulationPage() {
 
         {/* ── Junction Visualizer ───────────────────────────── */}
         <div className="glass border border-cyan-500/10 rounded-2xl p-6">
-          <div className="text-xs text-slate-500 font-mono uppercase tracking-widest mb-4">Junction N41 · PCE-Weighted Signal</div>
+          <div className="text-xs text-slate-500 font-mono uppercase tracking-widest mb-4">{state?.junction?.name || 'Junction'} · {state?.junction?.id || '---'} · PCE-Weighted Signal</div>
           <div className="relative w-full max-w-[480px] mx-auto aspect-square">
             {/* Road SVG */}
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 480 480">

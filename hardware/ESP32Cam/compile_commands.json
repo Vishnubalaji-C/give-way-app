@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "c:\\Users\\MSI\\Desktop\\MakeWay\\hardware\\ESP32Cam",
+    "command": "g++ -c ESP32Cam.ino",
+    "file": "ESP32Cam.ino"
+  }
+]

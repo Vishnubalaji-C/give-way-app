@@ -26,6 +26,9 @@ class WsService {
             case 'STATE_UPDATE':
               _stateController.add(msg['payload']);
               break;
+            case 'JUNCTION_SWITCH':
+              _stateController.add(msg['payload']['state']);
+              break;
             case 'ALERT':
               _alertController.add(msg['payload']);
               break;

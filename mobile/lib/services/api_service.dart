@@ -13,6 +13,7 @@ class ApiService {
     String? station,
     String? dept,
     String? access,
+    String? fullName,
   }) async {
     final res = await http.post(
       Uri.parse('$baseUrl/api/auth/register'),
@@ -25,6 +26,7 @@ class ApiService {
         'station': station,
         'dept': dept,
         'access': access,
+        'fullName': fullName,
       }),
     );
     final data = jsonDecode(res.body);

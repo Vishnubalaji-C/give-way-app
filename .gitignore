@@ -1,0 +1,20 @@
+# Node dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+client/dist/
+
+# Environment variables
+.env
+client/.env
+
+# Local database
+db.json
+giveway_secure_db.json
+
+# IDEs and OS
+.vscode/
+.DS_Store
+.clangd/

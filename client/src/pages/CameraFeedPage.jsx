@@ -46,12 +46,20 @@ export default function CameraFeedPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Camera size={26} className="text-cyan-400" />
-          <h2 className="text-2xl font-black text-slate-100">Live Hardware Feed</h2>
+          <div>
+            <h2 className="text-2xl font-black text-slate-100">Live Hardware Feed</h2>
+            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
+              📍 {state?.junction?.name || 'Junction'} — {state?.junction?.address || ''}
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-700/50 bg-slate-800/60 font-mono text-slate-300">
             <Cpu size={14} className="text-amber-400" />
-            ESP32-CAM Nodes: 4/4
+            ESP32-CAM Nodes: {state?.junction?.cameraNodes || 4}/{state?.junction?.cameraNodes || 4}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 font-mono text-cyan-400">
+            <Server size={14} /> {state?.junction?.id || 'JN-001'} · {state?.junction?.poleId || 'POLE-04'}
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-500/30 bg-green-500/10 font-mono text-green-400">
             <Radio size={14} className="blink" />
@@ -61,7 +69,7 @@ export default function CameraFeedPage() {
       </div>
 
       <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
-        Real-time edge computation node visualization. ESP32-CAM devices capture lane data, process it via Tiny-YOLO, and stream <span className="text-cyan-400 font-mono">1KB JSON</span> density scores to the central Arduino Mega decision engine.
+        Real-time edge computation from <span className="text-cyan-400 font-semibold">{state?.junction?.name || 'junction'}</span>. ESP32-CAM devices capture lane data, process it via Tiny-YOLO, and stream <span className="text-cyan-400 font-mono">1KB JSON</span> density scores to the central Arduino Mega decision engine.
       </p>
 
       {/* ── Four Camera Layout ────────────────────────────── */}

@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "c:\\Users\\MSI\\Desktop\\MakeWay\\hardware\\ArduinoMaster",
+    "command": "g++ -c ArduinoMaster.ino",
+    "file": "ArduinoMaster.ino"
+  }
+]

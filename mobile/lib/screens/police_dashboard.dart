@@ -65,14 +65,30 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${widget.user['name'] ?? 'Officer'}',
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w900)),
-            Text('Latency: ${_latency}ms',
-                style: TextStyle(
+            Text(
+              (_state['junction'] as Map<String, dynamic>?)?['name'] ?? 'GiveWay Junction',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+            ),
+            Row(
+              children: [
+                Text(
+                  '${widget.user['name'] ?? 'Officer'} · ',
+                  style: TextStyle(
                     fontSize: 10,
-                    color: accent,
-                    fontFamily: 'monospace')),
+                    color: Colors.grey[500],
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                Text(
+                  '${(_state['junction'] as Map<String, dynamic>?)?['poleId'] ?? ''} · ${_latency}ms',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: const Color(0xFF00E5FF),
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         leading: Padding(
@@ -147,10 +163,26 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
               ),
               const SizedBox(height: 4),
               Text(
-                'AI infrastructure is functioning optimally.',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                '📍 ${(_state['junction'] as Map<String, dynamic>?)?['address'] ?? 'AI infrastructure is online.'}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
+              // Junction Location Chips
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _locationChip(
+                    '${(_state['junction'] as Map<String, dynamic>?)?['city'] ?? '---'}, ${(_state['junction'] as Map<String, dynamic>?)?['state'] ?? '---'}',
+                    const Color(0xFF475569),
+                  ),
+                  _locationChip(
+                    '${(_state['junction'] as Map<String, dynamic>?)?['id'] ?? '---'} · ${(_state['junction'] as Map<String, dynamic>?)?['zone'] ?? ''}',
+                    const Color(0xFF00E5FF),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               Text('Avg Wait: ${avgWait.toStringAsFixed(1)}s',
                   style: const TextStyle(
                       color: Color(0xFFFFB700),
@@ -190,7 +222,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
             _statCard('Buses', '${_state['totalBuses'] ?? 0}',
                 const Color(0xFF00E5FF)),
             const SizedBox(width: 12),
-            _statCard('CO₂ Saved', '${_state['co2Reduced'] ?? 0} kg',
+            _statCard('Active Nodes', '${(_state['junction'] as Map?)?['cameraNodes'] ?? 0}',
                 const Color(0xFF00FF88)),
           ],
         ),
@@ -425,8 +457,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
             Icons.directions_bus, const Color(0xFF7C3AED)),
         _analyticsCard('Fuel Saved', '${_state['fuelSaved'] ?? 0} L',
             Icons.local_gas_station, const Color(0xFFFFB700)),
-        _analyticsCard('CO₂ Reduced', '${_state['co2Reduced'] ?? 0} kg',
-            Icons.eco, const Color(0xFF00FF88)),
+        _analyticsCard('Active Traffic Interventions', '${_state['tick'] ?? 0} cycles executed', Icons.auto_mode, const Color(0xFF00E5FF)),
         _analyticsCard('AI Compute Ticks', '${_state['tick'] ?? 0}',
             Icons.memory, const Color(0xFFA855F7)),
       ],
@@ -518,6 +549,26 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _locationChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          fontFamily: 'monospace',
+        ),
       ),
     );
   }
