@@ -8,7 +8,8 @@ const http    = require('http');
 const { WebSocketServer } = require('ws');
 const cors   = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const fs      = require('fs');
+const mongoose = require('mongoose');
+require('dotenv').config();
 const path    = require('path');
 
 const app    = express();
@@ -22,30 +23,38 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // ─── Confidential Database Layer ──────────────────────────────────────────────
-const DB_FILE = './giveway_secure_db.json';
-let db = { users: [], auditLogs: [], systemEvents: [] };
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/giveway')
+  .then(() => console.log('✅ Connected to MongoDB Backend!'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-if (fs.existsSync(DB_FILE)) {
-  try {
-    db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-  } catch(e) { console.error('DB parse error'); }
-} else {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-}
+const UserSchema = new mongoose.Schema({
+  id: String,
+  pin: String,
+  role: String,
+  token: String,
+  name: String,
+  meta: Object,
+  createdAt: String
+});
+const UserModel = mongoose.model('User', UserSchema);
 
-function saveDB() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-}
+const AuditLogSchema = new mongoose.Schema({
+  id: String,
+  action: String,
+  details: String,
+  timestamp: Number
+});
+const AuditLogModel = mongoose.model('AuditLog', AuditLogSchema);
 
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
 // Require valid Bearer token for API operations
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Confidential Access: Missing or invalid token' });
   }
   const token = authHeader.split(' ')[1];
-  const user = db.users.find(u => u.token === token);
+  const user = await UserModel.findOne({ token });
   
   if (!user) {
     return res.status(403).json({ error: 'Access Denied: Invalid Unique credentials' });
@@ -414,10 +423,8 @@ function logAudit(action, details) {
   auditLog.unshift(entry);
   if (auditLog.length > 200) auditLog.pop();
   
-  // Save to persistent secure DB
-  db.auditLogs.unshift(entry);
-  if (db.auditLogs.length > 1000) db.auditLogs.pop();
-  saveDB();
+  // Save to persistent secure DB asynchronously
+  AuditLogModel.create(entry).catch(err => console.error("MongoDB Audit Log Error:", err));
 }
 
 function sanitizeState() {
@@ -425,36 +432,35 @@ function sanitizeState() {
 }
 
 // ─── Secure Mobile/Web Auth APIs ──────────────────────────────────────────────
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { id, pin, role, badge, station, dept, access } = req.body;
   if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
   
-  if (db.users.find(u => u.id === id)) {
+  if (await UserModel.findOne({ id })) {
     return res.status(409).json({ error: 'Unique ID already registered to another officer/admin.' });
   }
 
   // Generate a confidential access token
   const token = uuidv4() + '-' + Date.now().toString(36);
   
-  const newUser = {
+  const newUserParams = {
     id, pin, role, token,
     name: role === 'police' ? `Officer ${id}` : `${dept} Admin`,
     meta: role === 'police' ? { badge, station } : { dept, access },
     createdAt: new Date().toISOString()
   };
 
-  db.users.push(newUser);
-  saveDB();
+  const newUser = await UserModel.create(newUserParams);
   
   logAudit('USER_REGISTER', `${newUser.name} registered into the system via ${role} terminal.`);
   
-  const { pin: _p, ...safeUser } = newUser;
+  const { pin: _p, _id, __v, ...safeUser } = newUser.toObject();
   res.json({ success: true, user: safeUser, token });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { id, pin } = req.body;
-  const user = db.users.find(u => u.id === id && u.pin === pin);
+  const user = await UserModel.findOne({ id, pin });
   
   if (!user) {
     return res.status(401).json({ error: 'Authentication Failed: Invalid ID or PIN.' });
@@ -462,16 +468,16 @@ app.post('/api/auth/login', (req, res) => {
 
   // Rotate token on login for security
   user.token = uuidv4() + '-' + Date.now().toString(36);
-  saveDB();
+  await user.save();
 
   logAudit('USER_LOGIN', `${user.name} established a secure uplink.`);
 
-  const { pin: _p, ...safeUser } = user;
+  const { pin: _p, _id, __v, ...safeUser } = user.toObject();
   res.json({ success: true, user: safeUser, token: user.token });
 });
 
 app.get('/api/auth/verify', requireAuth, (req, res) => {
-  const { pin: _p, ...safeUser } = req.user;
+  const { pin: _p, _id, __v, ...safeUser } = (req.user.toObject ? req.user.toObject() : req.user);
   res.json({ success: true, user: safeUser });
 });
 
