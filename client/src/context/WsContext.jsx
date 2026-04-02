@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 
 const WsContext = createContext(null);
 
-const WS_URL = 'ws://localhost:4000';
+const WS_URL = 'wss://give-way-app.onrender.com';
 
 export function WsProvider({ children }) {
   const ws = useRef(null);

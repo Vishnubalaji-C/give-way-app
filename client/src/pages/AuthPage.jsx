@@ -31,7 +31,7 @@ export default function AuthPage({ onLogin }) {
         ? { id: uniqueId, pin }
         : { id: uniqueId, pin, role, badge, station, dept, access };
 
-      const res = await fetch(`http://localhost:4000${endpoint}`, {
+      const res = await fetch(`https://give-way-app.onrender.com${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
