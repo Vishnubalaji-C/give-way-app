@@ -13,18 +13,22 @@ import AuthPage        from './pages/AuthPage';
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
-  // Authenticate from local storage with 7-days expiry
+  // Authenticate from local storage with persistence
   const [user, setUser] = useState(() => {
     const data = localStorage.getItem('giveway_user');
     if (data) {
-      const parsed = JSON.parse(data);
-      if (parsed.expiresAt > Date.now()) return parsed;
-      localStorage.removeItem('giveway_user');
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.expiresAt > Date.now()) return parsed;
+        localStorage.removeItem('giveway_user');
+      } catch (e) {
+        localStorage.removeItem('giveway_user');
+      }
     }
     return null;
   });
 
-  // Light / Dark mode auto-switcher based on user preference or time
+  // Light / Dark mode auto-switcher
   const [theme, setTheme] = useState(() => localStorage.getItem('giveway_theme') || 'auto');
   useEffect(() => {
     const root = document.documentElement;
@@ -33,7 +37,6 @@ export default function App() {
     } else if (theme === 'dark') {
       root.classList.remove('light-mode');
     } else {
-      // Auto: Light from 6 AM to 6 PM, Dark at night
       const hour = new Date().getHours();
       if (hour >= 6 && hour < 18) {
         root.classList.add('light-mode');
@@ -56,7 +59,7 @@ export default function App() {
       const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
       localStorage.setItem('giveway_user', JSON.stringify(authObj));
       setUser(authObj);
-      setTab('dashboard'); // Default
+      setTab('dashboard');
     }} />;
   }
 
@@ -71,11 +74,11 @@ export default function App() {
   };
 
   const PAGES = {
-    dashboard: DashboardPage,    // Mapped as 'Home'
-    features:  FeaturesPage,     // Special Features
-    camera:    CameraFeedPage,   // Camera Feed
-    analytics: AnalyticsPage,    // Analytics
-    settings:  SettingsPage,     // Settings (was Control Room)
+    dashboard: DashboardPage,
+    features:  FeaturesPage,
+    camera:    CameraFeedPage,
+    analytics: AnalyticsPage,
+    settings:  SettingsPage,
     map:       () => <div className="text-center mt-20 text-cyan-400 font-black text-2xl animate-pulse delay-100">Live Map Tracking Initializing...</div>,
     wave:      () => <div className="text-center mt-20 text-green-400 font-black text-2xl animate-pulse delay-100">Green Wave Synchronization Locked On</div>,
     override:  () => <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse delay-100">Emergency Override Emitting... <br/> <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span></div>,
@@ -86,7 +89,6 @@ export default function App() {
 
   return (
     <WsProvider>
-      {/* Immersive Background Theme */}
       <div className="fixed inset-0 pointer-events-none z-0 transition-all duration-400 bg-glow-ring">
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
