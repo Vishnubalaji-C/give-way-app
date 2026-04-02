@@ -120,14 +120,29 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,136,0.3)]">
               <span className="text-black font-black text-xs">GW</span>
             </div>
-            <span className="font-black text-xl brand-gradient tracking-tight drop-shadow-md">GiveWay</span>
+            <span className="font-black text-xl brand-gradient tracking-tight drop-shadow-md">GiveWay (ATES)</span>
+          </div>
+
+          {/* Vision Title (Desktop Only) */}
+          <div className="hidden 2xl:block text-[10px] font-black text-cyan-400 opacity-60 uppercase tracking-widest border-l border-slate-800 pl-4">
+             Adaptive Traffic Equity System <br/> 2026 Vision Framework
           </div>
 
           {/* Global Search */}
           <div className="flex-1 max-w-xl mx-4 xl:mx-8 relative min-w-[200px]">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Search Junction ID, Pole Number, or Officer Name..." 
-                   className="w-full bg-slate-900/60 border border-slate-700/80 rounded-full py-2 pl-11 pr-4 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 focus:bg-slate-900 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder:text-slate-500" />
+            <input type="text" placeholder="Search Junction, Pole, or Officer..." 
+                   className="w-full bg-slate-900/60 border border-slate-700/80 rounded-full py-2 pl-11 pr-4 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all placeholder:text-slate-500" />
+          </div>
+
+          {/* Wireless Hardware Sync Indicator */}
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 text-[9px] font-bold text-green-400 group relative cursor-help">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+             WIRELESS NODE SYNC ACTIVE
+             <div className="absolute top-10 left-0 bg-slate-900 border border-slate-800 p-3 rounded-xl w-64 hidden group-hover:block z-50 text-[10px] text-slate-300 leading-relaxed shadow-2xl">
+               <strong className="text-white block mb-1">🌍 Wireless Cloud Bridge</strong>
+               Your laptop and phone are perfectly synced through the Render WebSocket bridge. Any hardware data sent to the cloud is broadcast to all your devices instantly.
+             </div>
           </div>
 
           {/* Emergency Broadcast & Role Switcher */}
@@ -137,8 +152,8 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             </button>
             <div className="flex items-center gap-3 border-l border-slate-700/80 pl-4 xl:pl-6">
               <div className="text-right leading-tight">
-                <div className="text-xs xl:text-sm font-bold text-slate-200">{user?.name}</div>
-                <div className="text-[9px] xl:text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{user?.id} ▾</div>
+                <div className="text-xs xl:text-sm font-bold text-slate-200">{user?.name || 'Officer'}</div>
+                <div className="text-[9px] xl:text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{user?.id || 'ID-OFFLINE'} ▾</div>
               </div>
               <div className="w-9 h-9 xl:w-10 xl:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shadow-inner group relative cursor-pointer">
                 <ShieldAlert size={16} className="text-cyan-400 xl:w-[18px]" />

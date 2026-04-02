@@ -5,7 +5,7 @@ import { Shield, Zap, Radio, Book } from 'lucide-react';
 const LANES = ['N', 'S', 'E', 'W'];
 const LANE_LABELS = { N: 'North', S: 'South', E: 'East', W: 'West' };
 
-export default function ControlRoomPage() {
+export default function ControlRoomPage({ user }) {
   const { state, alerts, auditLog, send } = useWs();
   const [activeMode, setActiveMode] = useState('auto');
   const [ghostLane, setGhostLane] = useState(null);
@@ -61,7 +61,7 @@ export default function ControlRoomPage() {
             <span className="text-cyan-400/60">{state?.junction?.id || ''}</span>
           </div>
         </div>
-        <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: OFFICER 942</span>
+        <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: {user?.name?.toUpperCase() || 'OFFICER'} {user?.id}</span>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

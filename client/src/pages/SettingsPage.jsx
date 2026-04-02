@@ -5,7 +5,7 @@ import { Shield, Zap, Book, SlidersHorizontal, UserCheck } from 'lucide-react';
 const LANES = ['N', 'S', 'E', 'W'];
 const LANE_LABELS = { N: 'North', S: 'South', E: 'East', W: 'West' };
 
-export default function SettingsPage() {
+export default function SettingsPage({ user }) {
   const { state, auditLog, send } = useWs();
   const [activeMode, setActiveMode] = useState('auto');
 
@@ -40,7 +40,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 text-green-400 border border-green-500/30 text-xs font-bold font-mono shadow-inner shadow-green-500/10">
-          <UserCheck size={16} /> BIOMETRIC AUTHORIZED: OFF-942
+          <UserCheck size={16} /> BIOMETRIC AUTHORIZED: {user?.id || 'OFF-UNKNOWN'}
         </div>
       </div>
 

@@ -8,12 +8,15 @@ import FeaturesPage    from './pages/FeaturesPage';
 import CameraFeedPage  from './pages/CameraFeedPage';
 import AnalyticsPage   from './pages/AnalyticsPage';
 import SettingsPage    from './pages/SettingsPage';
+import MapPage         from './pages/MapPage';
+import GreenWavePage   from './pages/GreenWavePage';
+import TrainingPage    from './pages/TrainingPage';
 import AuthPage        from './pages/AuthPage';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
-  // Authenticate from local storage with persistence
+  // Authenticate from local storage with 10-days persistence
   const [user, setUser] = useState(() => {
     const data = localStorage.getItem('giveway_user');
     if (data) {
@@ -28,7 +31,7 @@ export default function App() {
     return null;
   });
 
-  // Light / Dark mode auto-switcher
+  // Light / Dark mode auto-switcher based on user preference or time
   const [theme, setTheme] = useState(() => localStorage.getItem('giveway_theme') || 'auto');
   useEffect(() => {
     const root = document.documentElement;
@@ -37,6 +40,7 @@ export default function App() {
     } else if (theme === 'dark') {
       root.classList.remove('light-mode');
     } else {
+      // Auto: Light from 6 AM to 6 PM, Dark at night
       const hour = new Date().getHours();
       if (hour >= 6 && hour < 18) {
         root.classList.add('light-mode');
@@ -59,7 +63,7 @@ export default function App() {
       const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
       localStorage.setItem('giveway_user', JSON.stringify(authObj));
       setUser(authObj);
-      setTab('dashboard');
+      setTab('dashboard'); // Default
     }} />;
   }
 
@@ -74,13 +78,14 @@ export default function App() {
   };
 
   const PAGES = {
-    dashboard: DashboardPage,
-    features:  FeaturesPage,
-    camera:    CameraFeedPage,
-    analytics: AnalyticsPage,
-    settings:  SettingsPage,
-    map:       () => <div className="text-center mt-20 text-cyan-400 font-black text-2xl animate-pulse delay-100">Live Map Tracking Initializing...</div>,
-    wave:      () => <div className="text-center mt-20 text-green-400 font-black text-2xl animate-pulse delay-100">Green Wave Synchronization Locked On</div>,
+    dashboard: DashboardPage,    // Mapped as 'Home'
+    features:  FeaturesPage,     // Special Features
+    camera:    CameraFeedPage,   // Camera Feed
+    analytics: AnalyticsPage,    // Analytics/Simulation
+    settings:  SettingsPage,     // Settings (was Control Room)
+    map:       MapPage,          // NEW Map View
+    wave:      GreenWavePage,    // NEW Green-Wave Tool
+    training:  TrainingPage,     // NEW AI Trainer
     override:  () => <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse delay-100">Emergency Override Emitting... <br/> <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span></div>,
     incidents: () => <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse delay-100">No new Ghost-Lane incidents currently detected.</div>,
   };
@@ -89,6 +94,7 @@ export default function App() {
 
   return (
     <WsProvider>
+      {/* Immersive Background Theme */}
       <div className="fixed inset-0 pointer-events-none z-0 transition-all duration-400 bg-glow-ring">
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
