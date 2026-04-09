@@ -25,18 +25,32 @@ function generateBaseAnalytics() {
 export default function AnalyticsPage() {
   const { state } = useWs();
   const [analytics, setAnalytics] = useState(generateBaseAnalytics());
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Refresh analytics every 10 s in a live-looking way
   useEffect(() => {
-    const id = setInterval(() => {
-      setAnalytics(prev => prev.map(row => ({
-        ...row,
-        throughput: Math.max(50, row.throughput + Math.floor((Math.random() - 0.45) * 20)),
-        giveway:    Math.max(5,  row.giveway    + Math.floor((Math.random() - 0.4) * 5)),
-        fixed:      Math.max(20, row.fixed      + Math.floor((Math.random() - 0.5) * 6)),
-        congestion: Math.min(100, Math.max(5, row.congestion + Math.floor((Math.random() - 0.5) * 10))),
-      })));
-    }, 10000);
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/analytics');
+        if (!res.ok) throw new Error('Failed to fetch analytics');
+        const data = await res.json();
+        if (data.hourly) {
+          setAnalytics(data.hourly);
+          setSuccess('Analytics data updated successfully.');
+          setTimeout(() => setSuccess(''), 3000);
+        }
+      } catch (e) { 
+        setError('Unable to sync live analytics. Using cached data.');
+        setTimeout(() => setError(''), 5000);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+    const id = setInterval(fetchAnalytics, 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -56,6 +70,18 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-black text-slate-100">Traffic Analytics</h2>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-pulse">
+          <ShieldAlert size={14} /> {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-500/10 border border-green-500/30 text-green-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-bounce">
+          <ShieldCheck size={14} /> {success}
+        </div>
+      )}
 
       {/* ── Row 1: Throughput + Vehicle Mix ─────────────────── */}
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">

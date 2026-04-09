@@ -3,7 +3,7 @@ import { User, Activity, Navigation, Zap, Cpu, BellRing, Clock } from 'lucide-re
 import { useState, useEffect } from 'react';
 
 export default function DashboardPage({ user }) {
-  const { state, alerts } = useWs();
+  const { state, alerts, send } = useWs();
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
@@ -46,31 +46,32 @@ export default function DashboardPage({ user }) {
         
         <div className="flex bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl p-4 gap-6 items-center flex-wrap shadow-sm">
            <div className="flex flex-col">
-              <span className="text-xs text-[var(--text-muted)] uppercase font-bold tracking-wider mb-1">Hardware & Diagnostics</span>
-              <div className="flex items-center gap-4 mt-1">
-                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse shadow-[0_0_8px_#ffb700]"></span>
-                    SOLAR-ECO MODE
-                 </div>
-                 <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_#00e5ff]"></span>
-                    PEDESTRIAN RADAR
-                 </div>
-                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#ff3b3b] bg-[#ff3b3b]/10 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 bg-[#ff3b3b] rounded-full shadow-[0_0_8px_#ff3b3b]"></span>
-                    GIVEWAY BUZZER ARM
-                 </div>
-                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_#00ff88]"></span>
-                    STALL-DETECT AI
-                 </div>
+              <span className="text-xs text-[var(--text-muted)] uppercase font-bold tracking-wider mb-2">Global System Tuning</span>
+              <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => send(state?.simulationRunning ? 'STOP_SIM' : 'START_SIM')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 shadow-lg active:scale-95 ${
+                      state?.simulationRunning 
+                        ? 'bg-red-500 text-white border border-red-400 hover:bg-red-600 shadow-red-500/20' 
+                        : 'bg-green-500 text-black border border-green-400 hover:bg-green-400 shadow-green-500/20'
+                    }`}
+                  >
+                   <div className={`w-2 h-2 rounded-full ${state?.simulationRunning ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`}></div>
+                   {state?.simulationRunning ? 'CEASE OPERATION' : 'INITIATE SYSTEM'}
+                 </button>
+                 <button 
+                   onClick={() => send('RESET_SIM')}
+                   className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition-all"
+                 >
+                    HARD RESET
+                 </button>
               </div>
            </div>
         </div>
       </div>
 
       {/* ── Adaptive Widgets Grid ───────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         
         <WidgetCard 
           icon={<Zap size={24} className="text-[#ff3b3b]" />} 
@@ -90,14 +91,16 @@ export default function DashboardPage({ user }) {
           border="border-cyan-500/20"
         />
 
-        <WidgetCard 
-          icon={<Cpu size={24} className="text-purple-400" />} 
-          title="AI Decisions" 
-          value={state?.tick || 0} 
-          sub="Computed at Edge Level"
-          bg="bg-gradient-to-br from-purple-500/10 to-transparent"
-          border="border-purple-500/20"
-        />
+        <div className="md:col-span-2 lg:col-span-1">
+          <WidgetCard 
+            icon={<Cpu size={24} className="text-purple-400" />} 
+            title="AI Decisions" 
+            value={state?.tick || 0} 
+            sub="Computed at Edge Level"
+            bg="bg-gradient-to-br from-purple-500/10 to-transparent"
+            border="border-purple-500/20"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -118,19 +121,35 @@ export default function DashboardPage({ user }) {
                const lane = state.lanes[id];
                const maxDens = Math.max(...Object.values(state?.lanes || {}).map(l => l.density || 1), 10);
                const w = ((lane.density || 0) / maxDens) * 100;
+               const isGhost = lane.ghostFlag;
 
                return (
-                 <div key={id} className="bg-[var(--input-bg)] border border-[var(--input-border)] p-4 rounded-2xl flex items-center justify-between gap-4">
-                    <div className="w-16 font-mono font-bold text-[var(--text-main)]">LANE {id}</div>
-                    <div className="flex-1 h-3 bg-[var(--border)] rounded-full overflow-hidden">
+                 <div key={id} className={`bg-[var(--input-bg)] border transition-all duration-300 p-4 rounded-2xl flex items-center justify-between gap-4 ${isGhost ? 'border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'border-[var(--input-border)]'}`}>
+                    <div className="flex flex-col gap-0.5 min-w-[80px]">
+                      <div className="font-mono font-bold text-[var(--text-main)]">LANE {id}</div>
+                      {isGhost ? (
+                        <div className="text-[9px] font-black text-amber-500 animate-pulse">INCIDENT DETECTED</div>
+                      ) : (
+                        <div className="text-[9px] font-black text-cyan-500/60 uppercase">System Nominal</div>
+                      )}
+                    </div>
+                    <div className="flex-1 h-3 bg-[var(--border)] rounded-full overflow-hidden relative">
                        <div className="h-full rounded-full transition-all duration-700 ease-in-out" 
                             style={{ 
                               width: `${w}%`, 
                               background: lane.signal === 'green' ? 'linear-gradient(90deg, var(--green), var(--cyan))' : 'var(--text-muted)' 
                             }}></div>
+                       {lane.signal === 'green' && (
+                         <div className="absolute top-0 right-0 h-full w-2 bg-green-500 animate-ping opacity-30"></div>
+                       )}
                     </div>
-                    <div className={`w-12 text-right font-black tabular-nums ${lane.signal === 'green' ? 'text-[var(--green)]' : 'text-[var(--text-muted)]'}`}>
-                       {lane.density || 0}
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 text-right font-black tabular-nums ${lane.signal === 'green' ? 'text-[var(--green)]' : 'text-[var(--text-muted)]'}`}>
+                        {lane.density || 0}
+                      </div>
+                      <div className={`w-10 text-[10px] font-mono text-center py-1 rounded-md border ${lane.signal === 'green' ? 'text-green-400 border-green-500/30' : 'text-red-400 border-red-500/30'}`}>
+                        {lane.signal === 'green' ? 'GRN' : 'RED'}
+                      </div>
                     </div>
                  </div>
                );
@@ -158,9 +177,12 @@ export default function DashboardPage({ user }) {
                 </div>
               ) : (
                 alerts?.slice(0, 6).map(a => (
-                  <div key={a.id} className={`p-4 rounded-2xl border text-sm ${a.type === 'emergency' ? 'bg-red-500/10 border-red-500/20 shadow-[0_0_15px_rgba(255,59,59,0.1)]' : 'bg-slate-800/50 border-slate-700/50'}`}>
-                    <div className="text-[10px] text-slate-500 font-mono mb-1">{new Date(a.timestamp).toLocaleTimeString()}</div>
-                    <div className={a.type === 'emergency' ? 'text-red-300 font-bold' : 'text-slate-300'}>{a.message}</div>
+                  <div key={a.id} className={`p-4 rounded-2xl border text-sm transition-all animate-in fade-in slide-in-from-right-4 duration-500 ${a.type === 'emergency' ? 'bg-red-500/20 border-red-500/40 shadow-[0_0_25px_rgba(255,59,59,0.2)] ring-1 ring-red-500/30' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="text-[10px] text-slate-500 font-mono">{new Date(a.timestamp).toLocaleTimeString()}</div>
+                      {a.type === 'emergency' && <div className="text-[8px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black animate-pulse">URGENT</div>}
+                    </div>
+                    <div className={a.type === 'emergency' ? 'text-red-100 font-bold leading-tight' : 'text-slate-300 leading-tight'}>{a.message}</div>
                   </div>
                 ))
               )}

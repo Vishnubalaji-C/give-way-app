@@ -74,7 +74,7 @@ const PENALTY_START = 90;     // seconds before exponential penalty
 const YELLOW_TIME   = 3;      // seconds (5 in Rain Mode)
 const PHASE_GREEN   = 15;     // base green phase duration
 
-const PCE = { ambulance: 999, bus: 10, car: 1, bike: 0.5 };
+const PCE = { ambulance: 100, bus: 20, car: 1, bike: 0.5 };
 
 // ─── Multi-Junction Location Registry ─────────────────────────────────────────
 // Each deployed hardware set gets a unique junction entry with location metadata
@@ -144,12 +144,13 @@ const junctions = {
 let activeJunction = 'JN-001'; // Currently viewed junction
 
 // ─── State ────────────────────────────────────────────────────────────────────
+let simulationRunning = false;
+let overrideMode = 'auto'; // auto | vip | festival | emergency
+
 let state = buildInitialState();
 let auditLog = db.auditLog;
 let worldTimer = null;
 let snapTimer = null;
-let simulationRunning = false;
-let overrideMode = 'auto'; // auto | vip | festival | emergency
 
 function buildInitialState() {
   const lanes = {};
@@ -185,6 +186,8 @@ function buildInitialState() {
     alerts: [],
     greenWave: { active: false, source: null, progress: 0 },
     junction: junctions[activeJunction] || junctions['JN-001'],
+    simulationRunning,
+    overrideMode,
   };
 }
 
@@ -519,7 +522,11 @@ function logAudit(action, details) {
 }
 
 function sanitizeState() {
-  return JSON.parse(JSON.stringify(state));
+  return {
+    ...JSON.parse(JSON.stringify(state)),
+    simulationRunning,
+    overrideMode
+  };
 }
 
 // ─── Secure Mobile/Web Auth APIs (JSON System) ────────────────────────────────
@@ -528,11 +535,11 @@ app.post('/api/auth/register', async (req, res) => {
   if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
   
   if (db.users.find(u => u.id === id)) {
-    return res.status(409).json({ error: 'Unique ID already registered in the system.' });
+    return res.status(409).json({ error: 'This Unique ID is already registered. Please choose a different Officer/Admin ID.' });
   }
 
   if (role === 'police' && badge && db.users.find(u => u.meta?.badge === badge)) {
-    return res.status(409).json({ error: 'Badge Number already assigned to another officer.' });
+    return res.status(409).json({ error: 'This Badge Number is already assigned to another active officer.' });
   }
 
   const token = uuidv4() + '-' + Date.now().toString(36);

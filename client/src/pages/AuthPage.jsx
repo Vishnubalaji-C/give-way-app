@@ -18,6 +18,7 @@ export default function AuthPage({ onLogin }) {
   const [access, setAccess] = useState('Standard');
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -49,8 +50,7 @@ export default function AuthPage({ onLogin }) {
         setIsLogin(true);
         setPin('');
         setError('');
-        // Show success splash for new users
-        alert('👮 Success: Secure Identity Created. Please authorize access below.');
+        setSuccess('👮 Secure Identity Created! You can now authorize your access below.');
         return;
       }
 
@@ -74,8 +74,10 @@ export default function AuthPage({ onLogin }) {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-green-500"></div>
 
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.3)]">
-            <span className="text-white font-black text-2xl drop-shadow-md">GW</span>
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_20px_rgba(0,255,136,0.2)]">
+            <div className="w-full h-full bg-[#02050a] rounded-[14px] flex items-center justify-center overflow-hidden">
+               <img src="/logo.png" alt="GiveWay Logo" className="w-full h-full object-cover" />
+            </div>
           </div>
         </div>
         
@@ -84,8 +86,14 @@ export default function AuthPage({ onLogin }) {
         </h1>
 
         {error && (
-          <div className="mb-4 bg-[var(--red)]/10 border border-[var(--red)]/30 text-[var(--red)] text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-pulse">
+          <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-pulse">
             <ShieldAlert size={14} /> {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 bg-green-500/10 border border-green-500/30 text-green-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-bounce">
+            <ShieldCheck size={14} /> {success}
           </div>
         )}
 

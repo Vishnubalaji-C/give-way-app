@@ -2,11 +2,11 @@ import { useWs } from '../context/WsContext';
 import { Home, Star, Camera, BarChart2, Settings } from 'lucide-react';
 
 const TABS = [
-  { id: 'dashboard', icon: Home,      label: 'Home' },
-  { id: 'features',  icon: Star,      label: 'Features' },
-  { id: 'camera',    icon: Camera,    label: 'Cameras' },
-  { id: 'analytics', icon: BarChart2, label: 'Analytics' },
-  { id: 'settings',  icon: Settings,  label: 'Settings' },
+  { id: 'dashboard',  icon: Home,      label: 'Home' },
+  { id: 'simulation', icon: Radio,     label: 'Live Sim' },
+  { id: 'camera',     icon: Camera,    label: 'Cameras' },
+  { id: 'analytics',  icon: BarChart2, label: 'Analytics' },
+  { id: 'settings',   icon: Settings,  label: 'Settings' },
 ];
 
 export default function BottomNav({ tab, setTab }) {

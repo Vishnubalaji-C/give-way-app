@@ -44,24 +44,24 @@ export default function GreenWavePage() {
                    <div className="text-[10px] font-mono text-slate-500">PCE Weighted · Zero Delay Fallback</div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 md:items-center gap-6">
                    <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 relative group overflow-hidden">
                       <div className="absolute top-0 right-0 p-3 opacity-20"><Navigation size={32} /></div>
                       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Source Junction</div>
-                      <div className="text-lg font-bold text-white">{state?.junction?.name || '---'}</div>
+                      <div className="text-lg font-bold text-white truncate">{state?.junction?.name || '---'}</div>
                       <div className="text-xs text-cyan-400 font-mono mt-1 opacity-70">{state?.junction?.id} — Local Controller</div>
                    </div>
 
                    <div className="flex items-center justify-center">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-700 ${activeHandshake ? 'bg-cyan-500 shadow-[0_0_30px_rgba(0,229,255,0.6)] scale-110' : 'bg-slate-800 text-slate-500'}`}>
-                         <Activity size={24} className={activeHandshake ? 'text-[#02050a]' : ''} />
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-700 ${activeHandshake ? 'bg-cyan-500 shadow-[0_0_40px_rgba(0,229,255,0.6)] scale-110' : 'bg-slate-800 text-slate-500'}`}>
+                         <Activity size={28} className={activeHandshake ? 'text-[#02050a]' : ''} />
                       </div>
                    </div>
 
                    <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 relative group overflow-hidden">
                       <div className="absolute top-0 right-0 p-3 opacity-20"><ExternalLink size={32} /></div>
                       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Junction</div>
-                      <div className="text-lg font-bold text-white">{junctions.find(j => j.id !== state?.junction?.id)?.name || 'Next Nearest Signal'}</div>
+                      <div className="text-lg font-bold text-white truncate">{junctions.find(j => j.id !== state?.junction?.id)?.name || 'Next Nearest Signal'}</div>
                       <div className="text-xs text-amber-500 font-mono mt-1 opacity-70">Uplink Handshake Request...</div>
                    </div>
                 </div>

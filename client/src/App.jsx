@@ -12,6 +12,7 @@ import MapPage         from './pages/MapPage';
 import GreenWavePage   from './pages/GreenWavePage';
 import TrainingPage    from './pages/TrainingPage';
 import AuthPage        from './pages/AuthPage';
+import SimulationPage  from './pages/SimulationPage';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -78,17 +79,26 @@ export default function App() {
   };
 
   const PAGES = {
-    dashboard: DashboardPage,    // Mapped as 'Home'
-    features:  FeaturesPage,     // Special Features
-    camera:    CameraFeedPage,   // Camera Feed
-    analytics: AnalyticsPage,    // Analytics/Simulation
-    settings:  SettingsPage,     // Settings (was Control Room)
-    map:       MapPage,          // NEW Map View
-    wave:      GreenWavePage,    // NEW Green-Wave Tool
-    training:  TrainingPage,     // NEW AI Trainer
+    dashboard: DashboardPage,    // Primary Grid View
+    simulation: SimulationPage,  // Live Junction Logic
+    features:  FeaturesPage,     // System Features
+    camera:    CameraFeedPage,   // Edge Node Feeds
+    analytics: AnalyticsPage,    // Traffic Analytics
+    settings:  SettingsPage,     // System Config
+    map:       MapPage,          // Geographic View
+    wave:      GreenWavePage,    // Green-Wave Logic
+    training:  TrainingPage,     // AI Dataset Trainer
     override:  () => <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse delay-100">Emergency Override Emitting... <br/> <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span></div>,
     incidents: () => <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse delay-100">No new Ghost-Lane incidents currently detected.</div>,
   };
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const Page = PAGES[tab] || DashboardPage;
 
@@ -109,7 +119,7 @@ export default function App() {
           <Page user={user} />
         </main>
 
-        {user.role === 'police' && <BottomNav tab={tab} setTab={setTab} />}
+        {(user.role === 'police' || isMobile) && <BottomNav tab={tab} setTab={setTab} />}
       </div>
     </WsProvider>
   );

@@ -8,11 +8,15 @@
  * and eco-mode LDR-based night detection.
  * 
  * Hardware:
+ *   - Follows HARDWARE_SPECIFICATION.md (v1.0)
  *   - Arduino Mega 2560 (4x hardware Serial ports)
  *   - 12x LEDs (4 lanes × 3 signals: Red/Yellow/Green)
  *   - 1x Piezo Buzzer (ambulance audio alert)
  *   - 1x LDR on A0 (eco-mode ambient light sensor)
- *   - Serial1/2/3 connected to ESP32-CAM nodes
+ *   - Serial1: Lane N (North)
+ *   - Serial2: Lane E (East)
+ *   - Serial3: Lane S (South)
+ *   - Serial:  Lane W (West) + USB Debugging
  */
 
 // ─── Pin Definitions: 4 Lanes (North, East, South, West) ─────────────────────
@@ -63,21 +67,15 @@ bool emergencyActive = false;
 bool ecoNightMode = false;
 unsigned long lastEcoCmdTime = 0;
 
-// Serial input buffer
-String serialBuffer = "";
-
 // ─── Lane Name Helper ─────────────────────────────────────────────────────────
 const char* laneNames[] = {"N", "E", "S", "W"};
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 void setup() {
-  Serial.begin(115200);   // USB debug + ESP32 communication
-
-  // If using Mega's extra serial ports for individual ESP32-CAMs:
-  // Serial1.begin(115200);  // Lane N ESP32-CAM
-  // Serial2.begin(115200);  // Lane E ESP32-CAM
-  // Serial3.begin(115200);  // Lane S ESP32-CAM
-  // Lane W can share Serial or use SoftwareSerial
+  Serial.begin(115200);   // USB debug + Lane W
+  Serial1.begin(115200);  // Lane N
+  Serial2.begin(115200);  // Lane E
+  Serial3.begin(115200);  // Lane S
 
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LDR_PIN, INPUT);
@@ -86,6 +84,15 @@ void setup() {
   for (int p = 2; p <= 13; p++) {
     pinMode(p, OUTPUT);
     digitalWrite(p, LOW);
+  }
+
+  // --- HARDWARE STARTUP SEQUENCE ---
+  // Flash all lights to verify wiring
+  for (int i = 0; i < 3; i++) {
+    for (int p = 2; p <= 13; p++) digitalWrite(p, HIGH);
+    delay(200);
+    for (int p = 2; p <= 13; p++) digitalWrite(p, LOW);
+    delay(200);
   }
 
   // Initialize lane data
@@ -140,29 +147,29 @@ void loop() {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// SERIAL DATA PARSER
-// Expected formats from ESP32-CAM nodes:
-//   Full:  "LANE:N,AMB:0,BUS:1,CAR:4,BIKE:3,PED:0"
-//   Legacy: "N:45,S:12,E:999,W:2,PED_N:1"
-// ──────────────────────────────────────────────────────────────────────────────
+// Global buffer per serial port to prevent inter-lane data corruption
+String buffers[4] = {"", "", "", ""};
+
 void readSerialData() {
-  while (Serial.available()) {
-    char c = Serial.read();
-    
+  // Check all 4 Serial ports
+  pollSerialPort(Serial,  3); // Lane W (West) uses primary Serial
+  pollSerialPort(Serial1, 0); // Lane N (North)
+  pollSerialPort(Serial2, 1); // Lane E (East)
+  pollSerialPort(Serial3, 2); // Lane S (South)
+}
+
+void pollSerialPort(Stream &s, int laneIdx) {
+  while (s.available()) {
+    char c = s.read();
     if (c == '\n' || c == '\r') {
-      serialBuffer.trim();
-      if (serialBuffer.length() > 0) {
-        parseSerialMessage(serialBuffer);
+      buffers[laneIdx].trim();
+      if (buffers[laneIdx].length() > 0) {
+        parseSerialMessage(buffers[laneIdx]);
       }
-      serialBuffer = "";
+      buffers[laneIdx] = "";
     } else {
-      serialBuffer += c;
-      // Defensive 256-byte hard cap to prevent Mega SRAM Overflow
-      if (serialBuffer.length() >= 256) {
-        Serial.println(F("[ERROR] Serial buffer exceeded 256 bytes! Corrupt packet truncated to prevent crash."));
-        serialBuffer = "";
-      }
+      buffers[laneIdx] += c;
+      if (buffers[laneIdx].length() >= 256) buffers[laneIdx] = "";
     }
   }
 }

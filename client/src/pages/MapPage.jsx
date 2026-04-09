@@ -33,17 +33,17 @@ export default function MapPage({ user }) {
     <div className="h-[calc(100vh-200px)] w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
       
       {/* Search & Overlay Controls */}
-      <div className="absolute top-6 left-6 z-[1000] w-72 space-y-3">
-         <div className="glass p-4 rounded-3xl border border-white/5 shadow-2xl">
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[1000] w-[calc(100%-2rem)] sm:w-72 space-y-3 pointer-events-none">
+         <div className="glass p-4 rounded-3xl border border-white/5 shadow-2xl pointer-events-auto">
             <h2 className="text-sm font-black text-white mb-1 uppercase tracking-widest flex items-center gap-2">
                <Navigation size={14} className="text-cyan-400" /> Live Grid Matrix
             </h2>
             <p className="text-[10px] text-slate-400 leading-tight">
-               Real-time monitoring of all GiveWay ATES nodes across Chennai.
+               Real-time monitoring of all GiveWay ATES nodes.
             </p>
          </div>
 
-         <div className="glass p-2 rounded-2xl border border-white/5 shadow-2xl max-h-[300px] overflow-y-auto no-scrollbar">
+         <div className="hidden sm:block glass p-2 rounded-2xl border border-white/5 shadow-2xl max-h-[300px] overflow-y-auto no-scrollbar pointer-events-auto">
             {junctions.map(j => (
                <button 
                   key={j.id} 

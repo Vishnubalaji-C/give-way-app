@@ -9,8 +9,8 @@ const VEHICLE_EMOJIS = { ambulance: '🚑', bus: '🚌', car: '🚗', bike: '�
 
 export default function SimulationPage() {
   const { state, alerts, send } = useWs();
-  const [running, setRunning] = useState(false);
   const logRef = useRef(null);
+  const running = state?.simulationRunning || false;
 
   useEffect(() => {
     if (logRef.current) {
@@ -18,9 +18,9 @@ export default function SimulationPage() {
     }
   }, [alerts]);
 
-  const handleStart = () => { send('START_SIM'); setRunning(true); };
-  const handlePause = () => { send('STOP_SIM'); setRunning(false); };
-  const handleReset = () => { send('RESET_SIM'); setRunning(false); };
+  const handleStart = () => { send('START_SIM'); };
+  const handlePause = () => { send('STOP_SIM'); };
+  const handleReset = () => { send('RESET_SIM'); };
 
   const inject = (laneId, vehicleType) => send('INJECT_VEHICLE', { laneId, vehicleType });
   const toggleMode = (mode, val) => send('SET_MODE', { mode, value: val });
@@ -37,8 +37,19 @@ export default function SimulationPage() {
           ● HARDWARE LIVE
         </div>
         <div className="ml-auto flex gap-2 flex-wrap">
+          {!running ? (
+            <button onClick={handleStart}
+              className="flex items-center gap-2 px-6 py-2 rounded-xl bg-green-500 text-black border border-green-400 hover:bg-green-400 transition-all text-sm font-black shadow-[0_0_20px_rgba(0,255,136,0.3)]">
+              <Play size={14} fill="currentColor" /> INITIATE SYSTEM
+            </button>
+          ) : (
+            <button onClick={handlePause}
+              className="flex items-center gap-2 px-6 py-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all text-sm font-black">
+              <Pause size={14} fill="currentColor" /> CEASE OPERATION
+            </button>
+          )}
           <button onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all text-sm font-semibold">
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition-all text-sm font-bold">
             <RotateCcw size={14} /> Reset State
           </button>
         </div>
@@ -89,32 +100,52 @@ export default function SimulationPage() {
           </div>
 
           {/* Lane count strips */}
-          <div className="mt-6 grid grid-cols-4 gap-2">
+          <div className="mt-8 grid grid-cols-4 gap-3">
             {LANES.map(id => {
               const l = lanes[id] || {};
               const isGreen = l.signal === 'green';
               return (
                 <div key={id}
-                  className={`rounded-xl p-3 border text-center transition-all duration-500 ${
+                  className={`relative rounded-2xl p-4 border transition-all duration-500 overflow-hidden ${
                     isGreen
-                      ? 'bg-green-500/10 border-green-500/30 shadow shadow-green-500/20'
+                      ? 'bg-green-500/10 border-green-500/40 shadow-[0_4px_20px_rgba(0,255,136,0.15)]'
                       : 'bg-slate-900/60 border-slate-700/30'
                   }`}>
-                  <div className={`text-xs font-mono font-bold mb-2 ${isGreen ? 'text-green-400' : 'text-slate-500'}`}>
-                    {LANE_LABELS[id]}
+                  
+                  {isGreen && (
+                    <div className="absolute top-0 right-0 p-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></div>
+                    </div>
+                  )}
+
+                  <div className={`text-[10px] font-mono font-black mb-3 tracking-tighter ${isGreen ? 'text-green-400' : 'text-slate-500'}`}>
+                    {LANE_LABELS[id]} APPROACH
                   </div>
-                  {Object.entries(VEHICLE_EMOJIS).map(([type, emoji]) => (
-                    <div key={type} className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                      <span>{emoji}</span>
-                      <span className="tabular-nums font-mono">{l.vehicles?.[type] ?? 0}</span>
+                  
+                  <div className="space-y-1.5">
+                    {Object.entries(VEHICLE_EMOJIS).map(([type, emoji]) => (
+                      <div key={type} className="flex justify-between items-center text-[11px]">
+                        <span className="opacity-80 grayscale-[0.5]">{emoji}</span>
+                        <span className={`tabular-nums font-mono ${l.vehicles?.[type] > 0 ? 'text-slate-200' : 'text-slate-600'}`}>
+                          {l.vehicles?.[type] ?? 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-slate-700/50 flex flex-col gap-1">
+                    <div className="flex justify-between items-end">
+                       <span className="text-[9px] text-slate-500 uppercase font-bold">PCE Score</span>
+                       <span className="text-xs font-black text-cyan-400 tabular-nums">
+                        {Math.round(l.pceScore ?? 0)}
+                       </span>
                     </div>
-                  ))}
-                  <div className="mt-2 pt-2 border-t border-slate-700/40">
-                    <div className="text-xs font-bold text-cyan-300 tabular-nums">
-                      PCE: {Math.round(l.pceScore ?? 0)}
+                    <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-full bg-cyan-500 transition-all duration-500" style={{ width: `${Math.min((l.pceScore || 0)/100, 1) * 100}%` }}></div>
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">
-                      Wait: <span className={l.waitTime > 90 ? 'text-red-400' : 'text-slate-400'}>{l.waitTime ?? 0}s</span>
+                    <div className="flex justify-between text-[9px] mt-1">
+                      <span className="text-slate-500">Wait Time</span>
+                      <span className={`font-mono ${l.waitTime > 90 ? 'text-red-400 font-bold' : 'text-slate-400'}`}>{l.waitTime ?? 0}s</span>
                     </div>
                   </div>
                 </div>
@@ -125,6 +156,44 @@ export default function SimulationPage() {
 
         {/* ── Right Panel ───────────────────────────────────── */}
         <div className="space-y-4">
+
+          {/* Hardware Health Widget */}
+          <div className="glass border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center gap-2">
+                 <span className="text-base text-cyan-400">🛡️</span>
+                 <h3 className="font-bold text-slate-200 text-xs uppercase tracking-wider">Node Telemetry</h3>
+               </div>
+               <div className="flex gap-1">
+                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+                 <div className="w-1.5 h-1.5 rounded-full bg-green-500/20"></div>
+                 <div className="w-1.5 h-1.5 rounded-full bg-green-500/20"></div>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+               <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
+                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Arduino CPU</div>
+                  <div className="text-sm font-black text-cyan-400 font-mono">16.0 MHz</div>
+                  <div className="text-[8px] text-green-500 mt-1 font-bold">STABLE</div>
+               </div>
+               <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
+                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">ESP32 Cam</div>
+                  <div className="text-sm font-black text-cyan-400 font-mono">4 ACTIVE</div>
+                  <div className="text-[8px] text-green-500 mt-1 font-bold">STREAMING</div>
+               </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-700/40">
+               <div className="flex justify-between text-[10px] items-center">
+                  <span className="text-slate-500 font-mono">LATENCY (ms)</span>
+                  <span className="text-green-400 font-black">24ms</span>
+               </div>
+               <div className="mt-2 h-1 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500 w-[15%]"></div>
+               </div>
+            </div>
+          </div>
 
           {/* Priority Bars */}
           <div className="glass border border-cyan-500/10 rounded-2xl p-5">

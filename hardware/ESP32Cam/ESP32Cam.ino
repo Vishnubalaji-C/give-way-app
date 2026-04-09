@@ -8,6 +8,7 @@
  * 
  * Hardware: ESP32-CAM (AI-Thinker)
  * Board:    "AI Thinker ESP32-CAM" in Arduino IDE
+ * Specs:    Follows /HARDWARE_SPECIFICATION.md
  */
 
 #include <WiFi.h>

@@ -104,6 +104,12 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <FileBarChart size={18} className={`relative z-10 ${tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
             <span className="text-[10px] font-black mt-1 relative z-10">ANALYTICS</span>
           </button>
+
+          <button onClick={() => setTab('simulation')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'simulation' ? 'bg-green-500/20 border-green-500 shadow-[0_0_15px_rgba(0,255,136,0.2)] text-green-300' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-green-500/30 border-transparent text-slate-300'}`}>
+            <div className="absolute inset-0 bg-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Radio size={18} className={`relative z-10 ${tab === 'simulation' ? 'text-green-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
+            <span className="text-[10px] font-black mt-1 relative z-10">LIVE SIM</span>
+          </button>
         </div>
       </nav>
       )}
@@ -117,10 +123,15 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
         <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/50 bg-black/40 xl:gap-8 overflow-x-auto no-scrollbar">
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,136,0.3)]">
-              <span className="text-black font-black text-xs">GW</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
+              <div className="w-full h-full bg-[#02050a] rounded-[10px] flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="GiveWay Logo" className="w-full h-full object-cover" />
+              </div>
             </div>
-            <span className="font-black text-xl brand-gradient tracking-tight drop-shadow-md">GiveWay (ATES)</span>
+            <div className="flex flex-col">
+              <span className="font-black text-xl brand-gradient tracking-tight leading-none">GiveWay</span>
+              <span className="text-[10px] font-bold text-cyan-400/60 tracking-[0.2em] uppercase mt-1">ATES Framework</span>
+            </div>
           </div>
 
           {/* Vision Title (Desktop Only) */}
@@ -222,8 +233,11 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             {[
               { id:'map', icon: <Map size={16}/>, label: 'Map View' },
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Grid View' },
+              { id:'simulation', icon: <Radio size={16}/>, label: 'Live Simulation' },
+              { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
               { id:'wave', icon: <Wind size={16}/>, label: 'Green-Wave Tool' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
+              { id:'training', icon: <Sparkles size={16}/>, label: 'AI Trainer' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${
