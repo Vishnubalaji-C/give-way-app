@@ -22,7 +22,7 @@ export default function DashboardPage({ user }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-cyan-900/30 to-purple-900/10 border border-cyan-500/20 shadow-[0_8px_32px_rgba(0,229,255,0.05)]">
         <div>
           <div className="flex items-center gap-2 text-cyan-400 font-mono text-sm tracking-wide mb-2 uppercase">
-            <User size={16} /> {state?.junction?.zone || 'GiveWay Network'}
+            <User size={16} /> {state?.junction?.zone || 'MakeWay Network'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[var(--text-main)] tracking-tight">
             {greeting}, <span className="text-[var(--cyan)]">{user?.name || 'Officer'}</span>

@@ -129,7 +129,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl brand-gradient tracking-tight leading-none">GiveWay</span>
+              <span className="font-black text-xl brand-gradient tracking-tight leading-none uppercase">MakeWay</span>
               <span className="text-[10px] font-bold text-cyan-400/60 tracking-[0.2em] uppercase mt-1">ATES Framework</span>
             </div>
           </div>

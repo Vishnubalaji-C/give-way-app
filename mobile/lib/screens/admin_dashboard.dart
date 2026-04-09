@@ -4,6 +4,9 @@ import '../services/ws_service.dart';
 import '../widgets/lane_card.dart';
 import '../widgets/feature_badge.dart';
 import '../widgets/alert_tile.dart';
+import '../widgets/junction_sim.dart';
+import '../widgets/analytics_charts.dart';
+import '../services/api_service.dart';
 
 class AdminDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -24,6 +27,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   final WsService _ws = WsService();
   Map<String, dynamic> _state = {};
+  Map<String, dynamic> _analytics = {};
   List<Map<String, dynamic>> _alerts = [];
   int _tabIndex = 0;
   Timer? _latencyTimer;
@@ -43,6 +47,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _latencyTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       setState(() => _latency = 45 + (DateTime.now().millisecond % 105));
     });
+    _fetchAnalytics();
+  }
+
+  Future<void> _fetchAnalytics() async {
+    try {
+      final data = await ApiService.getAnalytics(widget.user['token']);
+      setState(() => _analytics = data);
+    } catch (e) {
+      debugPrint('Failed to fetch analytics: $e');
+    }
   }
 
   @override
@@ -171,6 +185,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        JunctionSim(state: _state),
         const SizedBox(height: 16),
 
         // Hardware Status
@@ -334,7 +350,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
             }),
           ],
         ),
+        const SizedBox(height: 24),
+        const Text('⚙️ Engine Management',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _actionBtn('START', Icons.play_arrow, Colors.green, () {
+              _ws.send('START_SIM');
+            }),
+            const SizedBox(width: 8),
+            _actionBtn('STOP', Icons.stop, Colors.red, () {
+              _ws.send('STOP_SIM');
+            }),
+            const SizedBox(width: 8),
+            _actionBtn('RESET', Icons.refresh, Colors.grey, () {
+              _ws.send('RESET_SIM');
+            }),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _actionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: ElevatedButton.icon(
+        icon: Icon(icon, size: 16, color: Colors.white),
+        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        onPressed: onTap,
+      ),
     );
   }
 
@@ -377,6 +427,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const Color(0xFF22C55E)),
         _anaCard('AI Decisions', '${_state['tick'] ?? 0}', Icons.memory,
             const Color(0xFF7C3AED)),
+        const SizedBox(height: 24),
+        AnalyticsCharts(analytics: _analytics),
       ],
     );
   }

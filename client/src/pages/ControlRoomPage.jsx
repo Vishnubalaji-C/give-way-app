@@ -41,7 +41,7 @@ export default function ControlRoomPage({ user }) {
   const lanes = state?.lanes ?? {};
 
   const OVERRIDE_MODES = [
-    { id: 'auto',      label: '🤖 GiveWay AI',     desc: 'Full AI control' },
+    { id: 'auto',      label: '🤖 MakeWay AI',     desc: 'Full AI control' },
     { id: 'vip',       label: '👑 VIP Corridor',    desc: 'Priority escort mode' },
     { id: 'festival',  label: '🎉 Festival Mode',   desc: 'Balanced load sharing' },
     { id: 'emergency', label: '🚨 All-Stop',         desc: 'Emergency halt all lanes' },
@@ -53,6 +53,7 @@ export default function ControlRoomPage({ user }) {
         <Shield size={22} className="text-cyan-400" />
         <div className="mr-auto">
           <h2 className="text-2xl font-black text-slate-100">Police Control Room</h2>
+          <div className="text-[10px] font-black text-cyan-400 tracking-[0.2em] uppercase">MakeWay Matrix v2.6</div>
           <div className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-2">
             <span>📍 {state?.junction?.name || 'Junction'}</span>
             <span className="text-slate-700">|</span>
@@ -72,7 +73,7 @@ export default function ControlRoomPage({ user }) {
              <CardTitle icon={<Zap size={16} className="text-yellow-400"/>} title="Manual Lane Override" />
              <div className="text-[10px] text-red-400 font-mono font-bold border border-red-500/30 bg-red-500/10 px-2 py-0.5 rounded">30s PRIORITY GREEN</div>
           </div>
-          <p className="text-xs text-slate-400 mb-4">Immediate authority over AI edge decisions.</p>
+          <p className="text-xs text-slate-400 mb-4">Real-time monitoring of all MakeWay ATES nodes.</p>
           <div className="grid grid-cols-2 gap-3 mb-5">
             {LANES.map(id => {
               const l = lanes[id] ?? {};

@@ -76,7 +76,7 @@ export default function AuthPage({ onLogin }) {
         <div className="flex justify-center mb-6">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_20px_rgba(0,255,136,0.2)]">
             <div className="w-full h-full bg-[#02050a] rounded-[14px] flex items-center justify-center overflow-hidden">
-               <img src="/logo.png" alt="GiveWay Logo" className="w-full h-full object-cover" />
+               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>

@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
 
       {/* ── Row 2: Wait Time Comparison ─────────────────────── */}
       <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-        <CardTitle icon="⏳" title="Avg Wait Time: GiveWay AI vs Fixed-Timer Baseline (seconds)" />
+        <CardTitle icon="⏳" title="Avg Wait Time: MakeWay AI vs Fixed-Timer Baseline (seconds)" />
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={analytics} barCategoryGap="25%">
             <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
             <YAxis tick={{ fill: '#64748b', fontSize: 10 }} label={{ value: 'Wait (s)', angle: -90, position: 'insideLeft', fill: '#475569', fontSize: 10 }} />
             <Tooltip contentStyle={{ background: '#0d1827', border: '1px solid #00e5ff30', borderRadius: 8, fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
-            <Bar dataKey="giveway" name="GiveWay AI" fill="#00ff88" fillOpacity={0.8} radius={[4,4,0,0]}
+            <Bar dataKey="giveway" name="MakeWay AI" fill="#00ff88" fillOpacity={0.8} radius={[4,4,0,0]}
               style={{ filter: 'drop-shadow(0 0 4px #00ff8844)' }} />
             <Bar dataKey="fixed" name="Fixed Timer" fill="#ff3b3b" fillOpacity={0.6} radius={[4,4,0,0]} />
           </BarChart>

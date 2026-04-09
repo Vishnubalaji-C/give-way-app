@@ -16,36 +16,44 @@ export default function SplashScreen({ onComplete }) {
   }, [onComplete]);
 
   return (
-    <div className={`fixed inset-0 z-[100] bg-[#050a14] flex flex-col items-center justify-center transition-opacity duration-500 ${stage === 4 ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-[100] bg-[#02050a] flex flex-col items-center justify-center transition-opacity duration-500 ${stage === 4 ? 'opacity-0' : 'opacity-100'}`}>
       
-      {/* Animated Traffic Light Logo */}
-      <div className="relative w-24 h-56 bg-gradient-to-b from-slate-800 to-slate-900 border-4 border-slate-700 rounded-3xl p-4 flex flex-col justify-between items-center shadow-2xl mb-8">
-        {/* Red */}
-        <div className={`w-14 h-14 rounded-full border-2 transition-all duration-500 ${
-          stage >= 1 ? 'bg-red-500 border-red-400 shadow-[0_0_30px_rgba(255,59,59,0.8)]' : 'bg-slate-700 border-slate-600'
-        }`} />
-        {/* Yellow */}
-        <div className={`w-14 h-14 rounded-full border-2 transition-all duration-500 ${
-          stage >= 2 ? 'bg-amber-400 border-amber-300 shadow-[0_0_30px_rgba(255,183,0,0.8)]' : 'bg-slate-700 border-slate-600'
-        }`} />
-        {/* Green */}
-        <div className={`w-14 h-14 rounded-full border-2 transition-all duration-500 ${
-          stage >= 3 ? 'bg-green-400 border-green-300 shadow-[0_0_40px_rgba(0,255,136,1)]' : 'bg-slate-700 border-slate-600'
-        }`} />
+      {/* Premium Logo Container */}
+      <div className={`relative mb-10 transition-all duration-1000 transform ${stage >= 1 ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}>
+        <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] bg-slate-900 border border-cyan-500/20 shadow-[0_0_50px_rgba(0,229,255,0.2)] overflow-hidden p-1">
+          <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover rounded-[2.3rem]" />
+        </div>
+        <div className="absolute -inset-4 bg-cyan-500/10 blur-2xl -z-10 animate-pulse"></div>
       </div>
 
       {/* Brand Text */}
-      <div className={`text-center transition-all duration-700 transform ${stage >= 3 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}>
-        <h1 className="text-5xl font-black mb-2">
-          Give<span className="brand-gradient">Way</span>
+      <div className={`text-center transition-all duration-1000 delay-300 transform ${stage >= 2 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'}`}>
+        <h1 className="text-5xl md:text-7xl font-black mb-3 tracking-tighter">
+          MAKE<span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">WAY</span>
         </h1>
-        <p className="text-slate-400 font-mono tracking-widest text-sm uppercase">Adaptive Traffic Equity System</p>
-        <div className="mt-8 flex justify-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+        <p className="text-cyan-400/60 font-mono tracking-[0.3em] text-[10px] md:text-xs uppercase">Adaptive Traffic Equity System</p>
+        
+        {/* Loading Indicator */}
+        <div className="mt-12 flex justify-center gap-3">
+          {[0, 150, 300].map((delay) => (
+            <div 
+              key={delay}
+              className="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(0,229,255,0.8)]" 
+              style={{ 
+                animation: `bounce 1.2s infinite ease-in-out`,
+                animationDelay: `${delay}ms` 
+              }} 
+            />
+          ))}
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+          40% { transform: scale(1.2); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

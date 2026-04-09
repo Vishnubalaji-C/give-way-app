@@ -120,41 +120,98 @@ class _GiveWayAppState extends State<GiveWayApp> {
   }
 }
 
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
+
+  @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF02050A),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00E5FF).withOpacity(0.3),
-                    blurRadius: 20,
-                    spreadRadius: 5,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00E5FF).withOpacity(0.4),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    fit: BoxFit.cover,
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.cover,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(color: Color(0xFF00E5FF)),
-          ],
+              const SizedBox(height: 32),
+              Text(
+                'MAKEWAY',
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 8,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'ADAPTIVE TRAFFIC EQUITY SYSTEM',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 2,
+                  color: const Color(0xFF00E5FF).withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 48),
+              const SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  color: Color(0xFF00E5FF),
+                  strokeWidth: 3,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

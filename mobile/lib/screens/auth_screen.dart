@@ -95,20 +95,24 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 // Logo
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00E5FF), Color(0xFF00FF88)],
-                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withOpacity(0.3),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                  child: const Center(
-                    child: Text('GW',
-                        style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

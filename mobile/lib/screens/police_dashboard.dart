@@ -5,6 +5,8 @@ import '../services/api_service.dart';
 import '../widgets/lane_card.dart';
 import '../widgets/feature_badge.dart';
 import '../widgets/alert_tile.dart';
+import '../widgets/junction_sim.dart';
+import '../widgets/analytics_charts.dart';
 
 class PoliceDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -25,6 +27,7 @@ class PoliceDashboard extends StatefulWidget {
 class _PoliceDashboardState extends State<PoliceDashboard> {
   final WsService _ws = WsService();
   Map<String, dynamic> _state = {};
+  Map<String, dynamic> _analytics = {};
   List<Map<String, dynamic>> _alerts = [];
   int _tabIndex = 0;
   Timer? _latencyTimer;
@@ -44,6 +47,16 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
     _latencyTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       setState(() => _latency = 45 + (DateTime.now().millisecond % 105));
     });
+    _fetchAnalytics();
+  }
+
+  Future<void> _fetchAnalytics() async {
+    try {
+      final data = await ApiService.getAnalytics(widget.user['token']);
+      setState(() => _analytics = data);
+    } catch (e) {
+      debugPrint('Failed to fetch analytics: $e');
+    }
   }
 
   @override
@@ -244,12 +257,14 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('📷 Live Hardware Feed',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 4),
-        Text('ESP32-CAM edge inference. YOLOv8 → 1KB JSON density.',
+        Text('Interactive AI Junction Simulation',
             style: TextStyle(fontSize: 12, color: Colors.grey[500])),
         const SizedBox(height: 16),
+        JunctionSim(state: _state),
+        const SizedBox(height: 24),
+        const Text('📷 Edge Node Feeds (Metadata)',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 12),
         ...lanes.entries.map((entry) {
           final id = entry.key;
           final l = entry.value;
@@ -460,6 +475,8 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
         _analyticsCard('Active Traffic Interventions', '${_state['tick'] ?? 0} cycles executed', Icons.auto_mode, const Color(0xFF00E5FF)),
         _analyticsCard('AI Compute Ticks', '${_state['tick'] ?? 0}',
             Icons.memory, const Color(0xFFA855F7)),
+        const SizedBox(height: 24),
+        AnalyticsCharts(analytics: _analytics),
       ],
     );
   }

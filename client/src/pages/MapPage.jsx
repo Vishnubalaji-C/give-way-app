@@ -39,7 +39,7 @@ export default function MapPage({ user }) {
                <Navigation size={14} className="text-cyan-400" /> Live Grid Matrix
             </h2>
             <p className="text-[10px] text-slate-400 leading-tight">
-               Real-time monitoring of all GiveWay ATES nodes.
+               Real-time monitoring of all MakeWay ATES nodes.
             </p>
          </div>
 
@@ -108,7 +108,7 @@ export default function MapPage({ user }) {
       {/* Map Branding Overlay */}
       <div className="absolute bottom-6 right-6 z-[1000] glass px-6 py-3 rounded-2xl border border-white/5 flex items-center gap-4">
          <div className="text-right">
-            <div className="text-[10px] font-black text-cyan-400 tracking-[0.2em] uppercase">GiveWay Matrix v2.6</div>
+            <div className="text-[10px] font-black text-cyan-400 tracking-[0.2em] uppercase">MakeWay Matrix v2.6</div>
             <div className="text-[9px] text-slate-500 font-bold uppercase">Dynamic Location Handshake Active</div>
          </div>
          <div className="w-10 h-10 rounded-xl bg-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.4)]">
