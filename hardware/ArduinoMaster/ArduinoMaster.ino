@@ -39,6 +39,7 @@ struct LaneData {
   int    car;           // Raw car count
   int    bike;          // Raw bike count
   bool   hasData;       // Whether this lane has received any edge data
+  unsigned long lastPing; // Time of last received message
 };
 
 LaneData lanes[4];  // 0=N, 1=E, 2=S, 3=W
@@ -145,6 +146,21 @@ void loop() {
   if (greenTimer > 0) {
     greenTimer--;
   }
+
+  // --- ANTIGRAVITY HEARTBEAT CHECK ---
+  // If no data received from active lane ESP for 30s, trigger fail-safe
+  static unsigned long lastDataCheck = 0;
+  if (millis() - lastDataCheck > 30000) {
+    lastDataCheck = millis();
+    for (int i = 0; i < 4; i++) {
+      if (lanes[i].hasData && (millis() - lanes[i].lastPing > 30000)) {
+        lanes[i].hasData = false; // Mark offline
+        Serial.print(F("[FAILSAFE] Lane "));
+        Serial.print(laneNames[i]);
+        Serial.println(F(" went OFFLINE. Reverting to fixed timing."));
+      }
+    }
+  }
 }
 
 // Global buffer per serial port to prevent inter-lane data corruption
@@ -161,16 +177,24 @@ void readSerialData() {
 void pollSerialPort(Stream &s, int laneIdx) {
   while (s.available()) {
     char c = s.read();
+    
+    // --- STATE MACHINE SERIAL PARSER ---
+    // Look for start of message '$' (optional) or just line-based
     if (c == '\n' || c == '\r') {
-      buffers[laneIdx].trim();
-      if (buffers[laneIdx].length() > 0) {
+      if (buffers[laneIdx].length() > 5) { // Minimum length check
+        buffers[laneIdx].trim();
         parseSerialMessage(buffers[laneIdx]);
       }
       buffers[laneIdx] = "";
-    } else {
+    } else if (c >= 32 && c <= 126) { // ASCII printable characters only
       buffers[laneIdx] += c;
-      if (buffers[laneIdx].length() >= 256) buffers[laneIdx] = "";
+      if (buffers[laneIdx].length() >= 128) buffers[laneIdx] = "";
     }
+  }
+  
+  // Track last ping for failsafe
+  if (s.available()) {
+     lanes[laneIdx].lastPing = millis();
   }
 }
 
@@ -193,6 +217,7 @@ void parseSerialMessage(String msg) {
     lanes[laneIdx].bike       = bike;
     lanes[laneIdx].pedestrian = (ped > 0);
     lanes[laneIdx].hasData    = true;
+    lanes[laneIdx].lastPing   = millis();
 
     // Compute PCE density
     lanes[laneIdx].density = (int)(

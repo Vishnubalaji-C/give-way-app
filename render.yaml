@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: giveway-backend
+    env: node
+    plan: free # Change to starter/pro for persistent disks
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: MONGO_URI
+        sync: false # User can add this in Render dashboard if needed
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+    # disk: # Requires paid plan
+    #   name: giveway-data
+    #   mountPath: /opt/render/project/src/data
+    #   sizeGB: 1

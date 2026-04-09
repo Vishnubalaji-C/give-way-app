@@ -44,7 +44,13 @@ let saveTimeout = null;
 function saveToDisk() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
-    fs.writeFile(DB_FILE, JSON.stringify(db, null, 2), err => { if (err) console.error('Save failed', err); });
+    const tempFile = DB_FILE + '.tmp';
+    try {
+      fs.writeFileSync(tempFile, JSON.stringify(db, null, 2));
+      fs.renameSync(tempFile, DB_FILE);
+    } catch (err) {
+      console.error('CRITICAL: Database Atomic Save Failed:', err);
+    }
   }, 3000);
 }
 
@@ -599,15 +605,31 @@ app.get('/api/analytics', (req, res) => {
   });
 });
 
+// ─── Secure Edge Data Rate Limiting ───────────────────────────────────────────
+const edgeRequestLog = new Map(); // tracks last request per junction/lane
+
 app.post('/api/edge-data', (req, res) => {
   // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', junctionId: 'JN-001', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
   const { laneId, secret, vehicles, junctionId } = req.body;
-  if (secret !== 'GIVEWAY_NODE_KEY') return res.status(401).json({ error: 'Unauthorized Node' });
+  
+  if (secret !== 'GIVEWAY_NODE_KEY') {
+    return res.status(401).json({ error: 'Unauthorized Node Access' });
+  }
+  
+  const now = Date.now();
+  const requestId = `${junctionId}-${laneId}`;
+  
+  // Rate-limiting: Max 1 request per 1.5 seconds per node
+  if (edgeRequestLog.has(requestId) && (now - edgeRequestLog.get(requestId)) < 1500) {
+    return res.status(429).json({ error: 'System busy: Node rate limit exceeded' });
+  }
+  edgeRequestLog.set(requestId, now);
+
   if (!state.lanes[laneId]) return res.status(400).json({ error: 'Invalid Lane ID' });
   
   // Update junction heartbeat if junctionId provided
   if (junctionId && junctions[junctionId]) {
-    junctions[junctionId].lastPing = Date.now();
+    junctions[junctionId].lastPing = now;
     junctions[junctionId].status = 'online';
   }
   

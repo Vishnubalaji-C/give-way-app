@@ -49,9 +49,13 @@ const String junctionId  = "JN-001"; // Unique ID for this junction deployment
 // Built-in flash LED
 #define FLASH_GPIO_NUM     4
 
+#define STATUS_LED_GPIO   33  // Small red LED on back (Inverted: LOW = ON)
+
 // ─── Runtime State ────────────────────────────────────────────────────────────
 bool ecoModeActive     = false;
 bool cameraInitialized = false;
+int  consecutiveFailures = 0;
+const int MAX_FAILURES   = 10;   // Reboot after 10 failed POSTs
 unsigned long lastSendTime = 0;
 const unsigned long SEND_INTERVAL = 5000;  // 5 sec matching server architecture
 
@@ -135,8 +139,10 @@ void connectWiFi() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
+    digitalWrite(STATUS_LED_GPIO, HIGH); // LED OFF when connected (inverted)
     Serial.printf("\n[WIFI] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
   } else {
+    digitalWrite(STATUS_LED_GPIO, LOW);  // LED ON when disconnected
     Serial.println("\n[WIFI] Connection FAILED — will retry next cycle");
   }
 }
@@ -232,13 +238,21 @@ void postEdgeData(int amb, int bus, int car, int bike, bool pedestrian) {
   int httpCode = http.POST(payload);
   
   if (httpCode > 0) {
+    consecutiveFailures = 0; // Reset counter on success
     Serial.printf("[POST] Server response: HTTP %d\n", httpCode);
     if (httpCode == 200) {
       String response = http.getString();
       Serial.printf("[POST] Result: %s\n", response.c_str());
     }
   } else {
-    Serial.printf("[POST] Request failed: %s\n", http.errorToString(httpCode).c_str());
+    consecutiveFailures++;
+    Serial.printf("[POST] Request failed (%d/%d): %s\n", consecutiveFailures, MAX_FAILURES, http.errorToString(httpCode).c_str());
+    
+    if (consecutiveFailures >= MAX_FAILURES) {
+       Serial.println("[PIPE] CRITICAL: Too many failures. Rebooting node...");
+       delay(2000);
+       ESP.restart();
+    }
   }
 
   http.end();
@@ -313,6 +327,9 @@ void setup() {
   // Flash LED pin
   pinMode(FLASH_GPIO_NUM, OUTPUT);
   digitalWrite(FLASH_GPIO_NUM, LOW);
+  
+  pinMode(STATUS_LED_GPIO, OUTPUT);
+  digitalWrite(STATUS_LED_GPIO, LOW); // Start with Status LED ON
 
   // Initialize camera
   cameraInitialized = initCamera();

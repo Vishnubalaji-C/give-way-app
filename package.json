@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "server": "node server.js",
+    "start": "node server.js",
     "client": "npm run dev --prefix client",
     "dev": "start \"GiveWay Backend\" cmd /k npm run server & start \"GiveWay Frontend\" cmd /k npm run client",
     "build": "npm run build --prefix client",

@@ -1,5 +1,5 @@
-# 🚦 GiveWay — Adaptive Traffic Equity System
-### AI-Driven, PCE-Weighted Traffic Management Framework for Smart Cities (2026)
+# 🚦 MakeWay — Adaptive Traffic Equity System (ATES)
+### Final "Antigravity" Edition — AI-Driven, PCE-Weighted Traffic Management (v1.1)
 
 ---
 
@@ -61,11 +61,19 @@ Frontend runs at `http://localhost:5173`
 
 ---
 
+## 🌎 Official Deployment
+- **Web Dashboard**: [https://give-way-app.vercel.app](https://give-way-app.vercel.app)
+- **Backend API**: [https://give-way-app.onrender.com](https://give-way-app.onrender.com)
+- **Mobile App**: Production build pointing to cloud backend.
+
+---
+
 ## ⚙️ System Architecture
 
 ### A. Edge Layer (Simulated ESP32-CAM)
 - 4 traffic lanes: **N / S / E / W**
-- Every 5 seconds → generates realistic vehicle counts
+- Every 5 seconds → captures frame & runs YOLO inference
+- Supports **Local Storage (Atomic sync)** for zero-cost persistence
 - Calculates **PCE Density Score** on-edge:
 
 | Vehicle     | PCE Weight |
