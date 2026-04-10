@@ -1,20 +1,19 @@
 services:
   - type: web
-    name: giveway-backend
+    name: makeway-ates
     env: node
-    plan: free # Change to starter/pro for persistent disks
-    buildCommand: npm install
+    plan: free
+    # Build: install root deps + build the React client into client/dist
+    buildCommand: npm install && npm run build
+    # Start: serve both API and React static files from one Express process
     startCommand: node server.js
     envVars:
-      - key: PORT
-        value: 4000
-      - key: MONGO_URI
-        sync: false # User can add this in Render dashboard if needed
-      - key: JWT_SECRET
-        generateValue: true
+      # PORT is injected automatically by Render — do NOT hardcode 4000
       - key: NODE_ENV
         value: production
-    # disk: # Requires paid plan
-    #   name: giveway-data
-    #   mountPath: /opt/render/project/src/data
-    #   sizeGB: 1
+      - key: JWT_SECRET
+        generateValue: true
+      # Set this in Render Dashboard → Environment → GIVEWAY_NODE_KEY
+      # Must match the secret flashed to your ESP32-CAM firmware
+      - key: GIVEWAY_NODE_KEY
+        sync: false

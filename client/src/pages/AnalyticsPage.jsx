@@ -1,13 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useWs } from '../context/WsContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BarChart2, PieChart as PieIcon, Activity, TrendingUp, ShieldAlert, ShieldCheck, Timer, Zap, Map as MapIcon, Scale } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts';
 
-const COLORS = { ambulance: '#ff3b3b', bus: '#00e5ff', car: '#00ff88', bike: '#a855f7' };
+const COLORS = { ambulance: '#ef4444', bus: '#06b6d4', car: '#10b981', bike: '#8b5cf6' };
 const HOUR_LABELS = ['08','09','10','11','12','13','14','15','16','17','18','19'].map(h => `${h}:00`);
+
+const containerVars = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const itemVars = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', damping: 25, stiffness: 400 } }
+};
 
 function generateBaseAnalytics() {
   return HOUR_LABELS.map((hour, i) => {
@@ -29,7 +44,6 @@ export default function AnalyticsPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Refresh analytics every 10 s in a live-looking way
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
@@ -39,18 +53,18 @@ export default function AnalyticsPage() {
         const data = await res.json();
         if (data.hourly) {
           setAnalytics(data.hourly);
-          setSuccess('Analytics data updated successfully.');
+          setSuccess('Live intelligence stream active.');
           setTimeout(() => setSuccess(''), 3000);
         }
       } catch (e) { 
-        setError('Unable to sync live analytics. Using cached data.');
+        setError('Synchronizing with fallback data stream.');
         setTimeout(() => setError(''), 5000);
       } finally {
         setLoading(false);
       }
     };
     fetchAnalytics();
-    const id = setInterval(fetchAnalytics, 15000);
+    const id = setInterval(fetchAnalytics, 30000);
     return () => clearInterval(id);
   }, []);
 
@@ -68,146 +82,164 @@ export default function AnalyticsPage() {
   }));
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-black text-slate-100">Traffic Analytics</h2>
-
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-pulse">
-          <ShieldAlert size={14} /> {error}
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVars}
+      className="space-y-8 pb-32"
+    >
+      <motion.div variants={itemVars} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-white tracking-tight">System Intelligence</h1>
+          <p className="text-white/40 text-lg font-medium mt-1">Cross-sectional analysis of ATES algorithmic efficiency</p>
         </div>
-      )}
-
-      {success && (
-        <div className="bg-green-500/10 border border-green-500/30 text-green-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-bounce">
-          <ShieldCheck size={14} /> {success}
+        
+        <div className="flex items-center gap-3">
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs rounded-xl flex items-center gap-2 font-bold uppercase tracking-widest">
+                <ShieldAlert size={14} /> {error}
+              </motion.div>
+            )}
+            {success && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-4 py-2 bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-xl flex items-center gap-2 font-bold uppercase tracking-widest">
+                <ShieldCheck size={14} /> {success}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      )}
+      </motion.div>
 
-      {/* ── Row 1: Throughput + Vehicle Mix ─────────────────── */}
-      <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
-        <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-          <CardTitle icon="📈" title="Hourly Vehicle Throughput" />
-          <ResponsiveContainer width="100%" height={200}>
+      {/* ── Core Throughput Metrics ────────────────────────── */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <motion.div variants={itemVars} className="bg-glass-card lg:col-span-2 p-8">
+          <SectionHeader icon={<TrendingUp size={18}/>} title="Hourly Throughput Analysis" />
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={analytics}>
               <defs>
                 <linearGradient id="tpGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-              <XAxis dataKey="hour" tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: '#0d1827', border: '1px solid #00e5ff30', borderRadius: 8, fontSize: 12 }} />
-              <Area type="monotone" dataKey="throughput" stroke="#00e5ff" fill="url(#tpGrad)" strokeWidth={2} name="Vehicles/hr" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="hour" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+              <Tooltip 
+                contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, fontSize: 12, fontWeight: 600 }} 
+                itemStyle={{ color: '#06b6d4' }}
+              />
+              <Area type="monotone" dataKey="throughput" stroke="#06b6d4" fill="url(#tpGrad)" strokeWidth={3} name="Vehicles Linked" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
-        <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-          <CardTitle icon="🥧" title="Vehicle Mix" />
-          <ResponsiveContainer width="100%" height={180}>
+        <motion.div variants={itemVars} className="bg-glass-card p-8">
+          <SectionHeader icon={<PieIcon size={18}/>} title="Neural-PCE Mix" />
+          <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={vehicleMix} cx="50%" cy="50%" innerRadius={50} outerRadius={75}
-                dataKey="value" paddingAngle={3}>
+              <Pie data={vehicleMix} cx="50%" cy="50%" innerRadius={60} outerRadius={90}
+                dataKey="value" paddingAngle={8} strokeWidth={0}>
                 {vehicleMix.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85}
-                    style={{ filter: `drop-shadow(0 0 6px ${entry.color}66)` }}/>
+                  <Cell key={i} fill={entry.color} fillOpacity={0.9}
+                    style={{ filter: `drop-shadow(0 0 12px ${entry.color}44)` }}/>
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: '#0d1827', border: '1px solid #00e5ff30', borderRadius: 8, fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+              <Tooltip contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', paddingTop: '20px' }} />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
       </div>
 
-      {/* ── Row 2: Wait Time Comparison ─────────────────────── */}
-      <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-        <CardTitle icon="⏳" title="Avg Wait Time: MakeWay AI vs Fixed-Timer Baseline (seconds)" />
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={analytics} barCategoryGap="25%">
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-            <XAxis dataKey="hour" tick={{ fill: '#64748b', fontSize: 10 }} />
-            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} label={{ value: 'Wait (s)', angle: -90, position: 'insideLeft', fill: '#475569', fontSize: 10 }} />
-            <Tooltip contentStyle={{ background: '#0d1827', border: '1px solid #00e5ff30', borderRadius: 8, fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
-            <Bar dataKey="giveway" name="MakeWay AI" fill="#00ff88" fillOpacity={0.8} radius={[4,4,0,0]}
-              style={{ filter: 'drop-shadow(0 0 4px #00ff8844)' }} />
-            <Bar dataKey="fixed" name="Fixed Timer" fill="#ff3b3b" fillOpacity={0.6} radius={[4,4,0,0]} />
+      {/* ── Wait Time Optimization ─────────────────────────── */}
+      <motion.div variants={itemVars} className="bg-glass-card p-8">
+        <SectionHeader icon={<Timer size={18}/>} title="Optimization Gain: MakeWay AI vs. Legacy Fixed-Timer" />
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics} barGap={12}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey="hour" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }} />
+            <Legend wrapperStyle={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }} />
+            <Bar dataKey="giveway" name="ATES Optimized" fill="#10b981" radius={[6,6,0,0]} barSize={24}
+              style={{ filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }} />
+            <Bar dataKey="fixed" name="Legacy Timer" fill="rgba(239, 68, 68, 0.2)" radius={[6,6,0,0]} barSize={24} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
 
-      {/* ── Row 3: Congestion Trend ──────── */}
-      <div className="grid lg:grid-cols-1 gap-6">
-        {/* Heatmap */}
-        <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-          <CardTitle icon="🗺️" title="Congestion Heatmap (Live)" />
-          <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(12, 1fr)' }}>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Heatmap Section */}
+        <motion.div variants={itemVars} className="bg-glass-card p-8">
+          <SectionHeader icon={<MapIcon size={18}/>} title="Thermal Congestion Map" />
+          <div className="grid gap-1 mt-4" style={{ gridTemplateColumns: 'repeat(12, 1fr)' }}>
             {heatData.map((cell, i) => {
               const intensity = cell.v / 100;
-              const r = Math.round(255 * intensity);
-              const g = Math.round(255 * (1 - intensity));
               return (
-                <div key={i} title={`${cell.v}% congestion`} className="aspect-square rounded-sm cursor-pointer hover:scale-110 transition-transform"
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.005 }}
+                  className="aspect-square rounded-sm cursor-pointer hover:border hover:border-white transition-all"
                   style={{
-                    background: `rgb(${r},${g},50)`,
-                    opacity: 0.7 + intensity * 0.3,
-                    filter: cell.v > 85 ? `drop-shadow(0 0 4px rgb(${r},${g},50))` : 'none',
+                    background: intensity > 0.7 ? 'var(--red)' : intensity > 0.4 ? 'var(--amber)' : 'rgba(255,255,255,0.05)',
+                    opacity: 0.1 + intensity * 0.9,
                   }}
                 />
               );
             })}
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="text-[10px] text-slate-500">Low</span>
-            <div className="flex-1 h-1.5 rounded-full" style={{ background: 'linear-gradient(90deg, #00ff00, #ffff00, #ff0000)' }} />
-            <span className="text-[10px] text-slate-500">High</span>
+          <div className="flex justify-between items-center mt-6 text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">
+            <span>Nominal Flow</span>
+            <div className="flex-1 h-1 mx-4 rounded-full bg-white/5 overflow-hidden">
+               <div className="h-full w-1/2 bg-gradient-to-r from-green-500 via-amber-500 to-red-500" />
+            </div>
+            <span>System Saturation</span>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* ── Fairness Graph: Wait vs Priority ────────────────── */}
-      <div className="glass border border-cyan-500/10 rounded-2xl p-5">
-        <CardTitle icon="⚖️" title="Fairness Graph: Wait Time vs Final Priority per Lane" />
-        <WaitVsPriorityChart state={state} />
+        {/* Fairness Graph */}
+        <motion.div variants={itemVars} className="bg-glass-card p-8">
+          <SectionHeader icon={<Scale size={18}/>} title="Algorithmic Fairness Balance" />
+          <WaitVsPriorityChart state={state} />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function WaitVsPriorityChart({ state }) {
   const lanes = ['N','S','E','W'];
-  const LANE_COLORS = { N: '#00e5ff', S: '#00ff88', E: '#a855f7', W: '#ffb700' };
   const data = lanes.map(id => ({
     lane: id,
     waitTime: state?.lanes?.[id]?.waitTime ?? 0,
     priority: Math.round(state?.lanes?.[id]?.finalPriority ?? 0),
-    pce: Math.round(state?.lanes?.[id]?.pceScore ?? 0),
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-        <XAxis dataKey="lane" tick={{ fill: '#64748b', fontSize: 11 }} />
-        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-        <Tooltip contentStyle={{ background: '#0d1827', border: '1px solid #00e5ff30', borderRadius: 8, fontSize: 12 }} />
-        <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
-        <Line type="monotone" dataKey="waitTime" stroke="#ffb700" strokeWidth={2} dot={{ fill: '#ffb700', r: 4 }} name="Wait Time (s)" />
-        <Line type="monotone" dataKey="priority"  stroke="#00e5ff" strokeWidth={2} dot={{ fill: '#00e5ff', r: 4 }} name="Final Priority" />
-        <Line type="monotone" dataKey="pce"        stroke="#00ff88" strokeWidth={2} dot={{ fill: '#00ff88', r: 4 }} name="PCE Score" strokeDasharray="5 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+        <XAxis dataKey="lane" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+        <Tooltip contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }} />
+        <Line type="stepAfter" dataKey="waitTime" stroke="#f59e0b" strokeWidth={4} dot={{ fill: '#f59e0b', r: 6 }} name="Internal Latency (s)" />
+        <Line type="monotone" dataKey="priority"  stroke="#06b6d4" strokeWidth={4} dot={{ fill: '#06b6d4', r: 6 }} name="Priority Logic Weight" />
       </LineChart>
     </ResponsiveContainer>
   );
 }
 
-function CardTitle({ icon, title }) {
+function SectionHeader({ icon, title }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <span className="text-base">{icon}</span>
-      <h3 className="font-bold text-slate-200 text-sm">{title}</h3>
+    <div className="flex items-center gap-3 mb-8">
+      <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-cyan-400 border border-white/5">
+        {icon}
+      </div>
+      <h3 className="font-black text-white text-sm uppercase tracking-widest leading-none">{title}</h3>
     </div>
   );
 }

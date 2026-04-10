@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'qr_link_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onLogin;
@@ -9,7 +10,7 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   bool _isLogin = true;
   String _role = 'police';
   final _idCtrl = TextEditingController();
@@ -21,6 +22,20 @@ class _AuthScreenState extends State<AuthScreen> {
   String _access = 'Standard';
   String? _error;
   bool _loading = false;
+
+  late AnimationController _fadeCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     if (_idCtrl.text.isEmpty || _pinCtrl.text.isEmpty) return;
@@ -59,295 +74,207 @@ class _AuthScreenState extends State<AuthScreen> {
     final accent = isCyan ? const Color(0xFF00E5FF) : const Color(0xFFFFB700);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF02050A),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 420),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D1827).withOpacity(0.85),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: accent.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: accent.withOpacity(0.08),
-                  blurRadius: 40,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top accent line
-                Container(
-                  height: 3,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00E5FF), Color(0xFF00FF88)],
-                    ),
-                  ),
-                ),
-
-                // Logo
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accent.withOpacity(0.3),
-                        blurRadius: 15,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                Text(
-                  _isLogin ? 'System Authentication' : 'Secure Registration',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Error
-                if (_error != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.shield, color: Colors.red, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(_error!,
-                              style: const TextStyle(
-                                  color: Colors.redAccent,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Role Selector
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F1923),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: Row(
-                    children: [
-                      _roleBtn('police', 'Police Duty', Icons.shield,
-                          const Color(0xFF00E5FF)),
-                      _roleBtn('admin', 'Control Room', Icons.security,
-                          const Color(0xFFFFB700)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Unique ID
-                _buildInput(
-                  controller: _idCtrl,
-                  label: isCyan ? 'Officer Unique ID' : 'Admin System ID',
-                  hint: isCyan ? 'e.g., PL-8849' : 'e.g., ADM-091',
-                  icon: Icons.fingerprint,
-                  accent: accent,
-                ),
-                const SizedBox(height: 12),
-
-                // PIN
-                _buildInput(
-                  controller: _pinCtrl,
-                  label: 'Secure PIN',
-                  hint: '••••••',
-                  icon: Icons.lock,
-                  accent: accent,
-                  obscure: true,
-                ),
-
-                // Registration Extra Fields
-                if (!_isLogin) ...[
-                  const SizedBox(height: 16),
-                  
-                  // Full Name
-                  _buildInput(
-                    controller: _nameCtrl,
-                    label: 'Legal Full Name',
-                    hint: 'e.g. John Doe',
-                    icon: Icons.person,
-                    accent: accent,
-                  ),
-
-                  const SizedBox(height: 16),
-                  Divider(color: Colors.white.withOpacity(0.05)),
-                  const SizedBox(height: 16),
-                  Divider(color: Colors.white.withOpacity(0.05)),
-                  const SizedBox(height: 8),
-                  if (_role == 'police') ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildInput(
-                            controller: _badgeCtrl,
-                            label: 'Badge No.',
-                            accent: accent,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildInput(
-                            controller: _stationCtrl,
-                            label: 'Station Code',
-                            accent: accent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (_role == 'admin') ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildInput(
-                            controller: _deptCtrl,
-                            label: 'Dept Region',
-                            accent: accent,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0F1923),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white10),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _access,
-                                dropdownColor: const Color(0xFF0F1923),
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 13),
-                                items: ['Standard', 'Super-User']
-                                    .map((e) => DropdownMenuItem(
-                                        value: e, child: Text(e)))
-                                    .toList(),
-                                onChanged: (v) =>
-                                    setState(() => _access = v ?? 'Standard'),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-
-                const SizedBox(height: 24),
-
-                // Submit
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      textStyle: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          letterSpacing: 2),
-                    ),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.black))
-                        : Text(
-                            _isLogin ? 'AUTHORIZE ACCESS' : 'REGISTER ID'),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () =>
-                      setState(() { _isLogin = !_isLogin; _error = null; }),
-                  child: Text(
-                    _isLogin
-                        ? "New user? Create a Secure Identity"
-                        : "Already have an ID? Proceed to Login",
-                    style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+      backgroundColor: const Color(0xFF030712),
+      body: Stack(
+        children: [
+          // Cinematic background glow
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: accent.withOpacity(0.05),
+              ),
             ),
           ),
-        ),
+          
+          Center(
+            child: FadeTransition(
+              opacity: _fadeCtrl,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Brand Identity
+                    Container(
+                      width: 88,
+                      height: 88,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        boxShadow: [
+                          BoxShadow(color: accent.withOpacity(0.1), blurRadius: 40, spreadRadius: -10)
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'MakeWay ATES',
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'SECURE TERMINAL ACCESS'.toUpperCase(),
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white.withOpacity(0.2), letterSpacing: 3),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Authentication Surface
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.02),
+                        borderRadius: BorderRadius.circular(40),
+                        border: Border.all(color: Colors.white.withOpacity(0.04)),
+                      ),
+                      child: Column(
+                        children: [
+                          // Enhanced Role Selector
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            ),
+                            child: Row(
+                              children: [
+                                _roleSwitch('police', 'TACTICAL', Icons.security_rounded, const Color(0xFF00E5FF)),
+                                _roleSwitch('admin', 'COMMAND', Icons.hub_rounded, const Color(0xFFFFB700)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          if (_error != null) _errorAlert(),
+
+                          // Input Matrix
+                          if (!_isLogin) ...[
+                             _buildInputField(
+                              controller: _nameCtrl,
+                              label: 'FULL LEGAL IDENTITY',
+                              hint: 'Officer Name',
+                              icon: Icons.person_rounded,
+                              accent: accent,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+
+                          _buildInputField(
+                            controller: _idCtrl,
+                            label: isCyan ? 'SERVICE ID' : 'COMMAND ID',
+                            hint: isCyan ? 'PL-8849' : 'ADM-01',
+                            icon: Icons.fingerprint_rounded,
+                            accent: accent,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _pinCtrl,
+                            label: 'SECURE PIN',
+                            hint: '••••••',
+                            icon: Icons.lock_rounded,
+                            accent: accent,
+                            isPassword: true,
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // Action Execution
+                          SizedBox(
+                            width: double.infinity,
+                            height: 58,
+                            child: ElevatedButton(
+                              onPressed: _loading ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accent,
+                                foregroundColor: Colors.black,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                              child: _loading 
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                                : Text(_isLogin ? 'AUTHORIZE' : 'INITIALIZE', 
+                                    style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 13)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                    
+                    TextButton(
+                      onPressed: () => setState(() { _isLogin = !_isLogin; _error = null; }),
+                      child: Text(
+                        _isLogin ? 'INITIALIZE NEW UNIT' : 'EXISTING COMMAND ACCESS',
+                        style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                    const Divider(color: Colors.white10),
+                    const SizedBox(height: 32),
+
+                    // QR Sync Portal
+                    InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrLinkScreen())),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: accent.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: accent.withOpacity(0.1)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.qr_code_scanner_rounded, color: accent, size: 18),
+                            const SizedBox(width: 12),
+                            Text('SYNC STATION', style: TextStyle(color: accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _roleBtn(String role, String label, IconData icon, Color color) {
-    final selected = _role == role;
+  Widget _roleSwitch(String role, String label, IconData icon, Color color) {
+    final active = _role == role;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _role = role),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-                color: selected ? color.withOpacity(0.4) : Colors.transparent),
+            color: active ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon,
-                  size: 14,
-                  color: selected ? color : Colors.white38),
-              const SizedBox(width: 6),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: selected ? color : Colors.white38)),
+              Icon(icon, size: 14, color: active ? color : Colors.white12),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(color: active ? color : Colors.white12, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
             ],
           ),
         ),
@@ -355,48 +282,47 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildInput({
+  Widget _errorAlert() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.withOpacity(0.1)),
+      ),
+      child: Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildInputField({
     required TextEditingController controller,
     required String label,
-    String? hint,
-    IconData? icon,
+    required String hint,
+    required IconData icon,
     required Color accent,
-    bool obscure = false,
+    bool isPassword = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.white38)),
-        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1.5)),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: obscure,
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
+          obscureText: isPassword,
+          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white12),
-            prefixIcon:
-                icon != null ? Icon(icon, size: 16, color: accent) : null,
+            hintStyle: const TextStyle(color: Colors.white10),
+            prefixIcon: Icon(icon, color: accent.withOpacity(0.5), size: 18),
             filled: true,
-            fillColor: const Color(0xFF0F1923),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white10),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white10),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: accent),
-            ),
+            fillColor: Colors.white.withOpacity(0.02),
+            contentPadding: const EdgeInsets.all(20),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: Colors.white.withOpacity(0.05))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: accent.withOpacity(0.3))),
           ),
         ),
       ],

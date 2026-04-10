@@ -15,16 +15,18 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
+#include <WiFiUdp.h>
 #include "esp_camera.h"
+#include <base64.h>
 
 // ─── Wi-Fi Credentials ────────────────────────────────────────────────────────
 const char* ssid     = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PWD";
 
-// ─── Server Endpoints ─────────────────────────────────────────────────────────
-// Replace with your PC / deployed server IP
-const char* serverUrl    = "http://192.168.1.100:4000/api/edge-data";
-const char* inferenceUrl = "http://192.168.1.100:5000/detect";  // YOLO endpoint
+// ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
+String serverUrl    = "http://127.0.0.1:4000/api/edge-data";
+String inferenceUrl = "http://127.0.0.1:5000/detect"; 
+const String secretKey   = "GIVEWAY_NODE_KEY"; // Secure Signature Key
 const String laneId      = "N";      // Change per node: N, S, E, W
 const String junctionId  = "JN-001"; // Unique ID for this junction deployment
 
@@ -145,6 +147,54 @@ void connectWiFi() {
     digitalWrite(STATUS_LED_GPIO, LOW);  // LED ON when disconnected
     Serial.println("\n[WIFI] Connection FAILED — will retry next cycle");
   }
+}
+
+// ─── Secure Software Discovery (Auto-Connect Logic) ───────────────────────────
+WiFiUDP udp;
+const int discoveryPort = 5000;
+
+void discoverServer() {
+  Serial.println("[HUNT] Starting Secure Master Discovery...");
+  udp.begin(discoveryPort);
+  
+  unsigned long startHunt = millis();
+  bool found = false;
+
+  while (millis() - startHunt < 15000) { // Hunt for 15 seconds
+    int packetSize = udp.parsePacket();
+    if (packetSize) {
+      char buffer[255];
+      int len = udp.read(buffer, 255);
+      if (len > 0) buffer[len] = 0;
+
+      StaticJsonDocument<512> doc;
+      DeserializationError error = deserializeJson(doc, buffer);
+      
+      if (!error && doc["service"] == "GIVEWAY_MASTER") {
+        // SECURE HANDSHAKE: Check Signature
+        String sig = base64::decode(doc["sig"]);
+        if (sig == secretKey) {
+          IPAddress remoteIp = udp.remoteIP();
+          int port = doc["port"] | 4000;
+          
+          serverUrl = "http://" + remoteIp.toString() + ":" + String(port) + "/api/edge-data";
+          inferenceUrl = "http://" + remoteIp.toString() + ":5000/detect"; // YOLO usually at 5000
+          
+          Serial.print("[HUNT] Found Secure Master at: ");
+          Serial.println(remoteIp);
+          found = true;
+          break;
+        }
+      }
+    }
+    delay(100);
+    if (millis() % 1000 == 0) Serial.print(".");
+  }
+
+  if (!found) {
+    Serial.println("\n[HUNT] WARNING: Master not found. Using fallback logic.");
+  }
+  udp.stop();
 }
 
 // ─── Eco-Mode Handler (Serial commands from Arduino Master) ───────────────────
@@ -336,6 +386,11 @@ void setup() {
 
   // Connect to Wi-Fi
   connectWiFi();
+
+  // Perform Secure Discovery
+  if (WiFi.status() == WL_CONNECTED) {
+    discoverServer();
+  }
 
   // Initialize Wireless Flashing Support
   ArduinoOTA.setHostname(("GiveWay-Node-" + laneId).c_str());

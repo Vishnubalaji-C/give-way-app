@@ -45,7 +45,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
       });
     });
     _latencyTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      setState(() => _latency = 45 + (DateTime.now().millisecond % 105));
+      setState(() => _latency = 45 + (DateTime.now().millisecond % 45));
     });
     _fetchAnalytics();
   }
@@ -73,52 +73,42 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
     final accent = const Color(0xFF00E5FF);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF030712),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF02050A) : null,
+        elevation: 0,
+        backgroundColor: const Color(0xFF030712),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              (_state['junction'] as Map<String, dynamic>?)?['name'] ?? 'GiveWay Junction',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+              ((_state['junction'] as Map<String, dynamic>?)?['name'] ?? 'TERMINAL GATEWAY').toUpperCase(),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2),
             ),
+            const SizedBox(height: 2),
             Row(
               children: [
-                Text(
-                  '${widget.user['name'] ?? 'Officer'} · ',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[500],
-                    fontFamily: 'monospace',
-                  ),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(color: Color(0xFF00FF88), shape: BoxShape.circle),
                 ),
+                const SizedBox(width: 6),
                 Text(
-                  '${(_state['junction'] as Map<String, dynamic>?)?['poleId'] ?? ''} · ${_latency}ms',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: const Color(0xFF00E5FF),
-                    fontFamily: 'monospace',
+                  'SYNC: ${_latency}ms · LOCAL STREAM'.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: Color(0xFF00E5FF),
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
             ),
           ],
         ),
-        leading: Padding(
-          padding: const EdgeInsets.all(8),
-          child: CircleAvatar(
-            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.grey[200],
-            child: const Icon(Icons.person, size: 20),
-          ),
-        ),
         actions: [
           IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode,
-                color: Colors.amber, size: 20),
-            onPressed: widget.onToggleTheme,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+            icon: const Icon(Icons.logout, color: Colors.white30, size: 20),
             onPressed: widget.onLogout,
           ),
         ],
@@ -132,15 +122,21 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
           _buildAnalytics(isDark),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.videocam), label: 'Live Feed'),
-          NavigationDestination(icon: Icon(Icons.warning_amber), label: 'Alerts'),
-          NavigationDestination(icon: Icon(Icons.bar_chart), label: 'Analytics'),
-        ],
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(canvasColor: const Color(0xFF030712)),
+        child: NavigationBar(
+          height: 65,
+          backgroundColor: const Color(0xFF030712),
+          indicatorColor: const Color(0xFF00E5FF).withOpacity(0.1),
+          selectedIndex: _tabIndex,
+          onDestinationSelected: (i) => setState(() => _tabIndex = i),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'TACTICAL'),
+            NavigationDestination(icon: Icon(Icons.sensors_rounded, size: 20), label: 'SENSORS'),
+            NavigationDestination(icon: Icon(Icons.security_rounded, size: 20), label: 'SECURITY'),
+            NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTELLIGENCE'),
+          ],
+        ),
       ),
     );
   }
@@ -151,120 +147,93 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
     final avgWait = lanes.isNotEmpty ? (totalWait / lanes.length) : 0;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       children: [
-        // Greeting
+        // Cinematic Portal Greeting
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF00E5FF).withOpacity(0.1),
-                const Color(0xFF7C3AED).withOpacity(0.05),
-              ],
-            ),
-            border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.15)),
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome, ${widget.user['name'] ?? 'Officer'}',
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '📍 ${(_state['junction'] as Map<String, dynamic>?)?['address'] ?? 'AI infrastructure is online.'}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                'UNIT READY: ${widget.user['name']?.toUpperCase() ?? 'OFFICER'}',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white30, letterSpacing: 2),
               ),
               const SizedBox(height: 8),
-              // Junction Location Chips
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
+              const Text(
+                'MakeWay ATES v2.4',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, trackingAlpha: -0.5),
+              ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  _locationChip(
-                    '${(_state['junction'] as Map<String, dynamic>?)?['city'] ?? '---'}, ${(_state['junction'] as Map<String, dynamic>?)?['state'] ?? '---'}',
-                    const Color(0xFF475569),
-                  ),
-                  _locationChip(
-                    '${(_state['junction'] as Map<String, dynamic>?)?['id'] ?? '---'} · ${(_state['junction'] as Map<String, dynamic>?)?['zone'] ?? ''}',
-                    const Color(0xFF00E5FF),
-                  ),
+                  _locationChip('${(_state['junction'] as Map<String, dynamic>?)?['id'] ?? '---'} · ZONE-7'),
+                  const SizedBox(width: 8),
+                  _locationChip('LATERAL: ${avgWait.toStringAsFixed(1)}s', color: const Color(0xFFFFB700)),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text('Avg Wait: ${avgWait.toStringAsFixed(1)}s',
-                  style: const TextStyle(
-                      color: Color(0xFFFFB700),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16)),
             ],
           ),
         ),
+        const SizedBox(height: 24),
+
+        // Grid Metrics
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.4,
+          children: [
+            _metricCard('AMBULANCE', '${_state['totalAmbulances'] ?? 0}', const Color(0xFFFF3B3B), Icons.emergency_rounded),
+            _metricCard('BUS PRIORITY', '${_state['totalBuses'] ?? 0}', const Color(0xFF00E5FF), Icons.directions_bus_rounded),
+            _metricCard('SYSTEM TICK', '${_state['tick'] ?? 0}', const Color(0xFF7C3AED), Icons.memory_rounded),
+            _metricCard('ACTIVE NODES', '${(_state['junction'] as Map?)?['cameraNodes'] ?? 0}', const Color(0xFF00FF88), Icons.videocam_rounded),
+          ],
+        ),
+        const SizedBox(height: 32),
+
+        const Text('LANE FEED STATUS',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
         const SizedBox(height: 16),
-
-        // Hardware Feature Badges
-        const Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            FeatureBadge(label: 'SOLAR-ECO', color: Color(0xFFFFB700)),
-            FeatureBadge(label: 'PED RADAR', color: Color(0xFF00E5FF)),
-            FeatureBadge(label: 'BUZZER ARM', color: Color(0xFFFF3B3B)),
-            FeatureBadge(label: 'STALL-AI', color: Color(0xFF00FF88)),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Stats Row
-        Row(
-          children: [
-            _statCard('Ambulances', '${_state['totalAmbulances'] ?? 0}',
-                const Color(0xFFFF3B3B)),
-            const SizedBox(width: 12),
-            _statCard('AI Decisions', '${_state['tick'] ?? 0}',
-                const Color(0xFF7C3AED)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _statCard('Buses', '${_state['totalBuses'] ?? 0}',
-                const Color(0xFF00E5FF)),
-            const SizedBox(width: 12),
-            _statCard('Active Nodes', '${(_state['junction'] as Map?)?['cameraNodes'] ?? 0}',
-                const Color(0xFF00FF88)),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        // Lane Densities
-        const Text('Live Lane Densities',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 12),
         ...lanes.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: LaneCard(laneId: e.key, data: e.value),
             )),
+        const SizedBox(height: 100),
       ],
     );
   }
 
   Widget _buildCameraFeed(Map<String, dynamic> lanes, bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
-        Text('Interactive AI Junction Simulation',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        const Text('SPATIAL JUNCTION TELEMETRY',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
         const SizedBox(height: 16),
-        JunctionSim(state: _state),
-        const SizedBox(height: 24),
-        const Text('📷 Edge Node Feeds (Metadata)',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 12),
+        Container(
+          height: 240,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: JunctionSim(state: _state),
+          ),
+        ),
+        const SizedBox(height: 32),
+        const Text('NODE ANALYTICS SCAN',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
         ...lanes.entries.map((entry) {
           final id = entry.key;
           final l = entry.value;
@@ -273,156 +242,46 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
           final names = {'N': 'NORTH', 'S': 'SOUTH', 'E': 'EAST', 'W': 'WEST'};
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 14),
+            margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0D1827) : Colors.grey[100],
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: const Color(0xFF00E5FF).withOpacity(0.1)),
+              color: Colors.white.withOpacity(0.02),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
             ),
             child: Column(
               children: [
-                // Camera header
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F1923) : Colors.grey[200],
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(18)),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor: const Color(0xFF1E293B),
-                        child: Text(id,
-                            style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white70)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('${names[id]} NODE',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w800)),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: Colors.green.withOpacity(0.3)),
-                        ),
-                        child: const Text('● REC',
-                            style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.green)),
-                      ),
-                    ],
-                  ),
-                ),
-                // Simulated feed area
-                Container(
-                  height: 140,
-                  width: double.infinity,
-                  color: const Color(0xFF0B101C),
-                  child: Stack(
-                    children: [
-                      // Road visual
-                      Center(
-                        child: Container(
-                          width: 100,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.white.withOpacity(0.03),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Detection boxes
-                      ...List.generate(detected.clamp(0, 6), (i) {
-                        final types = v.entries.toList();
-                        final boxColors = {
-                          'ambulance': Colors.red,
-                          'bus': Colors.cyan,
-                          'car': Colors.green,
-                          'bike': Colors.purple,
-                        };
-                        String type = 'car';
-                        for (var t in types) {
-                          if ((t.value as int) > 0) {
-                            type = t.key;
-                            break;
-                          }
-                        }
-                        return Positioned(
-                          left: 20.0 + (i * 45) % 200,
-                          top: 20.0 + (i * 30) % 80,
-                          child: Container(
-                            width: type == 'bus' ? 40 : 28,
-                            height: type == 'bus' ? 50 : 32,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: boxColors[type] ?? Colors.green,
-                                  width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (boxColors[type] ?? Colors.green)
-                                      .withOpacity(0.3),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 2, vertical: 1),
-                                color: Colors.black54,
-                                child: Text(type.toUpperCase(),
-                                    style: const TextStyle(
-                                        fontSize: 6,
-                                        color: Colors.white,
-                                        fontFamily: 'monospace')),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                      if (detected == 0)
-                        const Center(
-                          child: Text('NO TARGETS',
-                              style: TextStyle(
-                                  color: Colors.white24,
-                                  fontSize: 10,
-                                  fontFamily: 'monospace')),
-                        ),
-                    ],
-                  ),
-                ),
-                // Footer stats
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      _feedStat('Detected', '$detected'),
-                      const SizedBox(width: 20),
-                      _feedStat('PCE Score',
-                          '${(l['pceScore'] ?? 0).toStringAsFixed(0)}',
-                          color: const Color(0xFF00E5FF)),
-                      const SizedBox(width: 20),
-                      _feedStat('Payload', '1 KB'),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+                        child: Text(id, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 10)),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('${names[id]} APPROACH', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+                      const Spacer(),
+                      const Text('30 FPS', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.bold, fontSize: 9)),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 160,
+                  width: double.infinity,
+                  color: Colors.black,
+                  child: Center(
+                    child: Text('LENS STREAM ${id}-0$detected'.toUpperCase(), style: const TextStyle(color: Colors.white10, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 5)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _feedChip('TARGETS: $detected', Colors.white38),
+                      _feedChip('PCE: ${(l['pceScore'] ?? 0).toStringAsFixed(0)}', const Color(0xFF00E5FF)),
+                      _feedChip('LATENCY: 12ms', Colors.white12),
                     ],
                   ),
                 ),
@@ -430,6 +289,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
             ),
           );
         }),
+        const SizedBox(height: 100),
       ],
     );
   }
@@ -437,19 +297,20 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
   Widget _buildAlerts(bool isDark) {
     return _alerts.isEmpty
         ? Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle_outline,
-                    size: 48, color: Colors.green.withOpacity(0.3)),
-                const SizedBox(height: 12),
-                Text('All Systems Nominal',
-                    style: TextStyle(color: Colors.grey[600])),
-              ],
+            child: Opacity(
+              opacity: 0.2,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.shield_rounded, size: 64, color: Colors.white24),
+                  const SizedBox(height: 16),
+                  const Text('SECURITY STATUS: NOMINAL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 10)),
+                ],
+              ),
             ),
           )
         : ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: _alerts.length,
             itemBuilder: (ctx, i) => AlertTile(alert: _alerts[i]),
           );
@@ -457,112 +318,63 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
 
   Widget _buildAnalytics(bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
-        const Text('📊 System Analytics',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 16),
-        _analyticsCard('Total Vehicles Served',
-            '${_state['totalVehiclesServed'] ?? 0}', Icons.directions_car,
-            const Color(0xFF00E5FF)),
-        _analyticsCard('Ambulances Cleared',
-            '${_state['totalAmbulances'] ?? 0}', Icons.local_hospital,
-            const Color(0xFFFF3B3B)),
-        _analyticsCard('Buses Prioritized', '${_state['totalBuses'] ?? 0}',
-            Icons.directions_bus, const Color(0xFF7C3AED)),
-        _analyticsCard('Fuel Saved', '${_state['fuelSaved'] ?? 0} L',
-            Icons.local_gas_station, const Color(0xFFFFB700)),
-        _analyticsCard('Active Traffic Interventions', '${_state['tick'] ?? 0} cycles executed', Icons.auto_mode, const Color(0xFF00E5FF)),
-        _analyticsCard('AI Compute Ticks', '${_state['tick'] ?? 0}',
-            Icons.memory, const Color(0xFFA855F7)),
+        const Text('SYSTEM INTELLIGENCE MATRIX',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
         const SizedBox(height: 24),
+        _intelligenceTile('TOTAL THROUGHPUT', '${_state['totalVehiclesServed'] ?? 0}', Icons.trending_up_rounded, const Color(0xFF00E5FF)),
+        _intelligenceTile('AMBULANCE SUCCESS', '${_state['totalAmbulances'] ?? 0}', Icons.emergency_rounded, const Color(0xFFFF3B3B)),
+        _intelligenceTile('BUS PRIORITIZATION', '${_state['totalBuses'] ?? 0}', Icons.directions_bus_rounded, const Color(0xFF7C3AED)),
+        _intelligenceTile('EMISSIONS REDUCTION', '${(_state['fuelSaved'] ?? 0).toStringAsFixed(1)}L', Icons.eco_rounded, const Color(0xFF00FF88)),
+        const SizedBox(height: 32),
         AnalyticsCharts(analytics: _analytics),
+        const SizedBox(height: 100),
       ],
     );
   }
 
-  Widget _statCard(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.15)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(value,
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: color)),
-            const SizedBox(height: 4),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[500])),
-          ],
-        ),
+  Widget _metricCard(String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color.withOpacity(0.4), size: 18),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: color)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 1)),
+        ],
       ),
     );
   }
 
-  Widget _feedStat(String label, String value, {Color? color}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[600],
-                fontFamily: 'monospace')),
-        Text(value,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: color ?? Colors.white70)),
-      ],
-    );
-  }
-
-  Widget _analyticsCard(
-      String label, String value, IconData icon, Color color) {
+  Widget _intelligenceTile(String label, String value, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.12)),
+        color: Colors.white.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: color)),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[500])),
+              Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 1)),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
             ],
           ),
         ],
@@ -570,23 +382,26 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
     );
   }
 
-  Widget _locationChip(String label, Color color) {
+  Widget _locationChip(String label, {Color color = Colors.white24}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          color: color,
-          fontFamily: 'monospace',
-        ),
+        label.toUpperCase(),
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color.withOpacity(0.8), letterSpacing: 1),
       ),
+    );
+  }
+
+  Widget _feedChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1)),
     );
   }
 }

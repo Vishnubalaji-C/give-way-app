@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'ws_service.dart';
 
 class ApiService {
-  // Change this to your server IP when deploying
-  static const String baseUrl = 'https://give-way-app.onrender.com';
+  static String get baseUrl => WsService.baseUrl;
 
   static Future<Map<String, dynamic>> register({
     required String id,

@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 const path    = require('path');
 const fs      = require('fs');
+const dgram   = require('dgram');
 
 const app    = express();
 const server = http.createServer(app);
@@ -153,6 +154,11 @@ let activeJunction = 'JN-001'; // Currently viewed junction
 let simulationRunning = false;
 let overrideMode = 'auto'; // auto | vip | festival | emergency
 
+let uplinkToken = uuidv4().substring(0, 8).toUpperCase(); // 8-character secure sync token
+setInterval(() => {
+  uplinkToken = uuidv4().substring(0, 8).toUpperCase();
+}, 300000); // Rotates every 5 minutes
+
 let state = buildInitialState();
 let auditLog = db.auditLog;
 let worldTimer = null;
@@ -176,6 +182,7 @@ function buildInitialState() {
       greenTimer: id === 'N' ? PHASE_GREEN : 0,
       phase: id === 'N' ? 'green' : 'red',
       ghostFlag: false,
+      isEmergency: false,
     };
   });
   return {
@@ -221,6 +228,7 @@ function selectNextLane() {
   // Emergency override: ambulance detected anywhere
   for (const id of LANES) {
     if (state.lanes[id].vehicles.ambulance > 0 && id !== state.activeLane) {
+      state.lanes[id].isEmergency = true;
       addAlert('emergency', `🚑 AMBULANCE detected on Lane ${id} — Innuyir Protocol (Instant Green) triggered!`, id);
       state.totalAmbulances++;
       return id;
@@ -285,6 +293,7 @@ function switchLane(nextId) {
     state.lanes[nextId].waitTime  = 0;
     state.lanes[nextId].greenTimer = computeGreenDuration(nextId);
     state.lanes[nextId].staticCycles = 0;
+    state.lanes[nextId].isEmergency = false; // Reset on green entry
     state.activeLane = nextId;
     state.phaseTimer = state.lanes[nextId].greenTimer;
 
@@ -324,6 +333,7 @@ function processEdgeData(laneId, vehicles) {
    
    lane.previousDensity = newDensity;
    lane.vehicles = vehicles;
+   lane.isEmergency = vehicles.ambulance > 0;
    
    computePriorities();
    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
@@ -585,6 +595,32 @@ app.get('/api/auth/verify', requireAuth, (req, res) => {
   res.json({ success: true, user: safeUser });
 });
 
+// ─── Secure QR Discovery API ──────────────────────────────────────────────────
+app.get('/api/sync/token', (req, res) => {
+  // Returns current IP (detected or from env) and the active uplink token
+  const os = require('os');
+  const networks = os.networkInterfaces();
+  let localIp = '127.0.0.1';
+  
+  // Find typical local WiFi/Ethernet IP
+  for (const name of Object.keys(networks)) {
+    for (const net of networks[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        localIp = net.address;
+        break;
+      }
+    }
+  }
+
+  res.json({
+    success: true,
+    ip: localIp,
+    port: PORT,
+    token: uplinkToken,
+    sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64')
+  });
+});
+
 // ─── REST APIs ────────────────────────────────────────────────────────────────
 app.get('/api/state', requireAuth, (req, res) => res.json(sanitizeState()));
 app.get('/api/alerts', requireAuth, (req, res) => res.json(state.alerts));
@@ -612,7 +648,7 @@ app.post('/api/edge-data', (req, res) => {
   // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', junctionId: 'JN-001', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
   const { laneId, secret, vehicles, junctionId } = req.body;
   
-  if (secret !== 'GIVEWAY_NODE_KEY') {
+  if (secret !== (process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY')) {
     return res.status(401).json({ error: 'Unauthorized Node Access' });
   }
   
@@ -672,8 +708,35 @@ app.get('*', (req, res) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
-  console.log(`\n🚦 GiveWay Server running on http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket ready on ws://localhost:${PORT}`);
-  console.log(`📡 Secure APIs at http://localhost:${PORT}/api\n`);
-  console.log(`🌐 Application UI hosted dynamically over the root node path.\n`);
+  console.log(`🚀 MakeWay Advanced ATES Backend running on http://localhost:${PORT}`);
+  console.log(`📡 WebSocket Gateway: ws://localhost:${PORT}`);
 });
+
+// ─── Secure Auto-Discovery Heartbeat (Software-Side) ──────────────────────────
+const DISCOVERY_PORT = 5000;
+const udpSocket = dgram.createSocket('udp4');
+
+udpSocket.on('error', (err) => {
+  console.error(`[UDP] Discovery Socket Error: ${err.message}`);
+});
+
+setInterval(() => {
+  try {
+    const heartbeat = JSON.stringify({
+      service: 'GIVEWAY_MASTER',
+      port: PORT,
+      // The "Signature" for privacy/security
+      sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64'),
+      timestamp: Date.now()
+    });
+    const message = Buffer.from(heartbeat);
+    udpSocket.send(message, 0, message.length, DISCOVERY_PORT, '255.255.255.255');
+  } catch (e) { /* ignore broadcast errors */ }
+}, 3000);
+
+udpSocket.on('listening', () => {
+  udpSocket.setBroadcast(true);
+  console.log(`📡 Secure Heartbeat Active on UDP Port ${DISCOVERY_PORT}`);
+});
+
+udpSocket.bind(DISCOVERY_PORT);

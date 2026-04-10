@@ -13,59 +13,63 @@ import GreenWavePage   from './pages/GreenWavePage';
 import TrainingPage    from './pages/TrainingPage';
 import AuthPage        from './pages/AuthPage';
 import SimulationPage  from './pages/SimulationPage';
+import ControlRoomPage from './pages/ControlRoomPage';
+
+// One-time migration: wipe old 'auto'/'light' theme so dark mode always loads.
+(function migrateTheme() {
+  const t = localStorage.getItem('giveway_theme');
+  if (!t || t === 'auto' || t === 'light') {
+    localStorage.setItem('giveway_theme', 'dark');
+  }
+  document.documentElement.classList.remove('light-mode');
+})();
 
 export default function App() {
+  // ─── ALL HOOKS MUST BE BEFORE ANY CONDITIONAL RETURNS ─────────────────────
   const [showSplash, setShowSplash] = useState(true);
+  const [tab,        setTab]        = useState('dashboard');
+  const [isMobile,   setIsMobile]   = useState(() => window.innerWidth < 1024);
+  const [theme,      setTheme]      = useState(() => localStorage.getItem('giveway_theme') || 'dark');
 
-  // Authenticate from local storage with 10-days persistence
   const [user, setUser] = useState(() => {
-    const data = localStorage.getItem('giveway_user');
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        if (parsed.expiresAt > Date.now()) return parsed;
-        localStorage.removeItem('giveway_user');
-      } catch (e) {
-        localStorage.removeItem('giveway_user');
-      }
+    try {
+      const data = localStorage.getItem('giveway_user');
+      if (!data) return null;
+      const parsed = JSON.parse(data);
+      if (parsed.expiresAt > Date.now()) return parsed;
+      localStorage.removeItem('giveway_user');
+    } catch (e) {
+      localStorage.removeItem('giveway_user');
     }
     return null;
   });
 
-  // Light / Dark mode auto-switcher based on user preference or time
-  const [theme, setTheme] = useState(() => localStorage.getItem('giveway_theme') || 'auto');
+  // Always enforce dark mode – glassmorphism UI is dark-only
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light-mode');
-    } else if (theme === 'dark') {
-      root.classList.remove('light-mode');
-    } else {
-      // Auto: Light from 6 AM to 6 PM, Dark at night
-      const hour = new Date().getHours();
-      if (hour >= 6 && hour < 18) {
-        root.classList.add('light-mode');
-      } else {
-        root.classList.remove('light-mode');
-      }
-    }
+    document.documentElement.classList.remove('light-mode');
   }, [theme]);
 
-  const [tab, setTab] = useState('dashboard');
+  // Responsive layout detection
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
+  // ─── CONDITIONAL RENDERS – after all hooks ─────────────────────────────────
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
 
-  // Intercept routing with Auth Lock
   if (!user) {
-    return <AuthPage onLogin={(userData) => {
-      // Set validity for 10 days
-      const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
-      localStorage.setItem('giveway_user', JSON.stringify(authObj));
-      setUser(authObj);
-      setTab('dashboard'); // Default
-    }} />;
+    return (
+      <AuthPage onLogin={(userData) => {
+        const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
+        localStorage.setItem('giveway_user', JSON.stringify(authObj));
+        setUser(authObj);
+        setTab('dashboard');
+      }} />
+    );
   }
 
   const logout = () => {
@@ -79,47 +83,64 @@ export default function App() {
   };
 
   const PAGES = {
-    dashboard: DashboardPage,    // Primary Grid View
-    simulation: SimulationPage,  // Live Junction Logic
-    features:  FeaturesPage,     // System Features
-    camera:    CameraFeedPage,   // Edge Node Feeds
-    analytics: AnalyticsPage,    // Traffic Analytics
-    settings:  SettingsPage,     // System Config
-    map:       MapPage,          // Geographic View
-    wave:      GreenWavePage,    // Green-Wave Logic
-    training:  TrainingPage,     // AI Dataset Trainer
-    override:  () => <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse delay-100">Emergency Override Emitting... <br/> <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span></div>,
-    incidents: () => <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse delay-100">No new Ghost-Lane incidents currently detected.</div>,
+    dashboard:  DashboardPage,
+    simulation: SimulationPage,
+    features:   FeaturesPage,
+    camera:     CameraFeedPage,
+    analytics:  AnalyticsPage,
+    settings:   SettingsPage,
+    map:        MapPage,
+    wave:       GreenWavePage,
+    training:   TrainingPage,
+    control:    ControlRoomPage,
+    override:   () => (
+      <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
+        Emergency Override Emitting...
+        <br />
+        <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span>
+      </div>
+    ),
+    incidents: () => (
+      <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse">
+        No new Ghost-Lane incidents currently detected.
+      </div>
+    ),
   };
-
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const Page = PAGES[tab] || DashboardPage;
 
   return (
     <WsProvider>
-      {/* Immersive Background Theme */}
-      <div className="fixed inset-0 pointer-events-none z-0 transition-all duration-400 bg-glow-ring">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
-          backgroundSize: '32px 32px'
-        }}/>
-      </div>
+      {/* Deep midnight dark grid background */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: '#030712',
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '32px 32px',
+        }}
+      />
 
-      <div className="relative z-10 min-h-screen flex flex-col transition-all duration-300">
-        <Navbar tab={tab} setTab={setTab} user={user} onLogout={logout} theme={theme} onChangeTheme={handleSetTheme} />
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <Navbar
+          tab={tab}
+          setTab={setTab}
+          user={user}
+          onLogout={logout}
+          theme={theme}
+          onChangeTheme={handleSetTheme}
+        />
 
         <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
           <Page user={user} />
         </main>
 
-        {(user.role === 'police' || isMobile) && <BottomNav tab={tab} setTab={setTab} />}
+        {(user.role === 'police' || isMobile) && (
+          <BottomNav tab={tab} setTab={setTab} />
+        )}
       </div>
     </WsProvider>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ShieldAlert, Fingerprint, Lock, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, Fingerprint, Lock, ShieldCheck, User, Globe, ChevronRight } from 'lucide-react';
 import { API_BASE_URL } from '../config';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AuthPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,11 +10,9 @@ export default function AuthPage({ onLogin }) {
   const [uniqueId, setUniqueId] = useState('');
   const [pin, setPin] = useState('');
   
-  // Police Extra
   const [badge, setBadge] = useState('');
   const [station, setStation] = useState('');
   
-  // Admin Extra
   const [dept, setDept] = useState('');
   const [access, setAccess] = useState('Standard');
 
@@ -43,21 +42,18 @@ export default function AuthPage({ onLogin }) {
       const data = await res.json();
       
       if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to authenticate securely against root server.');
+        throw new Error(data.error || 'Identity verification failed at root level.');
       }
 
       if (!isLogin) {
         setIsLogin(true);
         setPin('');
         setError('');
-        setSuccess('👮 Secure Identity Created! You can now authorize your access below.');
+        setSuccess('Secure Identity Created. You may now authorize access.');
         return;
       }
 
-      onLogin({
-        ...data.user,
-        token: data.token
-      });
+      onLogin({ ...data.user, token: data.token });
 
     } catch (err) {
       setError(err.message);
@@ -67,112 +63,156 @@ export default function AuthPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md glass p-8 relative overflow-hidden">
-        
-        {/* Decorative Top Glow */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-green-500"></div>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-[#030712]">
+      {/* Cinematic Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+      </div>
 
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_20px_rgba(0,255,136,0.2)]">
-            <div className="w-full h-full bg-[#02050a] rounded-[14px] flex items-center justify-center overflow-hidden">
-               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover" />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+        className="w-full max-w-[480px] bg-glass rounded-[2.5rem] p-10 relative border border-white/5 shadow-2xl overflow-hidden"
+      >
+        <div className="flex flex-col items-center mb-10">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="w-24 h-24 rounded-3xl bg-white/[0.03] p-1 border border-white/10 shadow-2xl mb-6 group"
+          >
+            <div className="w-full h-full bg-[#030712] rounded-[1.4rem] flex items-center justify-center overflow-hidden">
+               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
-          </div>
-        </div>
-        
-        <h1 className="text-2xl font-black text-center brand-gradient mb-4">
-          {isLogin ? 'System Authentication' : 'Secure Registration'}
-        </h1>
-
-        {error && (
-          <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-pulse">
-            <ShieldAlert size={14} /> {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 bg-green-500/10 border border-green-500/30 text-green-300 text-xs p-3 rounded-xl flex items-center gap-2 font-bold animate-bounce">
-            <ShieldCheck size={14} /> {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+          </motion.div>
           
-          <div className="flex bg-[var(--input-bg)] rounded-xl p-1 border border-[var(--input-border)]">
-            <button type="button" onClick={() => setRole('police')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${role === 'police' ? 'bg-[var(--cyan)]/20 text-[var(--cyan)] border border-[var(--cyan)]/30' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-              <ShieldCheck size={14} /> Police Duty
+          <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
+            MakeWay <span className="brand-gradient">ATES</span>
+          </h1>
+          <p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2">
+            <Globe size={12} className="text-cyan-400" /> Secure Terminal Authorization
+          </p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8 bg-red-500/10 border border-red-500/30 text-red-300 text-xs p-4 rounded-2xl flex items-center gap-3 font-bold"
+            >
+              <ShieldAlert size={16} /> {error}
+            </motion.div>
+          )}
+
+          {success && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8 bg-green-500/10 border border-green-500/30 text-green-300 text-xs p-4 rounded-2xl flex items-center gap-3 font-bold"
+            >
+              <ShieldCheck size={16} /> {success}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          <div className="flex bg-white/5 rounded-2xl p-1.5 border border-white/5">
+            <button 
+              type="button" 
+              onClick={() => setRole('police')} 
+              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${role === 'police' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-white/20 hover:text-white/40'}`}
+            >
+              <User size={14} /> Police Duty
             </button>
-            <button type="button" onClick={() => setRole('admin')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${role === 'admin' ? 'bg-[var(--amber)]/20 text-[var(--amber)] border border-[var(--amber)]/30' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+            <button 
+              type="button" 
+              onClick={() => setRole('admin')} 
+              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${role === 'admin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-white/20 hover:text-white/40'}`}
+            >
               <ShieldAlert size={14} /> Control Room
             </button>
           </div>
 
-          {!isLogin && (
-            <div>
-              <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Legal Full Name</label>
-              <div className="relative mt-1">
-                <ShieldCheck size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${role === 'police' ? 'text-[var(--cyan)]' : 'text-[var(--amber)]'}`} />
-                <input value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="e.g. John Doe" className={`w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-3 pl-10 pr-4 text-sm text-[var(--text-main)] focus:outline-none transition-colors ${role === 'police' ? 'focus:border-[var(--cyan)]' : 'focus:border-[var(--amber)]'}`} />
-              </div>
-            </div>
-          )}
+          <div className="space-y-4">
+            {!isLogin && (
+              <InputGroup 
+                label="Full Legal Name" 
+                icon={<User size={18} />} 
+                value={fullName} 
+                onChange={(e) => setFullName(e.target.value)} 
+                placeholder="e.g. John Doe"
+                role={role}
+              />
+            )}
 
-          <div>
-            <label className="text-xs text-[var(--text-muted)] font-bold ml-1">{role === 'police' ? 'Officer Unique ID' : 'Admin System ID'}</label>
-            <div className="relative mt-1">
-              <Fingerprint size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${role === 'police' ? 'text-[var(--cyan)]' : 'text-[var(--amber)]'}`} />
-              <input value={uniqueId} onChange={e => setUniqueId(e.target.value)} required placeholder={role === 'police' ? "e.g., PL-8849" : "e.g., ADM-091"} className={`w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-3 pl-10 pr-4 text-sm text-[var(--text-main)] focus:outline-none transition-colors ${role === 'police' ? 'focus:border-[var(--cyan)]' : 'focus:border-[var(--amber)]'}`} />
-            </div>
+            <InputGroup 
+              label={role === 'police' ? 'Officer Unique ID' : 'Admin System ID'} 
+              icon={<Fingerprint size={18} />} 
+              value={uniqueId} 
+              onChange={(e) => setUniqueId(e.target.value)} 
+              placeholder={role === 'police' ? "e.g., PL-8849" : "e.g., ADM-091"}
+              role={role}
+            />
+
+            <InputGroup 
+              label="Authorization PIN" 
+              type="password"
+              icon={<Lock size={18} />} 
+              value={pin} 
+              onChange={(e) => setPin(e.target.value)} 
+              placeholder="••••••"
+              role={role}
+            />
           </div>
 
-          <div>
-            <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Secure PIN</label>
-            <div className="relative mt-1">
-              <Lock size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${role === 'police' ? 'text-[var(--cyan)]' : 'text-[var(--amber)]'}`} />
-              <input type="password" value={pin} onChange={e => setPin(e.target.value)} required placeholder="••••••" className={`w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-3 pl-10 pr-4 text-sm tracking-widest text-[var(--text-main)] focus:outline-none transition-colors ${role === 'police' ? 'focus:border-[var(--cyan)]' : 'focus:border-[var(--amber)]'}`} />
-            </div>
-          </div>
-
-          {!isLogin && role === 'police' && (
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--input-border)]">
-              <div>
-                <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Badge Number</label>
-                <input value={badge} onChange={e => setBadge(e.target.value)} required className="w-full mt-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2 px-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--cyan)]" />
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Station Code</label>
-                <input value={station} onChange={e => setStation(e.target.value)} required className="w-full mt-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2 px-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--cyan)]" />
-              </div>
-            </div>
-          )}
-
-          {!isLogin && role === 'admin' && (
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--input-border)]">
-              <div>
-                <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Department Region</label>
-                <input value={dept} onChange={e => setDept(e.target.value)} required className="w-full mt-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2 px-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--amber)]" />
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-muted)] font-bold ml-1">Access Level</label>
-                <select value={access} onChange={e => setAccess(e.target.value)} className="w-full mt-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl py-2 px-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--amber)] appearance-none">
-                  <option>Standard</option>
-                  <option>Super-User</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          <button disabled={loading} type="submit" className={`w-full py-3 rounded-xl font-black tracking-widest text-sm text-white shadow-lg transition-all ${role === 'police' ? 'bg-[var(--cyan)] hover:brightness-110 shadow-[var(--cyan)]/20' : 'bg-[var(--amber)] hover:brightness-110 shadow-[var(--amber)]/20'} mt-6 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            {loading ? 'UPLINKING...' : (isLogin ? 'AUTHORIZE ACCESS' : 'REGISTER ID')}
-          </button>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={loading} 
+            type="submit" 
+            className={`w-full py-4 rounded-2xl font-black tracking-[0.2em] text-xs text-white shadow-2xl transition-all ${role === 'police' ? 'bg-cyan-500 shadow-cyan-500/25' : 'bg-amber-500 shadow-amber-500/25'} mt-6 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {loading ? 'SYNCHRONIZING...' : (isLogin ? 'AUTHORIZE ACCESS' : 'INITIALIZE IDENTITY')}
+          </motion.button>
         </form>
 
-        <div className="mt-6 text-center">
-          <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-            {isLogin ? "New user? Create a Secure Identity" : "Already have an ID? Proceed to Login"}
+        <div className="mt-10 text-center">
+          <button 
+            type="button" 
+            onClick={() => { setIsLogin(!isLogin); setError(''); }} 
+            className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors flex items-center justify-center gap-2 mx-auto"
+          >
+            {isLogin ? "Neural Identity Registration" : "Global Authorization Gateway"} <ChevronRight size={12} />
           </button>
         </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function InputGroup({ label, icon, value, onChange, placeholder, role, type = "text" }) {
+  const accent = role === 'police' ? 'focus:border-cyan-500' : 'focus:border-amber-500';
+  const iconColor = role === 'police' ? 'text-cyan-500' : 'text-amber-500';
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] ml-1">{label}</label>
+      <div className="relative group">
+        <div className={`absolute left-4 top-1/2 -translate-y-1/2 ${iconColor} opacity-40 group-focus-within:opacity-100 transition-opacity`}>
+          {icon}
+        </div>
+        <input 
+          type={type}
+          value={value} 
+          onChange={onChange} 
+          required 
+          placeholder={placeholder} 
+          className={`w-full bg-white/[0.02] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:bg-white/[0.04] transition-all ${accent} ${type === 'password' ? 'tracking-[0.5em]' : ''}`} 
+        />
       </div>
     </div>
   );

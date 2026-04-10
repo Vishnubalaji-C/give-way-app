@@ -9,6 +9,11 @@ import 'services/ws_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Start Secure Software Discovery
+  final ws = WsService();
+  ws.startDiscovery();
+  
   runApp(const GiveWayApp());
 }
 
@@ -28,14 +33,6 @@ class _GiveWayAppState extends State<GiveWayApp> {
   void initState() {
     super.initState();
     _loadSession();
-    _autoTheme();
-  }
-
-  void _autoTheme() {
-    final hour = DateTime.now().hour;
-    setState(() {
-      _themeMode = (hour >= 6 && hour < 18) ? ThemeMode.light : ThemeMode.dark;
-    });
   }
 
   Future<void> _loadSession() async {
@@ -47,13 +44,15 @@ class _GiveWayAppState extends State<GiveWayApp> {
     final expiresAt = prefs.getInt('expiresAt') ?? 0;
 
     if (token != null && expiresAt > DateTime.now().millisecondsSinceEpoch) {
-      setState(() {
-        _user = {'token': token, 'role': role, 'id': id, 'name': name};
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _user = {'token': token, 'role': role, 'id': id, 'name': name};
+          _loading = false;
+        });
+      }
     } else {
       await prefs.clear();
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -84,7 +83,7 @@ class _GiveWayAppState extends State<GiveWayApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GiveWay',
+      title: 'MakeWay ATES',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
@@ -92,14 +91,18 @@ class _GiveWayAppState extends State<GiveWayApp> {
         brightness: Brightness.light,
         colorSchemeSeed: const Color(0xFF00E5FF),
         textTheme: GoogleFonts.interTextTheme(),
-        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF00E5FF),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-        scaffoldBackgroundColor: const Color(0xFF02050A),
+        scaffoldBackgroundColor: const Color(0xFF030712),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00E5FF),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF030712),
+        ),
       ),
       home: _loading
           ? const _SplashScreen()
@@ -130,16 +133,20 @@ class _SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 1500),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.outBack)),
     );
     _controller.forward();
   }
@@ -153,64 +160,64 @@ class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF02050A),
+      backgroundColor: const Color(0xFF030712),
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(40),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00E5FF).withOpacity(0.4),
-                      blurRadius: 30,
-                      spreadRadius: 10,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(40),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    fit: BoxFit.cover,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00E5FF).withOpacity(0.15),
+                        blurRadius: 40,
+                        spreadRadius: -5,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.asset('assets/logo.png', fit: BoxFit.cover),
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'MAKEWAY',
-                style: GoogleFonts.outfit(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 8,
-                  color: Colors.white,
+                const SizedBox(height: 48),
+                Text(
+                  'MakeWay'.toUpperCase(),
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 12,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'ADAPTIVE TRAFFIC EQUITY SYSTEM',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 2,
-                  color: const Color(0xFF00E5FF).withOpacity(0.8),
+                const SizedBox(height: 12),
+                Container(
+                   width: 30,
+                   height: 1,
+                   color: const Color(0xFF00E5FF).withOpacity(0.3),
                 ),
-              ),
-              const SizedBox(height: 48),
-              const SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  color: Color(0xFF00E5FF),
-                  strokeWidth: 3,
+                const SizedBox(height: 12),
+                Text(
+                  'MISSION CONTROL CENTER'.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 3,
+                    color: Colors.white.withOpacity(0.2),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

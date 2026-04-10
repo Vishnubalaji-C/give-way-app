@@ -39,13 +39,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _ws.connect();
     _ws.stateStream.listen((s) => setState(() => _state = s));
     _ws.alertStream.listen((a) {
-      setState(() {
-        _alerts.insert(0, a);
-        if (_alerts.length > 50) _alerts.removeLast();
-      });
+      if (mounted) {
+        setState(() {
+          _alerts.insert(0, a);
+          if (_alerts.length > 50) _alerts.removeLast();
+        });
+      }
     });
     _latencyTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      setState(() => _latency = 45 + (DateTime.now().millisecond % 105));
+      if (mounted) {
+        setState(() => _latency = 30 + (DateTime.now().millisecond % 50));
+      }
     });
     _fetchAnalytics();
   }
@@ -72,63 +76,42 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF020617),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF02050A) : null,
-        title: Row(
+        elevation: 0,
+        backgroundColor: const Color(0xFF020617),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00E5FF), Color(0xFF00FF88)],
-                ),
-              ),
-              child: const Center(
-                child: Text('GW',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black)),
-              ),
+            const Text(
+              'CENTRAL COMMAND CENTER',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white30, letterSpacing: 2),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 4),
+            Row(
               children: [
-                const Text('GiveWay Control',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                Text('${widget.user['id']} · ${_latency}ms',
-                    style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF00E5FF),
-                        fontFamily: 'monospace')),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(color: Color(0xFF00E5FF), shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'LINK: 172.18.99.1 · ${_latency}ms'.toUpperCase(),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF00E5FF), letterSpacing: 1),
+                ),
               ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode,
-                color: Colors.amber, size: 20),
-            onPressed: widget.onToggleTheme,
+            icon: const Icon(Icons.security_rounded, color: Colors.white24, size: 20),
+            onPressed: _showBroadcast,
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.security, color: Color(0xFF00E5FF)),
-            onSelected: (v) {
-              if (v == 'logout') widget.onLogout();
-              if (v == 'broadcast') _showBroadcast();
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                  value: 'broadcast', child: Text('🚨 Emergency Broadcast')),
-              const PopupMenuItem(
-                  value: 'logout',
-                  child: Text('🔓 Logout Securely',
-                      style: TextStyle(color: Colors.redAccent))),
-            ],
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white24, size: 20),
+            onPressed: widget.onLogout,
           ),
         ],
       ),
@@ -141,268 +124,214 @@ class _AdminDashboardState extends State<AdminDashboard> {
           _buildAnalytics(isDark),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.grid_view), label: 'Grid View'),
-          NavigationDestination(
-              icon: Icon(Icons.tune), label: 'Control Room'),
-          NavigationDestination(
-              icon: Icon(Icons.notifications_active), label: 'Alerts'),
-          NavigationDestination(
-              icon: Icon(Icons.analytics), label: 'Analytics'),
-        ],
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(canvasColor: const Color(0xFF020617)),
+        child: NavigationBar(
+          height: 65,
+          backgroundColor: const Color(0xFF020617),
+          indicatorColor: const Color(0xFFFFB700).withOpacity(0.1),
+          selectedIndex: _tabIndex,
+          onDestinationSelected: (i) => setState(() => _tabIndex = i),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.monitor_rounded, size: 20), label: 'MATRIX'),
+            NavigationDestination(icon: Icon(Icons.terminal_rounded, size: 20), label: 'OVERRIDE'),
+            NavigationDestination(icon: Icon(Icons.hub_rounded, size: 20), label: 'NODES'),
+            NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'STATS'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildGridView(Map<String, dynamic> lanes, bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       children: [
-        // Welcome header
+        // Mission Briefing
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(colors: [
-              const Color(0xFFFFB700).withOpacity(0.08),
-              const Color(0xFF7C3AED).withOpacity(0.04),
-            ]),
-            border:
-                Border.all(color: const Color(0xFFFFB700).withOpacity(0.12)),
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Central Command — ${widget.user['name'] ?? 'Admin'}',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 4),
-              Text('City-wide junction monitoring is active.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              Text(
+                'UPLINK ACTIVE: ${widget.user['name']?.toUpperCase() ?? 'ADMIN'}',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white30, letterSpacing: 2),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Infrastructure Oversight',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, trackingAlpha: -0.5),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _statusChip('SOLAR: 94%', const Color(0xFFFFB700)),
+                  _statusChip('HW: NOMINAL', const Color(0xFF00FF88)),
+                ],
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        JunctionSim(state: _state),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
-        // Hardware Status
-        const Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            FeatureBadge(label: 'SOLAR-ECO', color: Color(0xFFFFB700)),
-            FeatureBadge(label: 'PED RADAR', color: Color(0xFF00E5FF)),
-            FeatureBadge(label: 'BUZZER ARM', color: Color(0xFFFF3B3B)),
-            FeatureBadge(label: 'STALL-AI', color: Color(0xFF00FF88)),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Stats
-        Row(
-          children: [
-            _stat('Total Served', '${_state['totalVehiclesServed'] ?? 0}',
-                const Color(0xFF00E5FF)),
-            const SizedBox(width: 12),
-            _stat('Ambulances', '${_state['totalAmbulances'] ?? 0}',
-                const Color(0xFFFF3B3B)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _stat('Buses', '${_state['totalBuses'] ?? 0}',
-                const Color(0xFF00E5FF)),
-            const SizedBox(width: 12),
-            _stat('Active Cams', '${(_state['junction'] as Map?)?['cameraNodes'] ?? 0}',
-                const Color(0xFF22C55E)),
-          ],
+        // Spatial Simulation Card
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: JunctionSim(state: _state),
+          ),
         ),
         const SizedBox(height: 24),
 
-        const Text('Junction Lanes',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 12),
+        // High Level Stats
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.5,
+          children: [
+            _adminStat('TOTAL SERVED', '${_state['totalVehiclesServed'] ?? 0}', Colors.cyan),
+            _adminStat('AMBULANCES', '${_state['totalAmbulances'] ?? 0}', Colors.redAccent),
+            _adminStat('BUS PRIORITY', '${_state['totalBuses'] ?? 0}', Colors.purpleAccent),
+            _adminStat('ACTIVE NODES', '${(_state['junction'] as Map?)?['cameraNodes'] ?? 0}', Colors.greenAccent),
+          ],
+        ),
+        const SizedBox(height: 32),
+
+        const Text('JUNCTION FEED MATRIX',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
         ...lanes.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: LaneCard(laneId: e.key, data: e.value),
             )),
+        const SizedBox(height: 100),
       ],
     );
   }
 
   Widget _buildControlRoom(Map<String, dynamic> lanes, bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
-        const Text('🎮 Signal Override Control',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 4),
-        Text('Manually force Green/Red on any lane.',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        const SizedBox(height: 16),
+        const Text('TACTICAL SIGNAL OVERRIDE',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 20),
         ...lanes.entries.map((entry) {
           final id = entry.key;
           final l = entry.value;
           final signal = l['signal'] ?? 'red';
-          final names = {
-            'N': 'NORTH',
-            'S': 'SOUTH',
-            'E': 'EAST',
-            'W': 'WEST'
-          };
+          final names = {'N': 'NORTH', 'S': 'SOUTH', 'E': 'EAST', 'W': 'WEST'};
+          
           return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0D1827) : Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: signal == 'green'
-                    ? Colors.green.withOpacity(0.3)
-                    : signal == 'yellow'
-                        ? Colors.amber.withOpacity(0.3)
-                        : Colors.red.withOpacity(0.1),
-              ),
+              color: Colors.white.withOpacity(0.02),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.04)),
             ),
             child: Row(
               children: [
-                // Signal indicator
                 Container(
-                  width: 14,
-                  height: 14,
+                  width: 12,
+                  height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: signal == 'green'
-                        ? Colors.green
-                        : signal == 'yellow'
-                            ? Colors.amber
-                            : Colors.red,
+                    color: signal == 'green' ? Colors.green : signal == 'yellow' ? Colors.amber : Colors.red,
                     boxShadow: [
-                      BoxShadow(
-                        color: (signal == 'green'
-                                ? Colors.green
-                                : signal == 'yellow'
-                                    ? Colors.amber
-                                    : Colors.red)
-                            .withOpacity(0.5),
-                        blurRadius: 10,
-                      ),
+                      BoxShadow(color: (signal == 'green' ? Colors.green : signal == 'yellow' ? Colors.amber : Colors.red).withOpacity(0.5), blurRadius: 10)
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Lane $id — ${names[id]}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 14)),
-                      Text(
-                          'Wait: ${l['waitTime'] ?? 0}s · PCE: ${(l['pceScore'] ?? 0).toStringAsFixed(0)}',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey[500])),
+                      Text('LANE $id: ${names[id]}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+                      const SizedBox(height: 4),
+                      Text('LATENCY: ${l['waitTime'] ?? 0}s · PCE: ${(l['pceScore'] ?? 0).toStringAsFixed(0)}', style: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
-                // Force buttons
                 IconButton(
-                  icon: const Icon(Icons.play_arrow, color: Colors.green),
-                  onPressed: () =>
-                      _ws.send('FORCE_GREEN', {'laneId': id}),
-                  tooltip: 'Force Green',
+                  icon: const Icon(Icons.bolt_rounded, color: Colors.green, size: 20),
+                  onPressed: () => _ws.send('FORCE_GREEN', {'laneId': id}),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.stop, color: Colors.red),
-                  onPressed: () =>
-                      _ws.send('FORCE_RED', {'laneId': id}),
-                  tooltip: 'Force Red',
+                  icon: const Icon(Icons.block_rounded, color: Colors.red, size: 20),
+                  onPressed: () => _ws.send('FORCE_RED', {'laneId': id}),
                 ),
               ],
             ),
           );
         }),
-        const SizedBox(height: 20),
-        // Mode controls
-        const Text('System Mode',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 32),
+        
+        const Text('SYSTEM EXECUTION MODES',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 12,
+          runSpacing: 12,
           children: [
-            _modeChip('Auto', Icons.smart_toy, Colors.green, () {
-              _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'});
-            }),
-            _modeChip('Emergency All-Stop', Icons.dangerous, Colors.red, () {
-              _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'});
-            }),
-            _modeChip('Green Wave', Icons.waves, Colors.teal, () {
-              _ws.send('TRIGGER_GREEN_WAVE');
-            }),
-            _modeChip('Rain Mode', Icons.water_drop, Colors.blue, () {
-              _ws.send('SET_MODE', {'mode': 'rain', 'value': true});
-            }),
+            _actionTile('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
+            _actionTile('EMERGENCY STOP', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
+            _actionTile('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
+            _actionTile('STORM PROTOCOL', Icons.cloud_rounded, Colors.blue, () => _ws.send('SET_MODE', {'mode': 'rain', 'value': true})),
           ],
         ),
-        const SizedBox(height: 24),
-        const Text('⚙️ Engine Management',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 32),
+        
+        const Text('ENGINE KERNEL CONTROL',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
         Row(
           children: [
-            _actionBtn('START', Icons.play_arrow, Colors.green, () {
-              _ws.send('START_SIM');
-            }),
-            const SizedBox(width: 8),
-            _actionBtn('STOP', Icons.stop, Colors.red, () {
-              _ws.send('STOP_SIM');
-            }),
-            const SizedBox(width: 8),
-            _actionBtn('RESET', Icons.refresh, Colors.grey, () {
-              _ws.send('RESET_SIM');
-            }),
+            _kernelBtn('START', Colors.green, () => _ws.send('START_SIM')),
+            const SizedBox(width: 12),
+            _kernelBtn('PAUSE', Colors.red, () => _ws.send('STOP_SIM')),
+            const SizedBox(width: 12),
+            _kernelBtn('RESET', Colors.white30, () => _ws.send('RESET_SIM')),
           ],
         ),
+        const SizedBox(height: 100),
       ],
-    );
-  }
-
-  Widget _actionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
-    return Expanded(
-      child: ElevatedButton.icon(
-        icon: Icon(icon, size: 16, color: Colors.white),
-        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        onPressed: onTap,
-      ),
     );
   }
 
   Widget _buildAlerts(bool isDark) {
     return _alerts.isEmpty
         ? Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, size: 48, color: Colors.grey[700]),
-                const SizedBox(height: 12),
-                Text('No alerts detected.',
-                    style: TextStyle(color: Colors.grey[600])),
-              ],
+            child: Opacity(
+              opacity: 0.1,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.notifications_off_rounded, size: 64, color: Colors.white24),
+                  const SizedBox(height: 16),
+                  const Text('ALERT BUFFER EMPTY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 10)),
+                ],
+              ),
             ),
           )
         : ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: _alerts.length,
             itemBuilder: (ctx, i) => AlertTile(alert: _alerts[i]),
           );
@@ -410,104 +339,102 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildAnalytics(bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
-        const Text('📊 City Analytics',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 16),
-        _anaCard('Vehicles Served', '${_state['totalVehiclesServed'] ?? 0}',
-            Icons.directions_car, const Color(0xFF00E5FF)),
-        _anaCard('Ambulances Cleared', '${_state['totalAmbulances'] ?? 0}',
-            Icons.local_hospital, const Color(0xFFFF3B3B)),
-        _anaCard('Buses Prioritized', '${_state['totalBuses'] ?? 0}',
-            Icons.directions_bus, const Color(0xFFA855F7)),
-        _anaCard('Fuel Saved', '${_state['fuelSaved'] ?? 0} L',
-            Icons.local_gas_station, const Color(0xFFFFB700)),
-        _anaCard('Total System Uptime', 'Running nominal', Icons.timer,
-            const Color(0xFF22C55E)),
-        _anaCard('AI Decisions', '${_state['tick'] ?? 0}', Icons.memory,
-            const Color(0xFF7C3AED)),
+        const Text('METROPOLITAN INTELLIGENCE',
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
         const SizedBox(height: 24),
         AnalyticsCharts(analytics: _analytics),
+        const SizedBox(height: 32),
+        _adminMetricTile('SYSTEM UPTIME', '100% NOMINAL', Icons.timer_rounded, Colors.greenAccent),
+        _adminMetricTile('AI CALCULATIONS', '${_state['tick'] ?? 0} OPS', Icons.memory_rounded, Colors.purpleAccent),
+        const SizedBox(height: 100),
       ],
     );
   }
 
-  Widget _stat(String label, String value, Color color) {
-    return Expanded(
+  Widget _adminStat(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 1)),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionTile(String label, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.07),
+          color: color.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.12)),
+          border: Border.all(color: color.withOpacity(0.1)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(value,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: color)),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[500])),
+            Icon(icon, color: color, size: 16),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
           ],
         ),
       ),
     );
   }
 
-  Widget _modeChip(
-      String label, IconData icon, Color color, VoidCallback onTap) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16, color: color),
-      label: Text(label,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-      backgroundColor: color.withOpacity(0.1),
-      side: BorderSide(color: color.withOpacity(0.2)),
-      onPressed: onTap,
+  Widget _kernelBtn(String label, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.1)),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(color: color.withOpacity(0.8), fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _anaCard(String label, String value, IconData icon, Color color) {
+  Widget _adminMetricTile(String label, String value, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.12)),
+        color: Colors.white.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: color)),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[500])),
+              Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 1)),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
             ],
           ),
         ],
@@ -515,25 +442,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  Widget _statusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color, letterSpacing: 1)),
+    );
+  }
+
   void _showBroadcast() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('🚨 Emergency Broadcast'),
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('🚨 EMERGENCY BROADCAST', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2)),
         content: const Text(
-            'This will trigger an All-Stop emergency across all junctions. Continue?'),
+            'This will trigger an All-Stop emergency protocol across all managed junctions. Access to this command is logged.',
+            style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'});
-              Navigator.pop(context);
-            },
-            child: const Text('ACTIVATE',
-                style: TextStyle(color: Colors.white)),
+              child: const Text('CANCEL', style: TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 2))),
+          Padding(
+            padding: const EdgeInsets.only(right: 8, bottom: 8),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'});
+                Navigator.pop(context);
+              },
+              child: const Text('ACTIVATE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 2)),
+            ),
           ),
         ],
       ),

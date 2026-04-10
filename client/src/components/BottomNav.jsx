@@ -1,5 +1,5 @@
 import { useWs } from '../context/WsContext';
-import { Home, Star, Camera, BarChart2, Settings } from 'lucide-react';
+import { Home, Radio, Camera, BarChart2, Settings } from 'lucide-react';
 
 const TABS = [
   { id: 'dashboard',  icon: Home,      label: 'Home' },

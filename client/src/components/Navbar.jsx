@@ -1,6 +1,7 @@
-import { useWs } from '../context/WsContext';
-import { Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, Map, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import SyncPortal from './SyncPortal';
+import { useWs } from '../context/WsContext';
+import { Tablet, Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, Map, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
 
 export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme }) {
   const { connected, state, junctions, switchJunction } = useWs();
@@ -21,6 +22,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
   };
 
   const ThemeIcon = theme === 'light' ? Sun : (theme === 'dark' ? Moon : Sparkles);
+  const [showSync, setShowSync] = useState(false);
 
   return (
     <>
@@ -52,15 +54,17 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
 
           {/* Right Side: Theme, Config & Status */}
           <div className="flex items-center gap-2">
+            {/* WS Connection Status */}
+            <div className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] animate-pulse' : 'bg-red-500'}`} title={connected ? 'WebSocket Connected' : 'Disconnected'} />
+            <button onClick={() => setShowSync(true)} className="p-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full transition-colors text-cyan-400 border border-cyan-500/20" title="Link Mobile Device">
+              <Tablet size={14} />
+            </button>
             <button onClick={cycleTheme} className="p-1.5 bg-slate-800/80 hover:bg-slate-700 rounded-full transition-colors text-amber-400">
               <ThemeIcon size={14} />
             </button>
             <button onClick={onLogout} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-full transition-colors text-red-500 border border-red-500/20">
               <LogOut size={14} />
             </button>
-            <div className="p-1.5 bg-blue-500/10 rounded-full border border-blue-500/20 ml-1">
-              <CloudRain size={16} className="text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-            </div>
           </div>
         </div>
 
@@ -158,6 +162,13 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
 
           {/* Emergency Broadcast & Role Switcher */}
           <div className="flex items-center gap-4 xl:gap-6 shrink-0">
+            <button 
+              onClick={() => setShowSync(true)}
+              className="flex items-center gap-2 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20 px-3 xl:px-4 py-2 rounded-full border border-cyan-400/30 transition-all text-[10px] xl:text-xs font-black tracking-wide shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.1)] group"
+            >
+              <Tablet size={14} className="group-hover:scale-110 transition-transform" /> 
+              LINK MOBILE
+            </button>
             <button className="flex items-center gap-2 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-3 xl:px-4 py-2 rounded-full border border-amber-500/30 transition-all text-[10px] xl:text-xs font-black tracking-wide shrink-0 animate-[pulse_2s_ease-in-out_infinite]">
               <Radio size={14} /> EMERGENCY BROADCAST
             </button>
@@ -273,6 +284,8 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
         </div>
       </nav>
       )}
+      
+      <SyncPortal isOpen={showSync} onClose={() => setShowSync(false)} />
     </>
   );
 }
