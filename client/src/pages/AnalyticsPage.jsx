@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWs } from '../context/WsContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart2, PieChart as PieIcon, Activity, TrendingUp, ShieldAlert, ShieldCheck, Timer, Zap, Map as MapIcon, Scale } from 'lucide-react';
+import { BarChart2, PieChart as PieIcon, Activity, TrendingUp, ShieldAlert, ShieldCheck, Timer, Zap, Map as MapIcon, Scale, Cpu } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -37,9 +37,30 @@ function generateBaseAnalytics() {
   });
 }
 
+function generatePredictionData() {
+  const currentHour = new Date().getHours();
+  return [1, 2, 3, 4].map(offset => {
+    const hr = (currentHour + offset) % 24;
+    let base = 50;
+    if (hr >= 8 && hr <= 10) base = 120;
+    if (hr >= 17 && hr <= 20) base = 150;
+    if (hr >= 0 && hr <= 5) base = 20;
+    
+    // Add noise modifier
+    const predicted = Math.floor(base + Math.random() * 30);
+    const nominal = Math.floor(base * 0.7); // Safe flow limit
+    return {
+      hour: `${String(hr).padStart(2, '0')}:00`,
+      predicted: predicted,
+      nominal: nominal
+    };
+  });
+}
+
 export default function AnalyticsPage() {
   const { state } = useWs();
   const [analytics, setAnalytics] = useState(generateBaseAnalytics());
+  const [predictionData, setPredictionData] = useState(generatePredictionData());
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -206,6 +227,23 @@ export default function AnalyticsPage() {
           <WaitVsPriorityChart state={state} />
         </motion.div>
       </div>
+
+      {/* ── Predictive AI Model ──────────────────────────── */}
+      <motion.div variants={itemVars} className="bg-glass-card p-8">
+        <SectionHeader icon={<Cpu size={18}/>} title="Predictive AI: Volume Forecasting (Next 4 Hours)" />
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={predictionData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <XAxis dataKey="hour" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }} />
+            <Legend wrapperStyle={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }} />
+            <Line type="monotone" dataKey="predicted" name="Expected Network Load (PCE)" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }} activeDot={{ r: 8 }} />
+            <Line type="monotone" dataKey="nominal" name="Nominal Flow Threshold" stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </motion.div>
+
     </motion.div>
   );
 }

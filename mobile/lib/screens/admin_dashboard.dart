@@ -293,6 +293,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             _actionTile('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
             _actionTile('EMERGENCY STOP', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
             _actionTile('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
+            _actionTile('PED CROSSING', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
             _actionTile('STORM PROTOCOL', Icons.cloud_rounded, Colors.blue, () => _ws.send('SET_MODE', {'mode': 'rain', 'value': true})),
           ],
         ),

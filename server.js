@@ -544,6 +544,28 @@ function handleClientMessage(msg) {
       break;
     }
 
+    case 'REQUEST_PED_CROSSING': {
+      overrideMode = 'pedestrian';
+      logAudit('PED_CROSSING_REQ', 'Virtual Pedestrian request activated via Mobile Edge.');
+      addAlert('ghost', '🚶‍♂️ Pedestrian Crossing Requested. Forcing All-Red Phase safely (15s).', null);
+      
+      LANES.forEach(id => {
+        state.lanes[id].signal = 'red';
+        state.lanes[id].phase = 'red';
+      });
+      broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+
+      // Automatically release back to AI after 15 seconds
+      setTimeout(() => {
+        if (overrideMode === 'pedestrian') {
+          overrideMode = 'auto';
+          addAlert('info', '🤖 Pedestrian Phase Over. GiveWay AI resumed control.', null);
+          broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+        }
+      }, 15000);
+      break;
+    }
+
     case 'TRIGGER_GREEN_WAVE': {
       state.greenWave = { active: true, source: 'A', progress: 0 };
       addAlert('info', '🌊 Green Wave initiated from Junction A → B → C.', null);
