@@ -4,11 +4,18 @@ import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WsService {
-  static String _serverIp = '127.0.0.1';
-  static int _serverPort = 4000;
+  static String _serverIp = 'giveway-backend.onrender.com';
+  static int _serverPort = 443;
   
-  static String get baseUrl => 'http://$_serverIp:$_serverPort';
-  static String get wsUrl => 'ws://$_serverIp:$_serverPort';
+  static String get baseUrl {
+    if (_serverIp == 'giveway-backend.onrender.com') return 'https://$_serverIp';
+    return 'http://$_serverIp:$_serverPort';
+  }
+  
+  static String get wsUrl {
+    if (_serverIp == 'giveway-backend.onrender.com') return 'wss://$_serverIp';
+    return 'ws://$_serverIp:$_serverPort';
+  }
 
   WebSocketChannel? _channel;
   final _stateController = StreamController<Map<String, dynamic>>.broadcast();

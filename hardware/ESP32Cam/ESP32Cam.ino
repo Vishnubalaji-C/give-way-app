@@ -24,8 +24,8 @@ const char* ssid     = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PWD";
 
 // ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
-String serverUrl    = "http://127.0.0.1:4000/api/edge-data";
-String inferenceUrl = "http://127.0.0.1:5000/detect"; 
+String serverUrl    = "https://giveway-backend.onrender.com/api/edge-data";
+String inferenceUrl = "http://127.0.0.1:5000/detect"; // Reserved for local Python YOLO node
 const String secretKey   = "GIVEWAY_NODE_KEY"; // Secure Signature Key
 const String laneId      = "N";      // Change per node: N, S, E, W
 const String junctionId  = "JN-001"; // Unique ID for this junction deployment

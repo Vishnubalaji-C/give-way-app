@@ -55,6 +55,33 @@ function saveToDisk() {
   }, 3000);
 }
 
+// Ensure MongoDB Persistence dynamically activates to prevent Cloud Data Loss
+if (process.env.MONGODB_URI) {
+  const mongoose = require('mongoose');
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('[DATABASE] Securely connected to MongoDB Atlas!'))
+    .catch(console.error);
+    
+  const GenericDbModel = mongoose.model('MakewayData', new mongoose.Schema({ _id: String, value: Object }, { strict: false }));
+  
+  // Load state from Mongo if exists
+  GenericDbModel.findById('makeway_db').then(doc => {
+    if (doc && doc.value) {
+      db = doc.value;
+      console.log('[DATABASE] Loaded persisted logic from MongoDB Atlas.');
+    }
+  });
+
+  // Override standard filesystem save with MongoDB Upsert
+  saveToDisk = function() {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      GenericDbModel.updateOne({ _id: 'makeway_db' }, { value: db }, { upsert: true })
+        .catch(err => console.error('CRITICAL: Mongoose Cloud Save Failed:', err));
+    }, 3000);
+  };
+}
+
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
 // Require valid Bearer token for API operations
 async function requireAuth(req, res, next) {
@@ -434,11 +461,15 @@ wss.on('connection', (ws) => {
 function handleClientMessage(msg) {
   switch (msg.type) {
     case 'START_SIM':
-      simulationRunning = true;
-      snapTimer  = setInterval(generateTraffic, SNAP_INTERVAL);
-      worldTimer = setInterval(tick, TICK_INTERVAL);
-      generateTraffic();
-      addAlert('info', '▶ Simulation started — GiveWay engine active.', null);
+      if (!simulationRunning) {
+        simulationRunning = true;
+        clearInterval(snapTimer);
+        clearInterval(worldTimer);
+        snapTimer  = setInterval(generateTraffic, SNAP_INTERVAL);
+        worldTimer = setInterval(tick, TICK_INTERVAL);
+        generateTraffic();
+        addAlert('info', '▶ Simulation started — GiveWay engine active.', null);
+      }
       break;
 
     case 'STOP_SIM':
