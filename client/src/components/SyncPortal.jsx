@@ -101,7 +101,7 @@ export default function SyncPortal({ isOpen, onClose }) {
                     level="H"
                     includeMargin={false}
                     imageSettings={{
-                      src: "/assets/logo.png",
+                      src: `${import.meta.env.BASE_URL}logo.png`,
                       x: undefined,
                       y: undefined,
                       height: 40,

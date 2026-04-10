@@ -2,17 +2,14 @@
 // When served from Express (localhost:4000), use same origin (relative).
 // When served from Vercel (different origin), point to Render backend.
 
-const RENDER_BACKEND = 'https://give-way-app.onrender.com';
-const VERCEL_HOST = 'give-way-app.vercel.app';
+const RENDER_BACKEND = 'https://giveway-backend.onrender.com';
 
-// Detect if the frontend is served by the Express backend itself (same-origin)
-const isSameOrigin = typeof window !== 'undefined' && !window.location.hostname.includes(VERCEL_HOST);
+// If running locally, you can use relative URLs. Otherwise, always use the Render backend.
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-// When same-origin (Express serves both API + static), use '' (relative URLs).
-// When cross-origin (Vercel frontend ↔ Render backend), use the Render URL.
-export const API_BASE_URL = isSameOrigin ? '' : RENDER_BACKEND;
+export const API_BASE_URL = isLocal ? '' : RENDER_BACKEND;
 
 const wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
-export const WS_URL = isSameOrigin
+export const WS_URL = isLocal
   ? `${wsProto}://${window.location.host}`
-  : 'wss://give-way-app.onrender.com';
+  : 'wss://giveway-backend.onrender.com';

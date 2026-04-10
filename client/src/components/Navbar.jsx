@@ -129,7 +129,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
               <div className="w-full h-full bg-[#02050a] rounded-[10px] flex items-center justify-center overflow-hidden">
-                <img src="/logo.png" alt="GiveWay Logo" className="w-full h-full object-cover" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="GiveWay Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex flex-col">

@@ -82,7 +82,7 @@ export default function AuthPage({ onLogin }) {
             className="w-24 h-24 rounded-3xl bg-white/[0.03] p-1 border border-white/10 shadow-2xl mb-6 group"
           >
             <div className="w-full h-full bg-[#030712] rounded-[1.4rem] flex items-center justify-center overflow-hidden">
-               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+               <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
           </motion.div>
           

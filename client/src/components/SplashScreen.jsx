@@ -21,7 +21,7 @@ export default function SplashScreen({ onComplete }) {
       {/* Premium Logo Container */}
       <div className={`relative mb-10 transition-all duration-1000 transform ${stage >= 1 ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}>
         <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] bg-slate-900 border border-cyan-500/20 shadow-[0_0_50px_rgba(0,229,255,0.2)] overflow-hidden p-1">
-          <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover rounded-[2.3rem]" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MakeWay Logo" className="w-full h-full object-cover rounded-[2.3rem]" />
         </div>
         <div className="absolute -inset-4 bg-cyan-500/10 blur-2xl -z-10 animate-pulse"></div>
       </div>
