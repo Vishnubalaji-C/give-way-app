@@ -1,0 +1,24 @@
+{
+  "name": "GiveWay",
+  "short_name": "GiveWay",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02050a",
+  "theme_color": "#00e5ff",
+  "description": "Adaptive Traffic Equity System with AI Prioritization",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait"
+}
