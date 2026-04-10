@@ -8,7 +8,8 @@ services:
     # Start: serve both API and React static files from one Express process
     startCommand: node server.js
     envVars:
-      # PORT is injected automatically by Render — do NOT hardcode 4000
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
