@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     # Build: install root deps + build the React client into client/dist
-    buildCommand: npm install && npm run build
+    buildCommand: npm run install:all && npm run build
     # Start: serve both API and React static files from one Express process
     startCommand: node server.js
     envVars:
