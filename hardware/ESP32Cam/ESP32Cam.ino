@@ -359,8 +359,10 @@ void captureAndProcess() {
     bike = fallbackBike;
   }
 
-  // Post to GiveWay server
-  // pedestrian detection is part of YOLO — for now set false (extend later)
+  // Output hardware serial string exactly formatted for Arduino Master Controller
+  Serial.printf("\nLANE:%s,AMB:%d,BUS:%d,CAR:%d,BIKE:%d,PED:0\n", laneId.c_str(), amb, bus, car, bike);
+
+  // Post to GiveWay server for cloud Dashboard syncing
   postEdgeData(amb, bus, car, bike, false);
 }
 
