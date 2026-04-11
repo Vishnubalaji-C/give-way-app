@@ -26,6 +26,14 @@ app.use(cors({
 
 app.use(express.json());
 
+// ─── Early Request Logger ───────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  if (!req.path.includes('assets')) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  }
+  next();
+});
+
 // ─── Status & Connectivity Monitoring ──────────────────────────────────────────
 app.get('/', (req, res) => {
   res.send('🚦 MakeWay Advanced ATES Backend is ACTIVE. Monitoring junction: ' + activeJunction);
@@ -740,7 +748,12 @@ app.post('/api/junctions/switch', requireAuth, (req, res) => {
 
 // ─── Frontend React Navigation Fallback ───────────────────────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+  const target = path.join(__dirname, 'client/dist/index.html');
+  if (fs.existsSync(target)) {
+    res.sendFile(target);
+  } else {
+    res.status(404).send('🚦 GiveWay Backend Active, but Frontend Build (client/dist) is missing. Check Render build logs.');
+  }
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
