@@ -144,7 +144,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
   Widget _buildHome(Map<String, dynamic> lanes, bool isDark) {
     final totalWait = lanes.values
         .fold<double>(0, (acc, l) => acc + ((l['waitTime'] ?? 0) as num));
-    final avgWait = lanes.isNotEmpty ? (totalWait / lanes.length) : 0;
+    final avgWait = lanes.isNotEmpty ? (totalWait / 3) : 0;
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -166,7 +166,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'MakeWay ATES v2.4',
+                'MakeWay ATES v4.2',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, trackingAlpha: -0.5),
               ),
               const SizedBox(height: 12),
@@ -212,6 +212,8 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
   }
 
   Widget _buildCameraFeed(Map<String, dynamic> lanes, bool isDark) {
+    final junction = _state['junction'] as Map<String, dynamic>? ?? {};
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -239,7 +241,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
           final l = entry.value;
           final v = (l['vehicles'] as Map<String, dynamic>?) ?? {};
           final detected = v.values.fold<int>(0, (a, b) => a + (b as int));
-          final names = {'N': 'NORTH', 'S': 'SOUTH', 'E': 'EAST', 'W': 'WEST'};
+          final names = {'1': 'PRIMARY', '2': 'SECONDARY', '3': 'TRANSVERSE'};
 
           return Container(
             margin: const EdgeInsets.only(bottom: 20),
@@ -260,19 +262,52 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
                         child: Text(id, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 10)),
                       ),
                       const SizedBox(width: 12),
-                      Text('${names[id]} APPROACH', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+                      Text('${names[id] ?? 'AUX'} APPROACH', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
                       const Spacer(),
                       const Text('30 FPS', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.bold, fontSize: 9)),
                     ],
                   ),
                 ),
-                Container(
-                  height: 160,
-                  width: double.infinity,
-                  color: Colors.black,
-                  child: Center(
-                    child: Text('LENS STREAM ${id}-0$detected'.toUpperCase(), style: const TextStyle(color: Colors.white10, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 5)),
-                  ),
+                Stack(
+                  children: [
+                    Container(
+                      height: 160,
+                      width: double.infinity,
+                      color: Colors.black,
+                      child: Center(
+                        child: Text('LENS STREAM ${id}-0$detected'.toUpperCase(), style: const TextStyle(color: Colors.white10, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 5)),
+                      ),
+                    ),
+                    // AUTOMATED LOCATION OVERLAY
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(junction['name']?.toUpperCase() ?? 'NULL NODE', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 2),
+                            Text(junction['address'] ?? 'COORDINATING...', style: const TextStyle(color: Colors.white54, fontSize: 6, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text('LAT: ${junction['lat']}', style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 6, fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 8),
+                                Text('LNG: ${junction['lng']}', style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 6, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),

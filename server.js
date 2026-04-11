@@ -100,7 +100,7 @@ async function requireAuth(req, res, next) {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const LANES        = ['N', 'S', 'E', 'W'];
+const LANES        = ['1', '2', '3'];
 const SNAP_INTERVAL = 5000;   // ms – edge camera snapshot
 const TICK_INTERVAL = 1000;   // ms – 1-second world clock
 const FAIRNESS_CAP  = 120;    // seconds max wait
@@ -126,7 +126,7 @@ const junctions = {
     status: 'online',
     lastPing: Date.now(),
     deployedAt: '2026-01-15',
-    cameraNodes: 4,
+    cameraNodes: 3,
   },
   'JN-002': {
     id: 'JN-002',
@@ -141,7 +141,7 @@ const junctions = {
     status: 'online',
     lastPing: Date.now(),
     deployedAt: '2026-02-20',
-    cameraNodes: 4,
+    cameraNodes: 3,
   },
   'JN-003': {
     id: 'JN-003',
@@ -156,7 +156,7 @@ const junctions = {
     status: 'online',
     lastPing: Date.now(),
     deployedAt: '2026-03-10',
-    cameraNodes: 4,
+    cameraNodes: 3,
   },
   'JN-004': {
     id: 'JN-004',
@@ -171,7 +171,7 @@ const junctions = {
     status: 'offline',
     lastPing: Date.now() - 600000,
     deployedAt: '2026-03-25',
-    cameraNodes: 4,
+    cameraNodes: 3,
   },
 };
 
@@ -196,25 +196,25 @@ function buildInitialState() {
   LANES.forEach(id => {
     lanes[id] = {
       id,
-      signal: id === 'N' ? 'green' : 'red',
+      signal: id === '1' ? 'green' : 'red',
       vehicles: { ambulance: 0, bus: 0, car: 0, bike: 0 },
       density: 0,
       previousDensity: 0,
       staticCycles: 0,
-      stagnantGreenCycles: 0,    // Tracks density stagnation across full Green Cycles
-      lastRedDensity: 0,         // Snapshot density recorded right as Green ends
+      stagnantGreenCycles: 0,
+      lastRedDensity: 0,
       pceScore: 0,
       finalPriority: 0,
       waitTime: 0,
-      greenTimer: id === 'N' ? PHASE_GREEN : 0,
-      phase: id === 'N' ? 'green' : 'red',
+      greenTimer: id === '1' ? PHASE_GREEN : 0,
+      phase: id === '1' ? 'green' : 'red',
       ghostFlag: false,
       isEmergency: false,
     };
   });
   return {
     lanes,
-    activeLane: 'N',
+    activeLane: '1',
     phaseTimer: PHASE_GREEN,
     tick: 0,
     totalVehiclesServed: 0,
@@ -252,33 +252,10 @@ function computePriorities() {
 }
 
 function selectNextLane() {
-  // Emergency override: ambulance detected anywhere
-  for (const id of LANES) {
-    if (state.lanes[id].vehicles.ambulance > 0 && id !== state.activeLane) {
-      state.lanes[id].isEmergency = true;
-      addAlert('emergency', `🚑 AMBULANCE detected on Lane ${id} — Innuyir Protocol (Instant Green) triggered!`, id);
-      state.totalAmbulances++;
-      return id;
-    }
-  }
-
-  // Fairness cap: any lane waiting ≥ FAIRNESS_CAP
-  for (const id of LANES) {
-    if (id !== state.activeLane && state.lanes[id].waitTime >= FAIRNESS_CAP) {
-      addAlert('warning', `⏱️ Fairness Cap (120s) hit for Lane ${id} — forcing Green.`, id);
-      return id;
-    }
-  }
-
-  // Highest final priority
-  let best = null, bestScore = -1;
-  LANES.forEach(id => {
-    if (id !== state.activeLane && state.lanes[id].finalPriority > bestScore) {
-      bestScore = state.lanes[id].finalPriority;
-      best = id;
-    }
-  });
-  return best || state.activeLane;
+  // Strict sequential round-robin: 1 -> 2 -> 3 -> 1
+  const currentIndex = LANES.indexOf(state.activeLane);
+  const nextIndex = (currentIndex + 1) % LANES.length;
+  return LANES[nextIndex];
 }
 
 function switchLane(nextId) {
@@ -288,27 +265,13 @@ function switchLane(nextId) {
   const outgoingId = state.activeLane;
   const outgoingLane = state.lanes[outgoingId];
 
-  // ─── Breakdown/Stall Detection Logic ───
-  // If the density hasn't dropped since the LAST time this lane turned Red,
-  // vehicles could not pass during this specific Green Phase.
-  if (outgoingLane.density > 0 && Math.abs(outgoingLane.density - outgoingLane.lastRedDensity) <= 1) {
-    outgoingLane.stagnantGreenCycles++;
-    if (outgoingLane.stagnantGreenCycles >= 2) {
-       addAlert('breakdown', `🚨 Vehicle Stalled in Lane ${outgoingId}. Engine failure blocking traffic detected. Dispatch assistance to clear junction.`, outgoingId);
-       logAudit('STALL_DETECTED', `Vehicle Stall detected on Lane ${outgoingId} over 2 full stagnant green cycles.`);
-       outgoingLane.stagnantGreenCycles = 0; // reset to prevent spam
-    }
-  } else {
-    outgoingLane.stagnantGreenCycles = 0;
-  }
-  outgoingLane.lastRedDensity = outgoingLane.density;
-  // ───────────────────────────────────────
-
-  // Set current green → yellow (briefly), then red
+  // 1. Enter Yellow Transition
   outgoingLane.signal = 'yellow';
   outgoingLane.phase  = 'yellow';
+  broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 
   setTimeout(() => {
+    // 2. Strict Red Transition (All-Red safety pause briefly)
     state.lanes[outgoingId].signal = 'red';
     state.lanes[outgoingId].phase  = 'red';
     state.lanes[outgoingId].greenTimer = 0;

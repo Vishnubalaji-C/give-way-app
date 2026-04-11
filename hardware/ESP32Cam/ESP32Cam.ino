@@ -27,7 +27,7 @@ const char* password = "YOUR_WIFI_PWD";
 String serverUrl    = "https://giveway-backend.onrender.com/api/edge-data";
 String inferenceUrl = "http://127.0.0.1:5000/detect"; // Reserved for local Python YOLO node
 const String secretKey   = "GIVEWAY_NODE_KEY"; // Secure Signature Key
-const String laneId      = "N";      // Change per node: N, S, E, W
+const String laneId      = "1";      // Change per node: 1, 2, 3
 const String junctionId  = "JN-001"; // Unique ID for this junction deployment
 
 // ─── AI-Thinker ESP32-CAM Pin Definitions ─────────────────────────────────────

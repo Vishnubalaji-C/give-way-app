@@ -70,12 +70,18 @@ class _QrLinkScreenState extends State<QrLinkScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _controller.torchState,
+            icon: ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _controller,
               builder: (context, state, child) {
-                switch (state) {
-                  case TorchState.off: return const Icon(Icons.flash_off, color: Colors.grey);
-                  case TorchState.on: return const Icon(Icons.flash_on, color: Colors.cyan);
+                switch (state.torchState) {
+                  case TorchState.off:
+                    return const Icon(Icons.flash_off, color: Colors.grey);
+                  case TorchState.on:
+                    return const Icon(Icons.flash_on, color: Colors.cyan);
+                  case TorchState.unavailable:
+                    return const Icon(Icons.flash_off, color: Colors.red);
+                  default:
+                    return const Icon(Icons.flash_off, color: Colors.grey);
                 }
               },
             ),

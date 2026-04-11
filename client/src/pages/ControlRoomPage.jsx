@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useWs } from '../context/WsContext';
 import { Shield, Zap, Radio, Book } from 'lucide-react';
+import TacticalMap from '../components/TacticalMap';
 
-const LANES = ['N', 'S', 'E', 'W'];
-const LANE_LABELS = { N: 'North', S: 'South', E: 'East', W: 'West' };
+const LANES = ['1', '2', '3'];
+const LANE_LABELS = { '1': 'Primary', '2': 'Secondary', '3': 'Transverse' };
 
 export default function ControlRoomPage({ user }) {
   const { state, alerts, auditLog, send } = useWs();
@@ -63,6 +64,17 @@ export default function ControlRoomPage({ user }) {
           </div>
         </div>
         <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: {user?.name?.toUpperCase() || 'OFFICER'} {user?.id}</span>
+      </div>
+
+      {/* ── Tactical Live Map Integration ──────────────────── */}
+      <div className="h-72 w-full rounded-2xl overflow-hidden border border-cyan-500/20 shadow-2xl relative mb-6">
+         <TacticalMap user={user} showControls={false} />
+         <div className="absolute top-4 right-4 z-[1000] pointer-events-none">
+            <div className="glass px-4 py-2 rounded-xl border border-cyan-500/30 flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+               <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Live Tactical Grid</span>
+            </div>
+         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

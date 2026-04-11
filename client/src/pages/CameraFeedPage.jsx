@@ -3,8 +3,8 @@ import { Camera, Server, Cpu, Radio, ShieldCheck, Activity, Maximize2, Monitor }
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const LANES = ['N', 'S', 'E', 'W'];
-const LANE_ROLES = { N: 'NORTH APPROACH', S: 'SOUTH APPROACH', E: 'EAST APPROACH', W: 'WEST APPROACH' };
+const LANES = ['1', '2', '3'];
+const LANE_ROLES = { '1': 'PRIMARY APPROACH', '2': 'SECONDARY APPROACH', '3': 'TRANSVERSE APPROACH' };
 const BBOX_COLORS = { ambulance: '#ef4444', bus: '#06b6d4', car: '#10b981', bike: '#8b5cf6' };
 
 const containerVars = {
@@ -68,7 +68,7 @@ export default function CameraFeedPage() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Badge icon={<Cpu size={14}/>} label={`ACTIVE NODES: ${state?.junction?.cameraNodes || 4}/4`} color="amber" />
+          <Badge icon={<Cpu size={14}/>} label={`ACTIVE NODES: ${state?.junction?.cameraNodes || 3}/3`} color="amber" />
           <Badge icon={<Server size={14}/>} label={state?.junction?.id || 'MASTER-CONTROL'} color="cyan" />
           <Badge icon={<Radio size={14} className="animate-pulse"/>} label="WEBSOCKET STREAM ACTIVE" color="green" />
         </div>
@@ -113,10 +113,16 @@ export default function CameraFeedPage() {
                 <div className="absolute inset-0 opacity-10 mix-blend-screen pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
                 <div className="absolute inset-0 pointer-events-none z-10 opacity-20 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_100%)]"></div>
                 
-                {/* Visual Overlays */}
-                <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                   <div className="p-2 bg-black/60 backdrop-blur-md rounded border border-white/10">
-                     <Monitor size={14} className="text-cyan-400" />
+                {/* AUTOMATIC LOCATION TELEMETRY OVERLAY */}
+                <div className="absolute top-4 left-4 z-20 flex flex-col gap-1">
+                   <div className="px-3 py-1.5 bg-black/80 backdrop-blur-xl rounded border border-white/10 flex flex-col gap-0.5">
+                      <div className="text-[8px] font-black text-cyan-400 tracking-[0.2em] uppercase">Tactical Uplink</div>
+                      <div className="text-[10px] font-black text-white uppercase truncate max-w-[140px]">{state?.junction?.name}</div>
+                      <div className="text-[7px] font-bold text-white/40 truncate max-w-[140px]">{state?.junction?.address}</div>
+                      <div className="flex items-center gap-2 mt-1 pt-1 border-t border-white/5">
+                         <div className="text-[7px] font-mono text-cyan-400/80 tracking-tighter">LAT: {state?.junction?.lat}°N</div>
+                         <div className="text-[7px] font-mono text-cyan-400/80 tracking-tighter">LNG: {state?.junction?.lng}°E</div>
+                      </div>
                    </div>
                 </div>
 

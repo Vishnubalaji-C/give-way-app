@@ -15,7 +15,7 @@ export default function DashboardPage({ user }) {
   }, []);
 
   const totalWait = Object.values(state?.lanes || {}).reduce((acc, curr) => acc + (curr.waitTime || 0), 0);
-  const avgWait = Object.keys(state?.lanes || {}).length > 0 ? (totalWait / 4).toFixed(1) : 0;
+  const avgWait = Object.keys(state?.lanes || {}).length > 0 ? (totalWait / 3).toFixed(1) : 0;
 
   const containerVars = {
     hidden: { opacity: 0 },
