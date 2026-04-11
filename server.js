@@ -31,7 +31,8 @@ app.get('/', (req, res) => {
   res.send('🚦 MakeWay Advanced ATES Backend is ACTIVE. Monitoring junction: ' + activeJunction);
 });
 
-app.get('/api/health', (req, res) => {
+// Primary and Fallback Health Routes for Production Monitoring
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({
     status: 'online',
     system: 'MakeWay-ATES',
