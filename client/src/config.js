@@ -1,22 +1,29 @@
-// API Configuration — Auto-detect backend URL
-// When served directly from the Node backend (Render), we can use relative.
-// If served from a separate CDN (like Vercel), fall back to the dynamic host or env variable.
+// API Configuration — Auto-detect backend and WebSocket endpoints
+const getBaseUrl = () => {
+  if (typeof window === 'undefined') return 'http://localhost:4000';
+  const hostname = window.location.hostname;
+  
+  // Local Development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:4000';
+  }
+  
+  // Vercel Deployment -> Point to Render Backend
+  if (hostname.includes('vercel.app')) {
+    return 'https://giveway-backend.onrender.com';
+  }
+  
+  // Default: Monolithic Render Deployment (use current host)
+  return '';
+};
 
-const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
-const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+const BASE_URL = getBaseUrl();
 
-// If hosted on Render as a full-stack monolithic express app, use the current host.
-const RENDER_BACKEND = isVercel ? 'https://giveway-backend.onrender.com' : '';
+export const API_BASE_URL = BASE_URL;
 
-// In dev mode, API calls are handled by Vite proxy to 4000, but we can also use relative path safely.
-export const API_BASE_URL = RENDER_BACKEND;
-
+// Dynamic WebSocket Protocol detection
 const wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-// If in dev mode (Vite), point WS directly to the backend running on port 4000
-// Otherwise, dynamically use the current host (works perfectly for Render fullstack deployments)
-export const WS_URL = isVercel 
-  ? 'wss://giveway-backend.onrender.com' 
-  : isDev 
-    ? `ws://${window.location.hostname}:4000`
-    : `${wsProto}://${typeof window !== 'undefined' ? window.location.host : 'localhost:4000'}`;
+export const WS_URL = BASE_URL 
+  ? BASE_URL.replace(/^http/, 'ws') 
+  : `${wsProto}://${typeof window !== 'undefined' ? window.location.host : 'localhost:4000'}`;

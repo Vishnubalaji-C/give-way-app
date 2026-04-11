@@ -17,8 +17,25 @@ const app    = express();
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://give-way-app.vercel.app', 'http://localhost:5173', 'http://localhost:4000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
+
 app.use(express.json());
+
+// ─── Health & Connectivity Monitoring ──────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'online',
+    system: 'MakeWay-ATES',
+    junction: activeJunction,
+    time: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Serve Production React PWA (client/dist) unconditionally
 app.use(express.static(path.join(__dirname, 'client/dist')));
@@ -59,8 +76,8 @@ function saveToDisk() {
 if (process.env.MONGODB_URI) {
   const mongoose = require('mongoose');
   mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('[DATABASE] Securely connected to MongoDB Atlas!'))
-    .catch(console.error);
+    .then(() => console.log('🚀 [DATABASE] Securely connected to MongoDB Atlas!'))
+    .catch(err => console.error('❌ [DATABASE] Connection Failure:', err));
     
   const GenericDbModel = mongoose.model('MakewayData', new mongoose.Schema({ _id: String, value: Object }, { strict: false }));
   
