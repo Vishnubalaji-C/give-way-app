@@ -130,7 +130,7 @@ class _QrLinkScreenState extends State<QrLinkScreen> {
                       const SizedBox(width: 8),
                       const Text(
                         'ANTIGRAVITY SYNC v4.2',
-                        style: TextStyle(color: Colors.cyan, fontSize: 10, fontWeight: FontWeight.black),
+                        style: const TextStyle(color: Colors.cyan, fontSize: 10, fontWeight: FontWeight.w900),
                       ),
                     ],
                   ),
