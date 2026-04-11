@@ -14,11 +14,18 @@ export default function AuthPage({ onLogin }) {
   const [station, setStation] = useState('');
   
   const [dept, setDept] = useState('');
-  const [access, setAccess] = useState('Standard');
+  const [access, setAccess] = useState('Super Admin');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setSuccess('');
+    // Unique ID is persisted for UX continuity
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -82,7 +89,7 @@ export default function AuthPage({ onLogin }) {
             className="w-24 h-24 rounded-3xl bg-white/[0.03] p-1 border border-white/10 shadow-2xl mb-6 group"
           >
             <div className="w-full h-full bg-[#030712] rounded-[1.4rem] flex items-center justify-center overflow-hidden">
-               <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
           </motion.div>
           
@@ -167,6 +174,52 @@ export default function AuthPage({ onLogin }) {
               placeholder="••••••"
               role={role}
             />
+
+            {!isLogin && role === 'police' && (
+              <>
+                <InputGroup 
+                  label="Badge Number" 
+                  icon={<ShieldCheck size={18} />} 
+                  value={badge} 
+                  onChange={(e) => setBadge(e.target.value)} 
+                  placeholder="e.g. TN-POL-1029"
+                  role={role}
+                />
+                <InputGroup 
+                  label="Assigned Control Station" 
+                  icon={<Globe size={18} />} 
+                  value={station} 
+                  onChange={(e) => setStation(e.target.value)} 
+                  placeholder="e.g. Mount Road District"
+                  role={role}
+                />
+              </>
+            )}
+
+            {!isLogin && role === 'admin' && (
+              <>
+                <InputGroup 
+                  label="Central Department" 
+                  icon={<Globe size={18} />} 
+                  value={dept} 
+                  onChange={(e) => setDept(e.target.value)} 
+                  placeholder="e.g. Smart City Infrastructure"
+                  role={role}
+                />
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] ml-1">System Access Level</label>
+                  <select 
+                    value={access}
+                    onChange={(e) => setAccess(e.target.value)}
+                    className="w-full bg-white/[0.02] border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:bg-white/[0.04] transition-all focus:border-amber-500"
+                  >
+                    <option value="Super Admin" className="bg-[#030712]">Super Admin</option>
+                    <option value="Limited Monitor" className="bg-[#030712]">Limited Monitor</option>
+                    <option value="Read Only" className="bg-[#030712]">Read Only</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
 
           <motion.button 
@@ -183,7 +236,7 @@ export default function AuthPage({ onLogin }) {
         <div className="mt-10 text-center">
           <button 
             type="button" 
-            onClick={() => { setIsLogin(!isLogin); setError(''); }} 
+            onClick={toggleMode} 
             className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors flex items-center justify-center gap-2 mx-auto"
           >
             {isLogin ? "Neural Identity Registration" : "Global Authorization Gateway"} <ChevronRight size={12} />

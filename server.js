@@ -598,10 +598,12 @@ function sanitizeState() {
 
 // ─── Secure Mobile/Web Auth APIs (JSON System) ────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
-  const { id, pin, role, badge, station, dept, access, fullName } = req.body;
+  const id = String(req.body.id || '');
+  const pin = String(req.body.pin || '');
+  const { role, badge, station, dept, access, fullName } = req.body;
   if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
   
-  if (db.users.find(u => u.id === id)) {
+  if (db.users.find(u => String(u.id) === id)) {
     return res.status(409).json({ error: 'This Unique ID is already registered. Please choose a different Officer/Admin ID.' });
   }
 
@@ -626,8 +628,9 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { id, pin } = req.body;
-  const user = db.users.find(u => u.id === id && u.pin === pin);
+  const id = String(req.body.id || '');
+  const pin = String(req.body.pin || '');
+  const user = db.users.find(u => String(u.id) === id && String(u.pin) === pin);
   
   if (!user) {
     return res.status(401).json({ error: 'Authentication Failed: Invalid ID or PIN.' });
