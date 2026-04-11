@@ -165,7 +165,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const SizedBox(height: 8),
               const Text(
                 'Infrastructure Oversight',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, trackingAlpha: -0.5),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
               Wrap(
