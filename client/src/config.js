@@ -11,8 +11,8 @@ const getBaseUrl = () => {
   // Vercel Deployment -> Detect Correct Render Backend
   // We prioritize 'giveway-backend' but support hyphenated 'give-way-backend' as fallback.
   if (hostname.includes('vercel.app')) {
-    // Check metadata or system preference; default to standard hyphenation
-    return 'https://giveway-backend.onrender.com';
+    // Proxy through Vercel for zero-CORS configuration
+    return '';
   }
   
   // Default: Monolithic Render Deployment (use current host)
@@ -26,6 +26,6 @@ export const API_BASE_URL = BASE_URL;
 // Dynamic WebSocket Protocol detection
 const wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-export const WS_URL = BASE_URL 
-  ? BASE_URL.replace(/^http/, 'ws') 
-  : `${wsProto}://${typeof window !== 'undefined' ? window.location.host : 'localhost:4000'}`;
+export const WS_URL = hostname === 'localhost' || hostname === '127.0.0.1'
+  ? `ws://localhost:4000`
+  : `wss://makeway-backend.onrender.com`;

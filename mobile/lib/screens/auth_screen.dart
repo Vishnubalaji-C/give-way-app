@@ -223,8 +223,37 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     ),
 
                     const SizedBox(height: 32),
+                    
+                    // Demo Access Portal
+                    InkWell(
+                      onTap: () {
+                        _idCtrl.text = 'admin';
+                        _pinCtrl.text = '1234';
+                        setState(() => _role = 'admin');
+                        _submit();
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB700).withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFFFB700).withOpacity(0.1)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.verified_user_rounded, color: Color(0xFFFFB700), size: 18),
+                            const SizedBox(width: 12),
+                            const Text('ONE-TAP DEMO ACCESS', style: TextStyle(color: Color(0xFFFFB700), fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
                     const Divider(color: Colors.white10),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
 
                     // QR Sync Portal
                     InkWell(

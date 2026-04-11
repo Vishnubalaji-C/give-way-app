@@ -1,7 +1,8 @@
-// ─── GIVEWAY: 3-Channel Adaptive Round-Robin ─────────────────────────────
+// ─── MAKEWAY: 3-Channel Adaptive Round-Robin ─────────────────────────────
 // This master controller uses a strict sequential round-robin sequence
 // (Lane 1 -> Lane 2 -> Lane 3) but intelligently adapts the green light 
 // duration based on PCE density data streamed from ESP32-CAMs via Serial.
+// PCE Weights synchronized with MakeWay server.js standard.
 // ────────────────────────────────────────────────────────────────────────
 
 // Direction 1
@@ -12,10 +13,12 @@ int G2 = 11; int Y2 = 12; int R2 = 13;
 int G3 = 14; int Y3 = 15; int R3 = 16;
 
 // PCE Weights (Passenger Car Equivalents)
-const float PCE_AMBULANCE = 999.0;
-const float PCE_BUS       = 10.0;
-const float PCE_CAR       = 1.0;
-const float PCE_BIKE      = 0.5;
+// ⚠️ MUST match server.js and app.py exactly for consistent priority decisions
+const float PCE_AMBULANCE = 500.0; // Emergency override weight
+const float PCE_BUS       = 15.0;  // High-occupancy vehicle priority
+const float PCE_CAR       = 1.0;   // Baseline unit
+const float PCE_BIKE      = 0.5;   // Sub-unit
+const float PCE_LORRY     = 8.0;   // Heavy vehicle weight
 
 // Real-time Traffic Memory
 int density1 = 0; int ambulance1 = 0;
@@ -57,7 +60,8 @@ void setup() {
   allRed();
   
   Serial.println("\n====================================");
-  Serial.println("GIVEWAY: 3-Way Smart Round-Robin Active");
+  Serial.println("MAKEWAY: 3-Way Smart Round-Robin Active");
+  Serial.println("PCE: AMB=500 | BUS=15 | CAR=1 | BIKE=0.5");
   Serial.println("====================================\n");
 }
 
@@ -159,14 +163,16 @@ void processMessage(String msg, int laneIdx) {
     int busIdx  = msg.indexOf("BUS:");
     int carIdx  = msg.indexOf("CAR:");
     int bikeIdx = msg.indexOf("BIKE:");
+    int lryIdx  = msg.indexOf("LORRY:");
 
     int amb  = (ambIdx != -1)  ? extractValueAtPos(msg, ambIdx + 4)  : 0;
     int bus  = (busIdx != -1)  ? extractValueAtPos(msg, busIdx + 4)  : 0;
-    int car  = (carIdx != -1)  ? extractValueAtPos(msg, carIdx + 4)  : 0;
+    int car  = (carIdx != -1)  ? extractValueAtPos(msg, carIdx  + 4) : 0;
     int bike = (bikeIdx != -1) ? extractValueAtPos(msg, bikeIdx + 5) : 0;
+    int lry  = (lryIdx != -1)  ? extractValueAtPos(msg, lryIdx  + 6) : 0;
     
     // PCE Density algorithm 
-    int density = (int)(amb * PCE_AMBULANCE + bus * PCE_BUS + car * PCE_CAR + bike * PCE_BIKE);
+    int density = (int)(amb * PCE_AMBULANCE + bus * PCE_BUS + car * PCE_CAR + bike * PCE_BIKE + lry * PCE_LORRY);
 
     // Save locally to state
     if (laneIdx == 1) { density1 = density; ambulance1 = amb; }

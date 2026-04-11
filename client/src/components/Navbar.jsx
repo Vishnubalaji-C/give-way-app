@@ -135,7 +135,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
               <div className="w-full h-full bg-[#02050a] rounded-[10px] flex items-center justify-center overflow-hidden">
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="GiveWay Logo" className="w-full h-full object-cover" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MakeWay Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex flex-col">
@@ -254,7 +254,6 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
               { id:'wave', icon: <Wind size={16}/>, label: 'Green-Wave Tool' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
-              { id:'training', icon: <Sparkles size={16}/>, label: 'AI Trainer' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${

@@ -17,10 +17,24 @@ const app    = express();
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://localhost:4000',
+  'https://makeway-backend.onrender.com'
+];
+
 app.use(cors({
-  origin: true,
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Api-Version'],
   credentials: true
 }));
 
@@ -38,7 +52,7 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    system: 'GiveWay-ATES-Master',
+    system: 'MakeWay-ATES-Master',
     build: '2026.04.11',
     junction: activeJunction
   });
@@ -68,7 +82,7 @@ let db = {
       hour: `${String(8 + i).padStart(2, '0')}:00`, throughput: 0, giveway: 0, fixed: 0
     })),
     fuelSaved: 0, co2Reduced: 0, totalServed: 0,
-    vehicleMix: { ambulance: 0, bus: 0, car: 0, bike: 0 }
+    vehicleMix: { ambulance: 0, bus: 0, car: 0, bike: 0, lorry: 0 }
   }
 };
 
@@ -117,6 +131,27 @@ if (process.env.MONGODB_URI) {
   };
 }
 
+// Provision Demo/Guest Account if not exists
+function ensureGuestAccount() {
+  const GUEST_ID = 'admin';
+  const GUEST_PIN = '1234';
+  if (!db.users.find(u => String(u.id) === GUEST_ID)) {
+    const guestUser = {
+      id: GUEST_ID,
+      pin: GUEST_PIN,
+      role: 'admin',
+      token: 'demo-guest-token-' + Date.now().toString(36),
+      name: 'Guest Admin',
+      meta: { dept: 'System Demo', access: 'All' },
+      createdAt: new Date().toISOString()
+    };
+    db.users.push(guestUser);
+    console.log('🛡️ [AUTH] Provisioned Guest Admin for seamless demo access.');
+    saveToDisk();
+  }
+}
+ensureGuestAccount();
+
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
 // Require valid Bearer token for API operations
 async function requireAuth(req, res, next) {
@@ -143,7 +178,7 @@ const PENALTY_START = 90;     // seconds before exponential penalty
 const YELLOW_TIME   = 3;      // seconds (5 in Rain Mode)
 const PHASE_GREEN   = 15;     // base green phase duration
 
-const PCE = { ambulance: 100, bus: 20, car: 1, bike: 0.5 };
+const PCE = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
 
 // ─── Multi-Junction Location Registry ─────────────────────────────────────────
 // Each deployed hardware set gets a unique junction entry with location metadata
@@ -221,18 +256,18 @@ setInterval(() => {
   uplinkToken = uuidv4().substring(0, 8).toUpperCase();
 }, 300000); // Rotates every 5 minutes
 
-let state = buildInitialState();
+let state = buildInitialState(db.analytics);
 let auditLog = db.auditLog;
 let worldTimer = null;
 let snapTimer = null;
 
-function buildInitialState() {
+function buildInitialState(persisted = null) {
   const lanes = {};
   LANES.forEach(id => {
     lanes[id] = {
       id,
       signal: id === '1' ? 'green' : 'red',
-      vehicles: { ambulance: 0, bus: 0, car: 0, bike: 0 },
+      vehicles: { ambulance: 0, bus: 0, car: 0, bike: 0, lorry: 0 },
       density: 0,
       previousDensity: 0,
       staticCycles: 0,
@@ -252,11 +287,14 @@ function buildInitialState() {
     activeLane: '1',
     phaseTimer: PHASE_GREEN,
     tick: 0,
-    totalVehiclesServed: 0,
-    totalAmbulances: 0,
-    totalBuses: 0,
-    fuelSaved: 0,
-    co2Reduced: 0,
+    totalVehiclesServed: persisted?.totalServed || 0,
+    totalAmbulances: persisted?.vehicleMix?.ambulance || 0,
+    totalBuses: persisted?.vehicleMix?.bus || 0,
+    totalCars: persisted?.vehicleMix?.car || 0,
+    totalBikes: persisted?.vehicleMix?.bike || 0,
+    totalLorry: persisted?.vehicleMix?.lorry || 0,
+    fuelSaved: persisted?.fuelSaved || 0,
+    co2Reduced: persisted?.co2Reduced || 0,
     mode: { rain: false, night: false, pedestrian: false },
     alerts: [],
     greenWave: { active: false, source: null, progress: 0 },
@@ -266,14 +304,13 @@ function buildInitialState() {
   };
 }
 
-// ─── PCE Decision Engine ──────────────────────────────────────────────────────
+// ─── MakeWay Decision Engine ──────────────────────────────────────────────────
 function computePriorities() {
   LANES.forEach(id => {
     const lane = state.lanes[id];
-    const { ambulance, bus, car, bike } = lane.vehicles;
-
-    // PCE density score
-    lane.density = ambulance * PCE.ambulance + bus * PCE.bus + car * PCE.car + bike * PCE.bike;
+    const { ambulance, bus, car, bike, lorry } = lane.vehicles;
+    // PCE density score - Updated for full vehicle mix
+    lane.density = ambulance * PCE.ambulance + bus * PCE.bus + car * PCE.car + bike * PCE.bike + lorry * PCE.lorry;
 
     // Wait-Time Penalty (WTP) - Antigravity Logic
     let penalty = 0;
@@ -303,6 +340,7 @@ function switchLane(nextId) {
   // 1. Enter Yellow Transition
   outgoingLane.signal = 'yellow';
   outgoingLane.phase  = 'yellow';
+  state.phaseTimer    = yellowTime; // Update timer to Yellow duration
   broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 
   setTimeout(() => {
@@ -338,7 +376,11 @@ function processEdgeData(laneId, vehicles) {
    const lane = state.lanes[laneId];
    
    // Apply Antigravity Ghost Lane Logic
-   const newDensity = vehicles.ambulance * PCE.ambulance + vehicles.bus * PCE.bus + vehicles.car * PCE.car + vehicles.bike * PCE.bike;
+   const newDensity = vehicles.ambulance * PCE.ambulance + 
+                      vehicles.bus * PCE.bus + 
+                      vehicles.car * PCE.car + 
+                      vehicles.bike * PCE.bike + 
+                      (vehicles.lorry || 0) * PCE.lorry;
    
    if (lane.signal === 'green' && newDensity > 10) {
       if (Math.abs(lane.previousDensity - newDensity) <= 2) {
@@ -376,6 +418,7 @@ function generateTraffic() {
       bus:       Math.floor(Math.random() * 3),     // 0-2 buses
       car:       Math.floor(Math.random() * 12 + 1),// 1-12 cars
       bike:      Math.floor(Math.random() * 8),     // 0-7 bikes
+      lorry:     Math.floor(Math.random() * 4),     // 0-3 lorries
     };
     processEdgeData(id, vehicles);
   });
@@ -405,16 +448,32 @@ function tick() {
   if (state.phaseTimer === 0 && overrideMode === 'auto') {
     const nextLane = selectNextLane();
     switchLane(nextLane);
-    state.phaseTimer = computeGreenDuration(nextLane);
   }
 
   // Analytics accumulators (every 5 ticks)
   if (state.tick % 5 === 0) {
-    const served = Object.values(state.lanes).reduce((acc, l) => acc + l.vehicles.car + l.vehicles.bus + l.vehicles.bike, 0);
+    const served = Object.values(state.lanes).reduce((acc, l) => acc + l.vehicles.car + l.vehicles.bus + l.vehicles.bike + l.vehicles.ambulance, 0);
     state.totalVehiclesServed += served;
     state.fuelSaved   = parseFloat((state.totalVehiclesServed * 0.08).toFixed(1));
     state.co2Reduced  = parseFloat((state.fuelSaved * 2.3).toFixed(1));
-    state.totalBuses += Object.values(state.lanes).reduce((acc, l) => acc + l.vehicles.bus, 0);
+    state.totalBuses += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.bus || 0), 0);
+    state.totalAmbulances += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.ambulance || 0), 0);
+    state.totalCars += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.car || 0), 0);
+    state.totalBikes += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.bike || 0), 0);
+    state.totalLorry += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.lorry || 0), 0);
+    
+    // Sync to persistent DB store
+    db.analytics.totalServed = state.totalVehiclesServed;
+    db.analytics.fuelSaved   = state.fuelSaved;
+    db.analytics.co2Reduced  = state.co2Reduced;
+    db.analytics.vehicleMix = {
+      ambulance: state.totalAmbulances,
+      bus: state.totalBuses,
+      car: state.totalCars,
+      bike: state.totalBikes,
+      lorry: state.totalLorry
+    };
+    saveToDisk();
   }
 
   // Green wave propagation
@@ -466,7 +525,7 @@ function handleClientMessage(msg) {
         snapTimer  = setInterval(generateTraffic, SNAP_INTERVAL);
         worldTimer = setInterval(tick, TICK_INTERVAL);
         generateTraffic();
-        addAlert('info', '▶ Simulation started — GiveWay engine active.', null);
+        addAlert('info', '▶ Simulation started — MakeWay engine active.', null);
       }
       break;
 
@@ -536,7 +595,7 @@ function handleClientMessage(msg) {
         addAlert('emergency', '🚨 Emergency All-Stop activated!', null);
       }
       if (overrideMode === 'auto') {
-        addAlert('info', '🤖 GiveWay AI control restored.', null);
+        addAlert('info', '🤖 MakeWay AI control restored.', null);
       }
       broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
       break;
@@ -557,7 +616,7 @@ function handleClientMessage(msg) {
       setTimeout(() => {
         if (overrideMode === 'pedestrian') {
           overrideMode = 'auto';
-          addAlert('info', '🤖 Pedestrian Phase Over. GiveWay AI resumed control.', null);
+          addAlert('info', '🤖 Pedestrian Phase Over. MakeWay AI resumed control.', null);
           broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
         }
       }, 15000);
@@ -644,8 +703,27 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ success: true, user: safeUser, token: user.token });
 });
 
-app.get('/api/auth/verify', requireAuth, (req, res) => {
-  const { pin, ...safeUser } = req.user;
+app.patch('/api/auth/role', requireAuth, (req, res) => {
+  const { role } = req.body;
+  if (!['admin', 'police'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role requested.' });
+  }
+
+  // Update logic for the authenticated user
+  const userIndex = db.users.findIndex(u => u.id === req.user.id);
+  if (userIndex === -1) return res.status(404).json({ error: 'User session invalid.' });
+
+  db.users[userIndex].role = role;
+  
+  // Explicitly update default names if they were system-generated
+  if (db.users[userIndex].name.includes('Officer') || db.users[userIndex].name.includes('Admin')) {
+    db.users[userIndex].name = (role === 'police' ? `Officer ${db.users[userIndex].id}` : `Central Admin`);
+  }
+
+  saveToDisk();
+  logAudit('ROLE_SWITCH', `User ${req.user.id} transitioned to ${role} persona.`);
+  
+  const { pin, ...safeUser } = db.users[userIndex];
   res.json({ success: true, user: safeUser });
 });
 
@@ -684,25 +762,61 @@ app.get('/api/analytics', (req, res) => {
   res.json({
     hourly: db.analytics.hourly,
     vehicleMix: {
-      ambulance: state.totalAmbulances + (db.analytics.vehicleMix?.ambulance || 0),
-      bus: state.totalBuses + (db.analytics.vehicleMix?.bus || 0),
-      car: Math.floor(state.totalVehiclesServed * 0.6) + (db.analytics.vehicleMix?.car || 0),
-      bike: Math.floor(state.totalVehiclesServed * 0.3) + (db.analytics.vehicleMix?.bike || 0),
+      ambulance: state.totalAmbulances,
+      bus: state.totalBuses,
+      car: state.totalCars,
+      bike: state.totalBikes,
+      lorry: state.totalLorry,
     },
     fuelSaved: state.fuelSaved + (db.analytics.fuelSaved || 0),
     co2Reduced: state.co2Reduced + (db.analytics.co2Reduced || 0),
     totalServed: state.totalVehiclesServed + (db.analytics.totalServed || 0),
   });
 });
+// ─── Dynamic Junction Location Update ────────────────────────────────────────
+// Called by the frontend after it reverse-geocodes the browser's GPS position.
+// This replaces the hardcoded static coordinates with real on-the-ground data.
+app.patch('/api/junctions/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { name, address, zone, lat, lng, city, state: stateField } = req.body;
 
-// ─── Secure Edge Data Rate Limiting ───────────────────────────────────────────
+  if (!junctions[id]) {
+    // Auto-register a new junction if it doesn't exist yet
+    junctions[id] = { id, status: 'online', lastPing: Date.now(), deployedAt: new Date().toISOString().split('T')[0], cameraNodes: 3, poleId: `POLE-${id}` };
+  }
+
+  // Merge only the fields provided
+  if (name)        junctions[id].name     = name;
+  if (address)     junctions[id].address  = address;
+  if (zone)        junctions[id].zone     = zone;
+  if (lat != null) junctions[id].lat      = parseFloat(lat);
+  if (lng != null) junctions[id].lng      = parseFloat(lng);
+  if (city)        junctions[id].city     = city;
+  if (stateField)  junctions[id].state    = stateField;
+
+  // If updating the active junction, push the state change to all clients
+  if (id === activeJunction) {
+    state.junction = junctions[id];
+    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+  }
+
+  logAudit('JUNCTION_UPDATE', `Junction ${id} location dynamically updated to: ${lat}, ${lng}`);
+  res.json({ success: true, junction: junctions[id] });
+});
+
+// ─── Junction List API ────────────────────────────────────────────────────────
+app.get('/api/junctions', (req, res) => {
+  res.json(Object.values(junctions));
+});
+
+
 const edgeRequestLog = new Map(); // tracks last request per junction/lane
 
 app.post('/api/edge-data', (req, res) => {
   // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', junctionId: 'JN-001', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
   const { laneId, secret, vehicles, junctionId } = req.body;
   
-  if (secret !== (process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY')) {
+  if (secret !== (process.env.MAKEWAY_NODE_KEY || 'MAKEWAY_NODE_KEY')) {
     return res.status(401).json({ error: 'Unauthorized Node Access' });
   }
   
@@ -782,7 +896,7 @@ udpSocket.on('error', (err) => {
 setInterval(() => {
   try {
     const heartbeat = JSON.stringify({
-      service: 'GIVEWAY_MASTER',
+      service: 'MAKEWAY_MASTER',
       port: PORT,
       // The "Signature" for privacy/security
       sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64'),

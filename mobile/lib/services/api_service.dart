@@ -70,5 +70,17 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     return jsonDecode(res.body);
+  static Future<Map<String, dynamic>> switchRole(String token, String role) async {
+    final res = await http.patch(
+      Uri.parse('$baseUrl/api/auth/role'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'role': role}),
+    );
+    final data = jsonDecode(res.body);
+    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Role switch failed');
+    return data;
   }
 }

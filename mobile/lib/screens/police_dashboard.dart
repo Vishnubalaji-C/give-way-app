@@ -12,12 +12,14 @@ class PoliceDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
   final VoidCallback onToggleTheme;
+  final Function(String) onSwitchRole;
 
   const PoliceDashboard({
     super.key,
     required this.user,
     required this.onLogout,
     required this.onToggleTheme,
+    required this.onSwitchRole,
   });
 
   @override
@@ -107,6 +109,11 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_search_rounded, color: Color(0xFF00E5FF), size: 20),
+            onPressed: () => _showPersonaSwitcher(context),
+            tooltip: 'Switch Persona',
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white30, size: 20),
             onPressed: widget.onLogout,
@@ -363,7 +370,18 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
         _intelligenceTile('BUS PRIORITIZATION', '${_state['totalBuses'] ?? 0}', Icons.directions_bus_rounded, const Color(0xFF7C3AED)),
         _intelligenceTile('EMISSIONS REDUCTION', '${(_state['fuelSaved'] ?? 0).toStringAsFixed(1)}L', Icons.eco_rounded, const Color(0xFF00FF88)),
         const SizedBox(height: 32),
-        AnalyticsCharts(analytics: _analytics),
+        _analytics.isEmpty
+            ? const Center(child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF00E5FF), strokeWidth: 1.5),
+                    SizedBox(height: 16),
+                    Text('LOADING INTELLIGENCE...', style: TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  ],
+                ),
+              ))
+            : AnalyticsCharts(analytics: _analytics),
         const SizedBox(height: 100),
       ],
     );
@@ -437,6 +455,60 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(6)),
       child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1)),
+    );
+  }
+
+  void _showPersonaSwitcher(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('PERSONA REDIRECTION', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const SizedBox(height: 16),
+            const Text('Switch System Context', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.black)),
+            const SizedBox(height: 24),
+            _personaTile(ctx, 'System Administrator', 'admin', Icons.admin_panel_settings_rounded, const Color(0xFFFFB700)),
+            const SizedBox(height: 12),
+            _personaTile(ctx, 'Police Field Officer', 'police', Icons.local_police_rounded, const Color(0xFF00E5FF)),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _personaTile(BuildContext context, String title, String role, IconData icon, Color color) {
+    final isSelected = widget.user['role'] == role;
+    return InkWell(
+      onTap: isSelected ? null : () {
+        Navigator.pop(context);
+        widget.onSwitchRole(role);
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.white.withOpacity(0.02),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? color.withOpacity(0.3) : Colors.white.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? color : Colors.white24, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(title, style: TextStyle(color: isSelected ? Colors.white : Colors.white54, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            if (isSelected) Icon(Icons.check_circle_rounded, color: color, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

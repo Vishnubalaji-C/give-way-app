@@ -14,12 +14,65 @@ export function WsProvider({ children }) {
   const [junctions, setJunctions] = useState([]);
   const [sendQueue, setSendQueue] = useState([]); // queue messages sent before connection
 
-  // Fetch available junctions on mount
+  // ── Auto-detect real location and update the active junction ─────────────────
+  // 1. Fetch junctions list from backend on mount
+  // 2. Request browser GPS (silently – no UI block)
+  // 3. Reverse-geocode via OpenStreetMap Nominatim (free, no API key)
+  // 4. PATCH the active junction with real on-the-ground coordinates
   useEffect(() => {
+    // Step 1: Load existing junctions from server
     fetch(`${API_BASE_URL}/api/junctions`)
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setJunctions(data); })
       .catch(() => {});
+
+    // Step 2: Request GPS from browser
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const { latitude: lat, longitude: lng, accuracy } = coords;
+        if (accuracy > 5000) return; // skip if wildly inaccurate
+
+        try {
+          // Step 3: Reverse-geocode with Nominatim (OpenStreetMap)
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const geo = await geoRes.json();
+          const road      = geo.address?.road || geo.address?.suburb || '';
+          const suburb    = geo.address?.suburb || geo.address?.neighbourhood || '';
+          const city      = geo.address?.city || geo.address?.town || geo.address?.county || '';
+          const stateVal  = geo.address?.state || '';
+          const district  = geo.address?.state_district || city;
+
+          const dynamicName    = road ? `${road} Junction` : `${city} Junction`;
+          const dynamicAddress = geo.display_name?.split(',').slice(0, 3).join(',') || `${road}, ${suburb}`;
+          const dynamicZone    = `${district} — ${stateVal}`;
+
+          // Step 4: Retrieve stored token and PATCH the active junction (JN-001)
+          const stored = localStorage.getItem('makeway_user');
+          const token  = stored ? JSON.parse(stored)?.token : null;
+          if (!token) return;
+
+          await fetch(`${API_BASE_URL}/api/junctions/JN-001`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ name: dynamicName, address: dynamicAddress, zone: dynamicZone, lat, lng, city, state: stateVal }),
+          });
+
+          // Refresh junction list after update
+          const refreshed = await fetch(`${API_BASE_URL}/api/junctions`).then(r => r.json());
+          if (Array.isArray(refreshed)) setJunctions(refreshed);
+
+          console.log(`📍 [GEO] Junction auto-located: ${dynamicName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        } catch (e) {
+          console.warn('[GEO] Reverse-geocode failed, keeping existing junction data.', e);
+        }
+      },
+      () => { /* User denied GPS — silently keep existing junction data */ },
+      { timeout: 8000, maximumAge: 300000 } // 5 min cache, 8s timeout
+    );
   }, []);
 
   const connect = useCallback(() => {

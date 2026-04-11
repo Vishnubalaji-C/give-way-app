@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WsService {
-  static String _serverIp = 'giveway-backend.onrender.com';
+  static String _serverIp = 'makeway-backend.onrender.com';
   static int _serverPort = 443;
   
   static String get baseUrl {
-    if (_serverIp == 'giveway-backend.onrender.com') return 'https://$_serverIp';
+    if (_serverIp == 'makeway-backend.onrender.com') return 'https://$_serverIp';
     return 'http://$_serverIp:$_serverPort';
   }
   
   static String get wsUrl {
-    if (_serverIp == 'giveway-backend.onrender.com') return 'wss://$_serverIp';
+    if (_serverIp == 'makeway-backend.onrender.com') return 'wss://$_serverIp';
     return 'ws://$_serverIp:$_serverPort';
   }
 
@@ -50,7 +50,7 @@ class WsService {
                 final message = utf8.decode(dg.data);
                 final payload = jsonDecode(message);
                 
-                if (payload['service'] == 'GIVEWAY_MASTER') {
+                if (payload['service'] == 'MAKEWAY_MASTER') {
                   // SECURE HANDSHAKE: Verify Signature
                   final sig = utf8.decode(base64.decode(payload['sig']));
                   if (sig == 'GIVEWAY_NODE_KEY') {
@@ -58,7 +58,7 @@ class WsService {
                     _serverPort = payload['port'] ?? 4000;
                     
                     if (!_connected) {
-                      print('[DISCOVERY] Found Secure Master at $_serverIp. Uplinking...');
+                      print('[DISCOVERY] Found MakeWay Master at $_serverIp. Uplinking...');
                       connect();
                     }
                   }

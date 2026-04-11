@@ -1,5 +1,5 @@
 /*
- * GIVEWAY - ESP32-CAM Edge Node
+ * MAKEWAY - ESP32-CAM Edge Node
  * AI-Thinker ESP32-CAM Module
  * 
  * Captures JPEG frames via OV2640 camera, sends them to a YOLO inference 
@@ -24,9 +24,9 @@ const char* ssid     = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PWD";
 
 // ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
-String serverUrl    = "https://giveway-backend.onrender.com/api/edge-data";
-String inferenceUrl = "http://127.0.0.1:5000/detect"; // Reserved for local Python YOLO node
-const String secretKey   = "GIVEWAY_NODE_KEY"; // Secure Signature Key
+String serverUrl    = "https://makeway-backend.onrender.com/api/edge-data";
+String inferenceUrl = "http://127.0.0.1:5000/detect"; // Local Python YOLO node (matches app.py route)
+const String secretKey   = "MAKEWAY_NODE_KEY"; // Secure Signature Key (must match server .env)
 const String laneId      = "1";      // Change per node: 1, 2, 3
 const String junctionId  = "JN-001"; // Unique ID for this junction deployment
 
@@ -66,6 +66,7 @@ int fallbackAmbulance = 0;
 int fallbackBus       = 0;
 int fallbackCar       = 0;
 int fallbackBike      = 0;
+int fallbackLorry     = 0;
 
 // ─── Camera Initialization ────────────────────────────────────────────────────
 bool initCamera() {
@@ -170,7 +171,7 @@ void discoverServer() {
       StaticJsonDocument<512> doc;
       DeserializationError error = deserializeJson(doc, buffer);
       
-      if (!error && doc["service"] == "GIVEWAY_MASTER") {
+      if (!error && doc["service"] == "MAKEWAY_MASTER") {
         // SECURE HANDSHAKE: Check Signature
         String sig = base64::decode(doc["sig"]);
         if (sig == secretKey) {
@@ -225,8 +226,7 @@ void handleSerialCommands() {
 }
 
 // ─── Send Frame to YOLO Inference Endpoint ────────────────────────────────────
-// Returns true if inference was successful and vehicle counts were parsed
-bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &bike) {
+bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &bike, int &lorry) {
   if (!fb || fb->len == 0) return false;
 
   HTTPClient http;
@@ -239,15 +239,16 @@ bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &b
   if (httpCode == 200) {
     String response = http.getString();
     
-    // Parse JSON response: { "ambulance": 0, "bus": 1, "car": 4, "bike": 3 }
+    // Parse JSON response: { "ambulance": 0, "bus": 1, "car": 4, "bike": 3, "lorry": 0 }
     StaticJsonDocument<512> doc;
     DeserializationError error = deserializeJson(doc, response);
     
     if (!error) {
-      amb  = doc["ambulance"] | 0;
-      bus  = doc["bus"]       | 0;
-      car  = doc["car"]       | 0;
-      bike = doc["bike"]      | 0;
+      amb   = doc["ambulance"] | 0;
+      bus   = doc["bus"]       | 0;
+      car   = doc["car"]       | 0;
+      bike  = doc["bike"]      | 0;
+      lorry = doc["lorry"]     | 0;
       http.end();
       return true;
     } else {
@@ -261,8 +262,8 @@ bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &b
   return false;
 }
 
-// ─── Post Vehicle Data to GiveWay Server ──────────────────────────────────────
-void postEdgeData(int amb, int bus, int car, int bike, bool pedestrian) {
+// ─── Post Vehicle Data to MakeWay Server ──────────────────────────────────────
+void postEdgeData(int amb, int bus, int car, int bike, int lorry, bool pedestrian) {
   HTTPClient http;
   http.begin(serverUrl);
   http.addHeader("Content-Type", "application/json");
@@ -279,6 +280,7 @@ void postEdgeData(int amb, int bus, int car, int bike, bool pedestrian) {
   vehicles["bus"]       = bus;
   vehicles["car"]       = car;
   vehicles["bike"]      = bike;
+  vehicles["lorry"]     = lorry;
 
   doc["pedestrian"] = pedestrian;
 
@@ -312,7 +314,7 @@ void postEdgeData(int amb, int bus, int car, int bike, bool pedestrian) {
 void captureAndProcess() {
   if (!cameraInitialized) {
     Serial.println("[PIPE] Camera not initialized — sending fallback data");
-    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, false);
+    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, false);
     return;
   }
 
@@ -331,39 +333,41 @@ void captureAndProcess() {
 
   if (!fb) {
     Serial.println("[CAM] Frame capture failed!");
-    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, false);
+    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, false);
     return;
   }
 
   Serial.printf("[CAM] Captured frame: %d bytes (%dx%d)\n", fb->len, fb->width, fb->height);
 
   // Attempt YOLO inference
-  int amb = 0, bus = 0, car = 0, bike = 0;
-  bool inferenceOk = sendFrameForInference(fb, amb, bus, car, bike);
+  int amb = 0, bus = 0, car = 0, bike = 0, lorry = 0;
+  bool inferenceOk = sendFrameForInference(fb, amb, bus, car, bike, lorry);
 
   // Release frame buffer immediately
   esp_camera_fb_return(fb);
 
   if (inferenceOk) {
-    Serial.printf("[YOLO] Detected — Amb:%d Bus:%d Car:%d Bike:%d\n", amb, bus, car, bike);
+    Serial.printf("[YOLO] Detected — Amb:%d Bus:%d Car:%d Bike:%d Lorry:%d\n", amb, bus, car, bike, lorry);
     // Update fallback values with latest successful detection
     fallbackAmbulance = amb;
     fallbackBus       = bus;
     fallbackCar       = car;
     fallbackBike      = bike;
+    fallbackLorry     = lorry;
   } else {
     Serial.println("[YOLO] Inference unavailable — using last known counts");
-    amb  = fallbackAmbulance;
-    bus  = fallbackBus;
-    car  = fallbackCar;
-    bike = fallbackBike;
+    amb   = fallbackAmbulance;
+    bus   = fallbackBus;
+    car   = fallbackCar;
+    bike  = fallbackBike;
+    lorry = fallbackLorry;
   }
 
-  // Output hardware serial string exactly formatted for Arduino Master Controller
-  Serial.printf("\nLANE:%s,AMB:%d,BUS:%d,CAR:%d,BIKE:%d,PED:0\n", laneId.c_str(), amb, bus, car, bike);
+  // Output hardware serial string exactly formatted for MakeWay Master Controller
+  Serial.printf("\nLANE:%s,AMB:%d,BUS:%d,CAR:%d,BIKE:%d,LORRY:%d,PED:0\n", laneId.c_str(), amb, bus, car, bike, lorry);
 
-  // Post to GiveWay server for cloud Dashboard syncing
-  postEdgeData(amb, bus, car, bike, false);
+  // Post to MakeWay server for cloud Dashboard syncing
+  postEdgeData(amb, bus, car, bike, lorry, false);
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
@@ -395,7 +399,7 @@ void setup() {
   }
 
   // Initialize Wireless Flashing Support
-  ArduinoOTA.setHostname(("GiveWay-Node-" + laneId).c_str());
+  ArduinoOTA.setHostname(("MakeWay-Node-" + laneId).c_str());
   ArduinoOTA.begin();
 
   Serial.println("[INIT] Setup complete — entering main loop\n");

@@ -1,99 +1,83 @@
 # 🚦 MakeWay — Adaptive Traffic Equity System (ATES)
-### Final "Antigravity" Edition — AI-Driven, PCE-Weighted Traffic Management (v1.1)
+### Final "Shield" Edition — AI-Driven, PCE-Weighted Traffic Management (v4.2)
 
 ---
 
 ## 📖 Overview
-MakeWay (GiveWay) is an advanced IoT and AI-driven smart city traffic management system. It dynamically controls traffic lights using real-time edge processing (YOLO) and proprietary Passenger Car Equivalent (PCE) algorithms to prioritize ambulances, balance junction loads, and eradicate static wait times.
+MakeWay is an advanced IoT and AI-driven smart city traffic management system. It dynamically controls traffic lights using real-time edge processing (YOLOv8) and a proprietary Passenger Car Equivalent (PCE) algorithm. The system prioritizes ambulances/emergency vehicles, balances junction loads, and optimizes traffic flow based on real-time vehicle density detected at the edge.
 
 ---
 
 ## 🏗️ Project Structure
 ```text
 MakeWay/
-├── server.js              # Node.js + Express + WebSocket backend
-├── package.json           # Root scripts
-├── db.json                # Local fallback DB persistence
-├── client/                # React + Vite + Tailwind frontend
-├── mobile/                # Flutter Mobile application (Android)
-└── hardware/              # Arduino Mega Master & ESP32-CAM nodes
+├── server.js              # Node.js + WebSocket backend (Master Controller)
+├── package.json           # Global ecosystem scripts
+├── db.json                # Local persistence layer (Fallback)
+├── client/                # React Fiber Web Dashboard (Command Center)
+├── mobile/                # Flutter Police/Admin Deployment App
+└── hardware/              
+    ├── ArduinoMaster/     # Mega 2560 Logic Controller (3-Way Round Robin)
+    ├── ESP32Cam/          # AI Edge Nodes (Lane Detection)
+    └── inference/         # Python Flask ML Service (YOLOv8 + LBPH)
 ```
 
 ---
 
-## 🚀 Deployment & Local Setup
+## 🚀 Quick Start (Demo Mode)
 
-### 1. Web Infrastructure Start
+### 1. Unified Startup
 ```bash
-# Install all dependencies (Frontend & Backend)
+# Install and run everything concurrently
 npm run install:all
-
-# Start both servers concurrently
 npm run dev
 ```
-- **Backend API**: Runs computationally at `http://localhost:4000`
-- **Dashboard UI**: Runs locally at `http://localhost:5173`
+- **Dashboard**: `http://localhost:5173`
+- **Backend API**: `http://localhost:4000`
+- **ML Inference**: `http://localhost:5000`
 
-### 2. Mobile App (Flutter)
-- Ensure **Windows Developer Mode** is active.
-- Navigate to `mobile/` and run `flutter build apk` to compile the companion uplinking app.
-
-### 3. Cloud Production
-- **Dashboard**: Auto-deployed as a built React/Vite instance or fullstack rendering
-- **Backend**: Configured for Render/Vercel with Mongoose DB for authentication logs.
+### 2. Physical Deployment
+- Flash `ArduinoMaster.ino` to the Arduino Mega.
+- Flash `ESP32Cam.ino` to the AI-Thinker modules (Adjust SSIDs).
+- Ensure the ML service is running to process edge frames.
 
 ---
 
-## ⚙️ System Architecture & Logic
+## ⚙️ Final System Specifications (3-Lane Arch)
 
-### A. Decision Engine (GiveWay Algorithm)
+### A. Decision Logic (ATES Engine)
+Final priority and green-light duration are calculated using dynamic density:
 ```text
-Final Priority = (Lane Density × Weight) + (Wait Time × Penalty Coefficient)
+Phase Duration = Base (15s) + (Density Bonus) 
+Density (PCE) = [AMB:500 | BUS:15 | LORRY:8 | CAR:1 | BIKE:0.5]
 ```
-**Rules:**
-1. 🚑 **Ambulance Override** — Instant Green via Innuyir protocol.
-2. ⏱️ **Starvation Prevention** — Exponential penalty applied after 90s wait.
-3. 🛑 **Fairness Cap** — Max 120s wait threshold enforced.
-4. 👻 **Ghost Lane Detection** — Flags zero-movement phases to assume breakdown/accidents.
+- **Ambulance Protocol**: Instant MAX-GREEN (40s) override.
+- **Starvation Check**: Automatic wait-time penalty applied after 90s.
+- **Fairness Cap**: Strict 120s max red limit per lane.
 
-### B. Hardware Master Specification (Arduino Mega 2560)
-The physical logic controller directly integrates with edge cameras. Pins are strictly configured:
+### B. Hardware Master Pins (Arduino Mega)
+The system uses a strict **3-approach sequential round-robin** (Pins 8 through 16):
 
-**🚦 Traffic Light Control (Output): HIGH = ON**
-- Lane North (R, Y, G): Pins 2, 3, 4
-- Lane East (R, Y, G): Pins 5, 6, 7
-- Lane South (R, Y, G): Pins 8, 9, 10
-- Lane West (R, Y, G): Pins 11, 12, 13
+| Component       | Lane 1 (Approach A) | Lane 2 (Approach B) | Lane 3 (Approach C) |
+|:----------------|:--------------------|:--------------------|:--------------------|
+| **Green LED**   | Pin 8               | Pin 11              | Pin 14              |
+| **Yellow LED**  | Pin 9               | Pin 12              | Pin 15              |
+| **Red LED**     | Pin 10              | Pin 13              | Pin 16              |
 
-**🔊 Sensors & Alerts (I/O)**
-- Ambulance Buzzer: Pin 22 (Digital Out)
-- LDR (Light Sensor): Pin A0 (Analog In)
+*Note: Pins 14-16 are addressed as A0-A2 on most Mega shields.*
 
-**📡 Serial Communication**
-- Lane N (TX18, RX19) / Lane E (TX16, RX17) / Lane S (TX14, RX15) / Lane W (TX1, RX0) @ 115200 Baud
-
-### C. Edge Nodes (ESP32-CAM AI-Thinker)
-- Camera Data (D0-D7): Pins 5,18,19,21,36,39,34,35
-- Flash LED: Pin 4 (Night Vision / Alert)
-- Serial Data Payload Protocol: `LANE:X,AMB:n,BUS:n,CAR:n,BIKE:n,PED:n\n` (Polled every 5 seconds)
+### C. Edge Node Communications
+Each **ESP32-CAM** node communicates with the Master via Serial (115200 Baud):
+- **Payload**: `LANE:X,AMB:n,BUS:n,CAR:n,BIKE:n,LORRY:n,PED:n`
+- **Discovery**: Nodes auto-discover the Master server via Secure UDP Heartbeat (`MAKEWAY_MASTER`).
+- **Sync**: Real-time cloud logging to the Command Center via the Render Node.js bridge.
 
 ---
 
-## 🌐 Networking APIs
-
-### WebSockets (Real-time Sync)
-| Hook                 | Purpose                                |
-|----------------------|----------------------------------------|
-| `START_SIM`/`STOP_SIM` | Control Engine Kernels                |
-| `FORCE_GREEN/RED`    | Tactical Overrides                     |
-| `SET_OVERRIDE_MODE`  | `auto`, `emergency`, `festival`, `vip` |
-| `TRIGGER_GREEN_WAVE` | Sync Junctions                         |
-
-### REST API (Secure Auth & Stats)
-- `GET /api/state`: Current matrix view
-- `GET /api/alerts`: 50 latest operational events
-- `GET /api/audit`: Immutable ledger of police/admin actions
-- `GET /api/analytics`: Datasets for charting heatmaps and CO₂ fuel savings.
+## 🌐 Networking & Security
+- **WebSockets**: Real-time state replication across Web, Mobile, and Hardware.
+- **Geolocation**: Web Dashboard auto-detects real junction location via Browser GPS + OSM Reverse Geocoding.
+- **Audit Ledger**: All overrides (Admin/Police) are logged with non-repudiable timestamps in `db.json`/MongoDB.
 
 ---
-*Built with ❤️ for Smart Cities 2026 — 10% Hardware, 90% Intelligence.*
+*Built for the 2026 Smart City Initiative — Vision Framework v4.2*

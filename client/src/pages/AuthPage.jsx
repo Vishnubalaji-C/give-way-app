@@ -233,7 +233,15 @@ export default function AuthPage({ onLogin }) {
           </motion.button>
         </form>
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 space-y-4 text-center">
+          <button 
+            type="button"
+            onClick={() => { setUniqueId('admin'); setPin('1234'); setRole('admin'); }}
+            className={`text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full border border-white/5 bg-white/5 text-amber-500/80 hover:bg-amber-500/10 hover:border-amber-500/20 transition-all flex items-center justify-center gap-2 mx-auto`}
+          >
+            <ShieldCheck size={14} /> One-Tap Demo Access
+          </button>
+
           <button 
             type="button" 
             onClick={toggleMode} 

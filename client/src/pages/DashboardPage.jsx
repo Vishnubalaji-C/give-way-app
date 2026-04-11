@@ -43,7 +43,7 @@ export default function DashboardPage({ user }) {
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 p-8 rounded-[2rem] bg-glass border border-white/5 shadow-2xl">
           <div className="flex-1">
             <div className="flex items-center gap-2 text-cyan-400 font-black text-[10px] tracking-[0.3em] mb-3 uppercase">
-              <ShieldCheck size={14} /> System Secure · Antigravity v4.2
+              <ShieldCheck size={14} /> System Secure · MakeWay v4.2
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
               {greeting}, <span className="brand-gradient">{user?.name?.split(' ')[0] || 'Officer'}</span>
@@ -56,8 +56,8 @@ export default function DashboardPage({ user }) {
               <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono text-white/50">
                 L-IP: {window.location.hostname}
               </div>
-              <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono text-white/50 lowercase">
-                u: {user?.role}
+              <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono text-white/50">
+                {user?.role?.toUpperCase() || 'GUEST'}
               </div>
               <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-widest">
                 Lat: {state?.junction?.lat?.toFixed(3)}°N
@@ -81,7 +81,11 @@ export default function DashboardPage({ user }) {
                   {state?.simulationRunning ? 'HALT SYSTEM' : 'BOOT SYSTEM'}
                 </button>
                 <button 
-                  onClick={() => send('RESET_SIM')}
+                  onClick={() => {
+                    if (window.confirm('Reset will wipe all simulation state. Are you sure?')) {
+                      send('RESET_SIM');
+                    }
+                  }}
                   className="p-3 rounded-xl bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white transition-all shadow-xl"
                   title="Purge Global State"
                 >
@@ -94,10 +98,10 @@ export default function DashboardPage({ user }) {
       </motion.div>
 
       {/* ── Core Metrics ───────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           icon={<Zap size={20} className="text-red-500" />} 
-          title="Ambulances Clear" 
+          title="Ambulances Cleared" 
           value={state?.totalAmbulances || 0} 
           trend="+0s Average Delay"
           delay={0.3}
@@ -115,6 +119,13 @@ export default function DashboardPage({ user }) {
           value={state?.tick || 0} 
           trend="Computed @ Edge"
           delay={0.5}
+        />
+        <MetricCard 
+          icon={<Activity size={20} className="text-amber-400" />} 
+          title="Avg. Wait Time" 
+          value={`${avgWait}s`} 
+          trend="Across all lanes"
+          delay={0.6}
         />
       </div>
 

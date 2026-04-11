@@ -14,17 +14,17 @@ void main() {
   final ws = WsService();
   ws.startDiscovery();
   
-  runApp(const GiveWayApp());
+  runApp(const MakeWayApp());
 }
 
-class GiveWayApp extends StatefulWidget {
-  const GiveWayApp({super.key});
+class MakeWayApp extends StatefulWidget {
+  const MakeWayApp({super.key});
 
   @override
-  State<GiveWayApp> createState() => _GiveWayAppState();
+  State<MakeWayApp> createState() => _MakeWayAppState();
 }
 
-class _GiveWayAppState extends State<GiveWayApp> {
+class _MakeWayAppState extends State<MakeWayApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   Map<String, dynamic>? _user;
   bool _loading = true;
@@ -73,11 +73,42 @@ class _GiveWayAppState extends State<GiveWayApp> {
     setState(() => _user = null);
   }
 
-  void _toggleTheme() {
-    setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    });
+  Future<void> _switchRole(String newRole) async {
+    if (_user == null) return;
+    try {
+      final res = await ApiService.switchRole(_user!['token'], newRole);
+      if (res['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('role', newRole);
+        if (res['user'] != null && res['user']['name'] != null) {
+          await prefs.setString('userName', res['user']['name']);
+        }
+        
+        setState(() {
+          _user = {
+            ..._user!,
+            'role': newRole,
+            if (res['user'] != null && res['user']['name'] != null) 'name': res['user']['name'],
+          };
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Persona Switched to ${newRole.toUpperCase()}'),
+              backgroundColor: const Color(0xFF00E5FF),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Switch Failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -109,15 +140,17 @@ class _GiveWayAppState extends State<GiveWayApp> {
           : _user == null
               ? AuthScreen(onLogin: _onLogin)
               : _user!['role'] == 'police'
-                  ? PoliceDashboard(
+                      ? PoliceDashboard(
                       user: _user!,
                       onLogout: _onLogout,
                       onToggleTheme: _toggleTheme,
+                      onSwitchRole: _switchRole,
                     )
                   : AdminDashboard(
                       user: _user!,
                       onLogout: _onLogout,
                       onToggleTheme: _toggleTheme,
+                      onSwitchRole: _switchRole,
                     ),
     );
   }

@@ -1,5 +1,16 @@
+# 🛡️ MakeWay IDE Stability Patch
+# Silences background clangd noise for Arduino files which don't have a full toolchain present.
 If:
-  PathMatch: .*\.ino
-
+  PathMatch: ".*\\.ino"
+CompileFlags:
+  Add: 
+    - "-xc++"
+    - "-w"
 Diagnostics:
-  Suppress: "*"
+  Suppress: ["*"]
+---
+# Global Diagnostics Suppression
+Diagnostics:
+  Suppress: 
+    - "compilation_database_not_found"
+    - "drv_unknown_argument"

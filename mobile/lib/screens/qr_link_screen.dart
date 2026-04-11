@@ -65,7 +65,7 @@ class _QrLinkScreenState extends State<QrLinkScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Uplink Mobile', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('SECURE UPLINK', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
