@@ -26,7 +26,11 @@ app.use(cors({
 
 app.use(express.json());
 
-// ─── Health & Connectivity Monitoring ──────────────────────────────────────────
+// ─── Status & Connectivity Monitoring ──────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.send('🚦 MakeWay Advanced ATES Backend is ACTIVE. Monitoring junction: ' + activeJunction);
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
