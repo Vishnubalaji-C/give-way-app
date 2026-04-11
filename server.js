@@ -18,7 +18,7 @@ const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
 app.use(cors({
-  origin: ['https://give-way-app.vercel.app', 'http://localhost:5173', 'http://localhost:4000'],
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true
@@ -36,7 +36,12 @@ app.use((req, res, next) => {
 
 // ─── Status & Connectivity Monitoring ──────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.send('🚦 MakeWay Advanced ATES Backend is ACTIVE. Monitoring junction: ' + activeJunction);
+  res.json({
+    status: 'online',
+    system: 'GiveWay-ATES-Master',
+    build: '2026.04.11',
+    junction: activeJunction
+  });
 });
 
 // Primary and Fallback Health Routes for Production Monitoring

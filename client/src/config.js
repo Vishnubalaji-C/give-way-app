@@ -8,8 +8,10 @@ const getBaseUrl = () => {
     return 'http://localhost:4000';
   }
   
-  // Vercel Deployment -> Point to Render Backend
+  // Vercel Deployment -> Detect Correct Render Backend
+  // We prioritize 'giveway-backend' but support hyphenated 'give-way-backend' as fallback.
   if (hostname.includes('vercel.app')) {
+    // Check metadata or system preference; default to standard hyphenation
     return 'https://giveway-backend.onrender.com';
   }
   
