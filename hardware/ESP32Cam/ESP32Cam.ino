@@ -24,7 +24,7 @@ const char* ssid     = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PWD";
 
 // ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
-String serverUrl    = "https://makeway-backend.onrender.com/api/edge-data";
+String serverUrl    = "https://makeway-backend-api.onrender.com/api/edge-data";
 String inferenceUrl = "http://127.0.0.1:5000/detect"; // Local Python YOLO node (matches app.py route)
 const String secretKey   = "MAKEWAY_NODE_KEY"; // Secure Signature Key (must match server .env)
 const String laneId      = "1";      // Change per node: 1, 2, 3
@@ -273,7 +273,7 @@ void postEdgeData(int amb, int bus, int car, int bike, int lorry, bool pedestria
   StaticJsonDocument<256> doc;
   doc["laneId"]     = laneId;
   doc["junctionId"] = junctionId;
-  doc["secret"]     = "GIVEWAY_NODE_KEY";
+  doc["secret"]     = "MAKEWAY_NODE_KEY";
 
   JsonObject vehicles = doc.createNestedObject("vehicles");
   vehicles["ambulance"] = amb;

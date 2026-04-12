@@ -70,6 +70,8 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     return jsonDecode(res.body);
+  }
+
   static Future<Map<String, dynamic>> switchRole(String token, String role) async {
     final res = await http.patch(
       Uri.parse('$baseUrl/api/auth/role'),

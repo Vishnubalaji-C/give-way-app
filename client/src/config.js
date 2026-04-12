@@ -23,5 +23,5 @@ const wsProto = typeof window !== 'undefined' && window.location.protocol === 'h
 
 export const WS_URL = hostname === 'localhost' || hostname === '127.0.0.1'
   ? `ws://localhost:4000`
-  : `wss://makeway-backend.onrender.com`;
+  : `wss://makeway-backend-api.onrender.com`;
 

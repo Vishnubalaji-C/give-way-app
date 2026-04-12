@@ -111,6 +111,12 @@ class _MakeWayAppState extends State<MakeWayApp> {
     }
   }
 
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

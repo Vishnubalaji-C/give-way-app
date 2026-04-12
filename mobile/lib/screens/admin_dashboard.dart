@@ -493,6 +493,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ],
       ),
     );
+  }
+
   void _showPersonaSwitcher(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -506,7 +508,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           children: [
             const Text('PERSONA REDIRECTION', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
             const SizedBox(height: 16),
-            const Text('Switch System Context', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.black)),
+            const Text('Switch System Context', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 24),
             _personaTile(ctx, 'System Administrator', 'admin', Icons.admin_panel_settings_rounded, const Color(0xFFFFB700)),
             const SizedBox(height: 12),
