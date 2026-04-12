@@ -21,7 +21,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:4000',
-  'https://makeway-backend.onrender.com'
+  'https://give-way-app.onrender.com',
+  'https://give-way-app.vercel.app'
 ];
 
 app.use(cors({

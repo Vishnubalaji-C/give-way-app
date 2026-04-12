@@ -24,7 +24,7 @@ const char* ssid     = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PWD";
 
 // ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
-String serverUrl    = "https://makeway-backend-api.onrender.com/api/edge-data";
+String serverUrl    = "https://give-way-app.onrender.com/api/edge-data";
 String inferenceUrl = "http://127.0.0.1:5000/detect"; // Local Python YOLO node (matches app.py route)
 const String secretKey   = "MAKEWAY_NODE_KEY"; // Secure Signature Key (must match server .env)
 const String laneId      = "1";      // Change per node: 1, 2, 3

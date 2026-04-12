@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WsService {
-  static String _serverIp = 'makeway-backend-api.onrender.com';
+  static String _serverIp = 'give-way-app.onrender.com';
   static int _serverPort = 443;
   
   static String get baseUrl {
-    if (_serverIp == 'makeway-backend-api.onrender.com') return 'https://$_serverIp';
+    if (_serverIp == 'give-way-app.onrender.com') return 'https://$_serverIp';
     return 'http://$_serverIp:$_serverPort';
   }
   
   static String get wsUrl {
-    if (_serverIp == 'makeway-backend-api.onrender.com') return 'wss://$_serverIp';
+    if (_serverIp == 'give-way-app.onrender.com') return 'wss://$_serverIp';
     return 'ws://$_serverIp:$_serverPort';
   }
 
