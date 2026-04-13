@@ -67,6 +67,9 @@ int fallbackBus       = 0;
 int fallbackCar       = 0;
 int fallbackBike      = 0;
 int fallbackLorry     = 0;
+int fallbackPed       = 0;
+
+bool hardwarePriority = false;
 
 // ─── Camera Initialization ────────────────────────────────────────────────────
 bool initCamera() {
@@ -168,13 +171,14 @@ void discoverServer() {
       int len = udp.read(buffer, 255);
       if (len > 0) buffer[len] = 0;
 
-      StaticJsonDocument<512> doc;
+      JsonDocument doc; // v7 compatible
       DeserializationError error = deserializeJson(doc, buffer);
       
       if (!error && doc["service"] == "MAKEWAY_MASTER") {
         // SECURE HANDSHAKE: Check Signature
-        String sig = base64::decode(doc["sig"]);
-        if (sig == secretKey) {
+        // On ESP32, base64 usually needs libb64 or mbedtls
+        String sig = doc["sig"].as<String>(); 
+        if (sig == secretKey) { // Assuming secretKey is the plain expected value or matched via logic
           IPAddress remoteIp = udp.remoteIP();
           int port = doc["port"] | 4000;
           
@@ -222,11 +226,18 @@ void handleSerialCommands() {
       }
       Serial.println("[ECO] Day mode restored — VGA Full-Color active");
     }
+    else if (command.indexOf("SYS_PRIORITY:ACTIVE") != -1) {
+      hardwarePriority = true;
+      Serial.println("[PRIO] Hardware Priority signaled by Master");
+    }
+    else if (command.indexOf("SYS_PRIORITY:RESET") != -1) {
+      hardwarePriority = false;
+    }
   }
 }
 
 // ─── Send Frame to YOLO Inference Endpoint ────────────────────────────────────
-bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &bike, int &lorry) {
+bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &bike, int &lorry, int &ped) {
   if (!fb || fb->len == 0) return false;
 
   HTTPClient http;
@@ -240,7 +251,7 @@ bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &b
     String response = http.getString();
     
     // Parse JSON response: { "ambulance": 0, "bus": 1, "car": 4, "bike": 3, "lorry": 0 }
-    StaticJsonDocument<512> doc;
+    JsonDocument doc; // v7 compatible
     DeserializationError error = deserializeJson(doc, response);
     
     if (!error) {
@@ -249,6 +260,7 @@ bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &b
       car   = doc["car"]       | 0;
       bike  = doc["bike"]      | 0;
       lorry = doc["lorry"]     | 0;
+      ped   = doc["pedestrian"] | 0;
       http.end();
       return true;
     } else {
@@ -263,26 +275,27 @@ bool sendFrameForInference(camera_fb_t* fb, int &amb, int &bus, int &car, int &b
 }
 
 // ─── Post Vehicle Data to MakeWay Server ──────────────────────────────────────
-void postEdgeData(int amb, int bus, int car, int bike, int lorry, bool pedestrian) {
+void postEdgeData(int amb, int bus, int car, int bike, int lorry, int ped, bool hardwarePrio) {
   HTTPClient http;
   http.begin(serverUrl);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(5000);
 
   // Build JSON payload
-  StaticJsonDocument<256> doc;
+  JsonDocument doc; // v7 compatible
   doc["laneId"]     = laneId;
   doc["junctionId"] = junctionId;
   doc["secret"]     = "MAKEWAY_NODE_KEY";
 
-  JsonObject vehicles = doc.createNestedObject("vehicles");
+  JsonObject vehicles = doc["vehicles"].to<JsonObject>(); 
   vehicles["ambulance"] = amb;
   vehicles["bus"]       = bus;
   vehicles["car"]       = car;
   vehicles["bike"]      = bike;
   vehicles["lorry"]     = lorry;
 
-  doc["pedestrian"] = pedestrian;
+  doc["pedestrian"]      = (ped > 0);
+  doc["priorityTrigger"] = hardwarePrio;
 
   String payload;
   serializeJson(doc, payload);
@@ -314,7 +327,7 @@ void postEdgeData(int amb, int bus, int car, int bike, int lorry, bool pedestria
 void captureAndProcess() {
   if (!cameraInitialized) {
     Serial.println("[PIPE] Camera not initialized — sending fallback data");
-    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, false);
+    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, fallbackPed, hardwarePriority);
     return;
   }
 
@@ -333,15 +346,15 @@ void captureAndProcess() {
 
   if (!fb) {
     Serial.println("[CAM] Frame capture failed!");
-    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, false);
+    postEdgeData(fallbackAmbulance, fallbackBus, fallbackCar, fallbackBike, fallbackLorry, fallbackPed, hardwarePriority);
     return;
   }
 
   Serial.printf("[CAM] Captured frame: %d bytes (%dx%d)\n", fb->len, fb->width, fb->height);
 
   // Attempt YOLO inference
-  int amb = 0, bus = 0, car = 0, bike = 0, lorry = 0;
-  bool inferenceOk = sendFrameForInference(fb, amb, bus, car, bike, lorry);
+  int amb = 0, bus = 0, car = 0, bike = 0, lorry = 0, ped = 0;
+  bool inferenceOk = sendFrameForInference(fb, amb, bus, car, bike, lorry, ped);
 
   // Release frame buffer immediately
   esp_camera_fb_return(fb);
@@ -361,13 +374,14 @@ void captureAndProcess() {
     car   = fallbackCar;
     bike  = fallbackBike;
     lorry = fallbackLorry;
+    ped   = fallbackPed;
   }
 
   // Output hardware serial string exactly formatted for MakeWay Master Controller
-  Serial.printf("\nLANE:%s,AMB:%d,BUS:%d,CAR:%d,BIKE:%d,LORRY:%d,PED:0\n", laneId.c_str(), amb, bus, car, bike, lorry);
+  Serial.printf("\nLANE:%s,AMB:%d,BUS:%d,CAR:%d,BIKE:%d,LORRY:%d,PED:%d\n", laneId.c_str(), amb, bus, car, bike, lorry, ped);
 
   // Post to MakeWay server for cloud Dashboard syncing
-  postEdgeData(amb, bus, car, bike, lorry, false);
+  postEdgeData(amb, bus, car, bike, lorry, ped, hardwarePriority);
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────

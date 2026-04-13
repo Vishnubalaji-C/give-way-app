@@ -175,7 +175,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               <Tablet size={14} className="group-hover:scale-110 transition-transform" /> 
               LINK MOBILE
             </button>
-            <button className="flex items-center gap-2 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-3 xl:px-4 py-2 rounded-full border border-amber-500/30 transition-all text-[10px] xl:text-xs font-black tracking-wide shrink-0 animate-[pulse_2s_ease-in-out_infinite]">
+            <button onClick={() => setTab('override')} className="flex items-center gap-2 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 px-3 xl:px-4 py-2 rounded-full border border-amber-500/30 transition-all text-[10px] xl:text-xs font-black tracking-wide shrink-0 animate-[pulse_2s_ease-in-out_infinite]">
               <Radio size={14} /> EMERGENCY BROADCAST
             </button>
             <div className="flex items-center gap-3 border-l border-slate-700/80 pl-4 xl:pl-6">

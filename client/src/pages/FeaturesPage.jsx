@@ -1,4 +1,4 @@
-import { Layers, Shield, Zap, Sun, Volume2, Users, Activity } from 'lucide-react';
+import { Layers, Shield, Zap, Sun, Users, Activity } from 'lucide-react';
 
 export default function FeaturesPage() {
   const specs = [
@@ -30,13 +30,7 @@ export default function FeaturesPage() {
       color: "from-pink-500/20 to-transparent",
       border: "border-pink-500/30"
     },
-    {
-      icon: <Volume2 size={28} className="text-red-400" />,
-      title: "Giveway Audio-Visual Chirps",
-      desc: "Direct integration with a high-pitched 1200hz physical Piezo buzzer. Instantly alarms distracted drivers and visually impaired walkers during Innuyir protocol hijacks.",
-      color: "from-red-500/20 to-transparent",
-      border: "border-red-500/30"
-    },
+
     {
       icon: <Shield size={28} className="text-blue-400" />,
       title: "Secure Node Authorization",

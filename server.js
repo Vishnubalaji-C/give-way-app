@@ -281,6 +281,8 @@ function buildInitialState(persisted = null) {
       phase: id === '1' ? 'green' : 'red',
       ghostFlag: false,
       isEmergency: false,
+      isPedestrian: false,
+      priorityTrigger: false
     };
   });
   return {
@@ -302,6 +304,7 @@ function buildInitialState(persisted = null) {
     junction: junctions[activeJunction] || junctions['JN-001'],
     simulationRunning,
     overrideMode,
+    isCongested: false,
   };
 }
 
@@ -322,6 +325,17 @@ function computePriorities() {
     lane.finalPriority = lane.density + penalty;
     lane.pceScore = lane.density;
   });
+
+  // Global Congestion Detection (Threshold: 30 PCE)
+  const CONGESTION_LEVEL = 30;
+  const allCongested = LANES.every(id => state.lanes[id].density > CONGESTION_LEVEL);
+  
+  if (allCongested && !state.isCongested) {
+    state.isCongested = true;
+    addAlert('warning', '🚦 GRIDLOCK: Heavy traffic in all directions. ID-Priority Mode active.', null);
+  } else if (!allCongested && state.isCongested) {
+    state.isCongested = false;
+  }
 }
 
 function selectNextLane() {
@@ -403,6 +417,12 @@ function processEdgeData(laneId, vehicles) {
    lane.vehicles = vehicles;
    lane.isEmergency = vehicles.ambulance > 0;
    
+   // Store Pedestrian & Priority state
+   if (vehicles.pedestrian && !lane.isPedestrian) {
+      addAlert('ghost', `🚶‍♂️ Pedestrian detected on Lane ${laneId}! Entering Safety Mode.`, laneId);
+   }
+   lane.isPedestrian = vehicles.pedestrian || false;
+
    computePriorities();
    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 }
@@ -839,7 +859,14 @@ app.post('/api/edge-data', (req, res) => {
   }
   
   // Real-world integration logic routed through Antigravity Processor
-  processEdgeData(laneId, vehicles);
+  if (req.body.priorityTrigger) {
+    state.lanes[laneId].priorityTrigger = true;
+    addAlert('emergency', `🚨 Hardware Override: Priority Triggered on Lane ${laneId}!`, laneId);
+  } else {
+    state.lanes[laneId].priorityTrigger = false;
+  }
+
+  processEdgeData(laneId, { ...vehicles, pedestrian: req.body.pedestrian });
   
   res.json({ success: true, newScore: state.lanes[laneId].pceScore, junction: junctionId });
 });

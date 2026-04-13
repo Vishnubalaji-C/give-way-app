@@ -70,7 +70,27 @@ export function WsProvider({ children }) {
           console.warn('[GEO] Reverse-geocode failed, keeping existing junction data.', e);
         }
       },
-      () => { /* User denied GPS — silently keep existing junction data */ },
+      async () => { 
+        // Fallback to IP Geolocation if browser GPS denied or blocked (e.g., non-HTTPS LAN)
+        try {
+          const ipRes = await fetch('https://ipapi.co/json/');
+          const ipGeo = await ipRes.json();
+          if (ipGeo.latitude && ipGeo.longitude) {
+             const dynamicName = `${ipGeo.city || 'Local'} Junction`;
+             const stored = localStorage.getItem('makeway_user');
+             const token  = stored ? JSON.parse(stored)?.token : null;
+             if (token) {
+               await fetch(`${API_BASE_URL}/api/junctions/JN-001`, {
+                 method: 'PATCH',
+                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                 body: JSON.stringify({ name: dynamicName, address: ipGeo.city, zone: ipGeo.region, lat: ipGeo.latitude, lng: ipGeo.longitude, city: ipGeo.city, state: ipGeo.region }),
+               });
+               const refreshed = await fetch(`${API_BASE_URL}/api/junctions`).then(r => r.json());
+               if (Array.isArray(refreshed)) setJunctions(refreshed);
+             }
+          }
+        } catch(e) {}
+      },
       { timeout: 8000, maximumAge: 300000 } // 5 min cache, 8s timeout
     );
   }, []);

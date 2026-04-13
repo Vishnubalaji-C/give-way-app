@@ -29,6 +29,7 @@ print("[INFO] YOLOv8 and LBPH Feature Extractor online.")
 
 # COCO mappings we care about
 TARGET_CLASSES = {
+    0: "pedestrian",
     2: "car",
     3: "bike",
     5: "bus",
@@ -37,7 +38,7 @@ TARGET_CLASSES = {
 
 def decode_base64_image(b64_string):
     """Convert base64 string to OpenCV Image."""
-    img_data = base64.b64decode(b64_string.split(',')[1] if ',' in b64_string else b64_string)
+    img_data = base64.base64decode(b64_string.split(',')[1] if ',' in b64_string else b64_string)
     np_arr = np.frombuffer(img_data, np.uint8)
     return cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
@@ -47,6 +48,9 @@ def lbph_texture_verification(crop_img, predicted_class):
     If YOLO predicts 'car' but the user specifically needs to find 'ambulance',
     we run the crop through the texture histogram to find structural matches.
     """
+    if predicted_class == "pedestrian":
+        return "pedestrian", 1.0 # Pedestrians don't need texture verification
+        
     gray_crop = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
     gray_crop = cv2.resize(gray_crop, (150, 150)) # Normalize size for LBPH
     
@@ -76,7 +80,7 @@ def run_yolo_and_lbph(image):
 
     detections = []
     pce_score  = 0
-    counts = {"ambulance": 0, "bus": 0, "car": 0, "bike": 0, "lorry": 0}
+    counts = {"ambulance": 0, "bus": 0, "car": 0, "bike": 0, "lorry": 0, "pedestrian": 0}
 
     for box in results.boxes:
         class_id = int(box.cls[0])
@@ -92,8 +96,8 @@ def run_yolo_and_lbph(image):
         final_class, lbph_conf = lbph_texture_verification(crop, base_class)
 
         # MakeWay Standard PCE Weight Mapping (must match server.js & ArduinoMaster.ino)
-        PCE = {"car": 1.0, "bike": 0.5, "bus": 15.0, "lorry": 8.0, "ambulance": 500.0}
-        weight = PCE.get(final_class, 1.0)
+        PCE = {"car": 1.0, "bike": 0.5, "bus": 15.0, "lorry": 8.0, "ambulance": 500.0, "pedestrian": 0.0}
+        weight = PCE.get(final_class, 0.0)
         pce_score += weight
 
         counts[final_class] = counts.get(final_class, 0) + 1

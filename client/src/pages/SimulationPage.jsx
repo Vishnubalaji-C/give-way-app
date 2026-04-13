@@ -2,9 +2,9 @@ import { useWs } from '../context/WsContext';
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 
-const LANES = ['N', 'S', 'E', 'W'];
-const LANE_LABELS = { N: 'NORTH', S: 'SOUTH', E: 'EAST', W: 'WEST' };
-const LANE_COLORS = { N: '#00e5ff', S: '#00ff88', E: '#a855f7', W: '#ffb700' };
+const LANES = ['1', '2', '3'];
+const LANE_LABELS = { '1': 'SOUTH APPROACH', '2': 'EAST APPROACH', '3': 'WEST APPROACH' };
+const LANE_COLORS = { '1': '#00e5ff', '2': '#a855f7', '3': '#ffb700' };
 const VEHICLE_EMOJIS = { ambulance: '🚑', bus: '🚌', car: '🚗', bike: '🏍️' };
 
 export default function SimulationPage() {
@@ -100,7 +100,7 @@ export default function SimulationPage() {
           </div>
 
           {/* Lane count strips */}
-          <div className="mt-8 grid grid-cols-4 gap-3">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
             {LANES.map(id => {
               const l = lanes[id] || {};
               const isGreen = l.signal === 'green';
@@ -351,10 +351,9 @@ function SignalPole({ id, laneData, isActive }) {
   const timer  = laneData?.greenTimer ?? 0;
 
   const posMap = {
-    N: { top: '2%',  left: '50%', transform: 'translateX(-50%)' },
-    S: { bottom: '2%', left: '50%', transform: 'translateX(-50%)' },
-    E: { right: '2%', top: '50%', transform: 'translateY(-50%)' },
-    W: { left: '2%',  top: '50%', transform: 'translateY(-50%)' },
+    '1': { bottom: '2%', left: '50%', transform: 'translateX(-50%)' },
+    '2': { right: '2%', top: '50%', transform: 'translateY(-50%)' },
+    '3': { left: '2%',  top: '50%', transform: 'translateY(-50%)' },
   };
 
   const lights = [

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LANES = ['1', '2', '3'];
-const LANE_ROLES = { '1': 'PRIMARY APPROACH', '2': 'SECONDARY APPROACH', '3': 'TRANSVERSE APPROACH' };
+const LANE_ROLES = { '1': 'SOUTH APPROACH', '2': 'EAST APPROACH', '3': 'WEST APPROACH' };
 const BBOX_COLORS = { ambulance: '#ef4444', bus: '#06b6d4', car: '#10b981', bike: '#8b5cf6' };
 
 const containerVars = {
