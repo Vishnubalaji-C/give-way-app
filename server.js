@@ -177,7 +177,7 @@ const TICK_INTERVAL = 1000;   // ms – 1-second world clock
 const FAIRNESS_CAP  = 120;    // seconds max wait
 const PENALTY_START = 90;     // seconds before exponential penalty
 const YELLOW_TIME   = 3;      // seconds (5 in Rain Mode)
-const PHASE_GREEN   = 15;     // base green phase duration
+const PHASE_GREEN   = 30;     // base green phase duration
 
 const PCE = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
 
@@ -339,10 +339,27 @@ function computePriorities() {
 }
 
 function selectNextLane() {
-  // Strict sequential round-robin: 1 -> 2 -> 3 -> 1
-  const currentIndex = LANES.indexOf(state.activeLane);
-  const nextIndex = (currentIndex + 1) % LANES.length;
-  return LANES[nextIndex];
+  let highestPriority = -1;
+  let bestLane = state.activeLane;
+
+  LANES.forEach(id => {
+    // Evaluate only lanes that are currently constrained (red)
+    if (state.lanes[id].signal === 'red') {
+      if (state.lanes[id].finalPriority > highestPriority) {
+        highestPriority = state.lanes[id].finalPriority;
+        bestLane = id;
+      }
+    }
+  });
+  
+  // Fallback to sequential round-robin only if traffic is non-existent
+  if (highestPriority <= 0 || bestLane === state.activeLane) {
+    const currentIndex = LANES.indexOf(state.activeLane);
+    const nextIndex = (currentIndex + 1) % LANES.length;
+    return LANES[nextIndex];
+  }
+  
+  return bestLane;
 }
 
 function switchLane(nextId) {
@@ -382,8 +399,8 @@ function switchLane(nextId) {
 function computeGreenDuration(laneId) {
   const lane = state.lanes[laneId];
   const base = PHASE_GREEN;
-  const bonus = Math.min(Math.floor(lane.density / 5), 15);
-  return Math.min(base + bonus, 30);
+  const bonus = Math.min(Math.floor(lane.density / 2), 60);
+  return Math.min(base + bonus, 90);
 }
 
 // ─── Hardware Data Processor (No Simulation) ───────────────────────────────────

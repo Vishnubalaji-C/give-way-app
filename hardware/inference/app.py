@@ -3,12 +3,15 @@ import cv2
 import json
 import base64
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from ultralytics import YOLO
 
 app = Flask(__name__)
 CORS(app)
+
+# Global buffer for MJPEG Streaming
+LATEST_FRAMES = {}
 
 # ─── Config & Init ────────────────────────────────────────────────────────
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'weights', 'yolov8n.pt')
@@ -119,6 +122,7 @@ def detect_from_hardware():
     Returns simplified JSON for the Arduino serial bridge:
     { "ambulance": 0, "bus": 1, "car": 4, "bike": 3 }
     """
+    lane_id = request.args.get('lane', '1')
     try:
         raw = request.data
         if not raw:
@@ -131,6 +135,19 @@ def detect_from_hardware():
             return jsonify({'error': 'Invalid JPEG frame'}), 400
 
         detections, pce_score, counts = run_yolo_and_lbph(image)
+        
+        # Draw bounding boxes and text
+        for d in detections:
+            bbox = d["bbox"]
+            color = (0, 255, 0)  # Car/Bike
+            if d["type"] == "ambulance": color = (0, 0, 255)
+            elif d["type"] in ["bus", "lorry"]: color = (255, 0, 0)
+            cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 2)
+            cv2.putText(image, f"{d['type']} {d['confidence']}", (bbox[0], bbox[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        # Encode and buffer for Live MJPEG Stream
+        _, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        LATEST_FRAMES[lane_id] = buffer.tobytes()
 
         # Return format the ESP32 parser and Arduino Master expect
         return jsonify({
@@ -145,6 +162,20 @@ def detect_from_hardware():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+import time
+def generate_mjpeg(lane_id):
+    while True:
+        frame = LATEST_FRAMES.get(lane_id)
+        if frame:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        time.sleep(0.1)
+
+@app.route('/stream/<lane_id>')
+def stream_lane(lane_id):
+    """MJPEG Broadcast endpoint for the web dashboard."""
+    return Response(generate_mjpeg(lane_id), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 

@@ -20,25 +20,7 @@ const itemVars = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', damping: 25, stiffness: 400 } }
 };
 
-// Simulate random bounding boxes based on state vehicle counts
-function generateFakeBboxes(vehicles) {
-  const bboxes = [];
-  const types = Object.keys(vehicles);
-  types.forEach(type => {
-    for (let i = 0; i < vehicles[type]; i++) {
-      bboxes.push({
-        type,
-        x: 10 + Math.random() * 70,
-        y: 20 + Math.random() * 60,
-        w: type === 'bus' || type === 'ambulance' ? 18 : type === 'car' ? 12 : 6,
-        h: type === 'bus' || type === 'ambulance' ? 25 : type === 'car' ? 16 : 8,
-        conf: (0.8 + Math.random() * 0.18).toFixed(2),
-        id: Math.random().toString(36).substr(2, 5),
-      });
-    }
-  });
-  return bboxes;
-}
+// Real-time video fed directly via MJPEG from Python YOLO endpoint
 
 export default function CameraFeedPage() {
   const { state } = useWs();
@@ -83,8 +65,8 @@ export default function CameraFeedPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {LANES.map(id => {
           const l = lanes[id] || {};
-          const bboxes = generateFakeBboxes(l.vehicles || {});
           const isGreen = l.signal === 'green';
+          const vehicleCount = l.vehicles ? Object.values(l.vehicles).reduce((a, b) => a + b, 0) : 0;
           
           return (
             <motion.div 
@@ -108,10 +90,14 @@ export default function CameraFeedPage() {
                 </div>
               </div>
 
-              {/* Matrix Feed Simulation */}
+              {/* Real MJPEG Stream Integration */}
               <div className="relative w-full aspect-video bg-black overflow-hidden cursor-crosshair">
-                <div className="absolute inset-0 opacity-10 mix-blend-screen pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-                <div className="absolute inset-0 pointer-events-none z-10 opacity-20 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_100%)]"></div>
+                <img 
+                  src={`http://127.0.0.1:5000/stream/${id}`} 
+                  alt={`Live YOLO Feed Lane ${id}`} 
+                  className="absolute w-full h-full object-cover" 
+                />
+                <div className="absolute inset-0 pointer-events-none z-10 opacity-30 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_100%)]"></div>
                 
                 {/* AUTOMATIC LOCATION TELEMETRY OVERLAY */}
                 <div className="absolute top-4 left-4 z-20 flex flex-col gap-1">
@@ -126,31 +112,6 @@ export default function CameraFeedPage() {
                    </div>
                 </div>
 
-                {/* Neural Targets (Bounding Boxes) */}
-                <AnimatePresence>
-                  {bboxes.map((box) => (
-                    <motion.div 
-                      key={box.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute border-2 flex flex-col justify-end transition-all duration-300 group-hover:bg-white/5"
-                      style={{
-                        left: `${box.x}%`,
-                        top: `${box.y}%`,
-                        width: `${box.w}%`,
-                        height: `${box.h}%`,
-                        borderColor: BBOX_COLORS[box.type],
-                        boxShadow: `0 0 15px ${BBOX_COLORS[box.type]}44 inset`
-                      }}>
-                      <div className="absolute bottom-full left-[-2px] px-1.5 py-0.5 bg-black/80 backdrop-blur-md text-[7px] font-black text-white whitespace-nowrap uppercase tracking-widest border border-white/10"
-                        style={{ borderBottomColor: BBOX_COLORS[box.type] }}>
-                        {box.type} · {box.conf}
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-
                 {/* System Diagnostics Overlay */}
                 <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
                    <button className="p-2 bg-black/60 backdrop-blur-md rounded border border-white/10 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all text-white/40 hover:text-cyan-400">
@@ -161,7 +122,7 @@ export default function CameraFeedPage() {
 
               {/* Data Interface Bar */}
               <div className="bg-white/[0.02] p-6 grid grid-cols-3 gap-6">
-                 <DataStat label="Neural Targets" value={bboxes.length} sub="Active Classification" />
+                 <DataStat label="Neural Targets" value={vehicleCount} sub="Active Classification" />
                  <DataStat label="PCE Density" value={Math.round(l.pceScore || 0)} sub="Weighted Load" color="text-cyan-400" />
                  <DataStat label="Buffer Latency" value="12ms" sub="Node Response" />
               </div>
