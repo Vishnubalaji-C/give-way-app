@@ -25,7 +25,7 @@ const char* password = "YOUR_WIFI_PWD";
 
 // ─── Server Endpoints (Dynamically Resolved via Auto-Discovery) ───────────────
 String serverUrl    = "https://give-way-app.onrender.com/api/edge-data";
-String inferenceUrl = "http://127.0.0.1:5000/detect?lane=1"; // Local Python YOLO node (matches app.py route)
+String inferenceUrl = "http://127.0.0.1:5000/detect"; // Local Python YOLO node (matches app.py route)
 const String secretKey   = "MAKEWAY_NODE_KEY"; // Secure Signature Key (must match server .env)
 const String laneId      = "1";      // Change per node: 1, 2, 3
 const String junctionId  = "JN-001"; // Unique ID for this junction deployment
@@ -183,7 +183,7 @@ void discoverServer() {
           int port = doc["port"] | 4000;
           
           serverUrl = "http://" + remoteIp.toString() + ":" + String(port) + "/api/edge-data";
-          inferenceUrl = "http://" + remoteIp.toString() + ":5000/detect?lane=" + laneId; // YOLO usually at 5000
+          inferenceUrl = "http://" + remoteIp.toString() + ":5000/detect"; // YOLO usually at 5000
           
           Serial.print("[HUNT] Found Secure Master at: ");
           Serial.println(remoteIp);

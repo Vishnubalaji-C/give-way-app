@@ -27,11 +27,6 @@ int density2 = 0; int ambulance2 = 0;
 int density3 = 0; int ambulance3 = 0;
 int pedestrian1 = 0; int pedestrian2 = 0; int pedestrian3 = 0;
 
-int wait1 = 0;
-int wait2 = 0;
-int wait3 = 0;
-int activeLane = 1;
-
 // Hardware Override Pins
 const int espSouth = 4; // Moved from 19 to avoid Serial1 conflict
 const int espEast  = 5;  // Direction 2 pulse
@@ -42,9 +37,9 @@ SoftwareSerial rfidSouth(A4, 6); // RX: A4, TX: 6 (Dummy)
 SoftwareSerial rfidEast(A3, 7);  // RX: A3, TX: 7 (Dummy)
 
 // Dynamic Timing Parameters (in seconds)
-const int BASE_GREEN_TIME = 30; 
-const int MIN_GREEN_TIME  = 15;  
-const int MAX_GREEN_TIME  = 90; 
+const int BASE_GREEN_TIME = 15; 
+const int MIN_GREEN_TIME  = 8;  
+const int MAX_GREEN_TIME  = 40; 
 const int YELLOW_TIME_MS  = 3000;
 
 // Congestion Management
@@ -63,7 +58,7 @@ void pollSerialPort(Stream &s, String &buf, int laneIdx);
 void processMessage(String msg, int laneIdx);
 int computeGreenDuration(int density, int amb, int laneIdx);
 int extractValueAtPos(String msg, int pos);
-int runLane(int G, int Y, int R, int density, int &amb, int laneIdx);
+void runLane(int G, int Y, int R, int density, int &amb, int laneIdx);
 bool isJunctionCongested();
 bool checkPriority(int currentLane);
 void executePriority(int G, int R, int laneIdx, String source);
@@ -100,41 +95,18 @@ void loop() {
   // Rapidly poll Serial to keep tracking ambulances/density across lanes
   parseSerialData();
 
-  float p1 = density1 + (wait1 * 1.5);
-  float p2 = density2 + (wait2 * 1.5);
-  float p3 = density3 + (wait3 * 1.5);
-
-  int nextLane = 1;
-  float maxP = -1;
-
-  if (activeLane != 1 && p1 > maxP) { maxP = p1; nextLane = 1; }
-  if (activeLane != 2 && p2 > maxP) { maxP = p2; nextLane = 2; }
-  if (activeLane != 3 && p3 > maxP) { maxP = p3; nextLane = 3; }
-
-  // Fallback if no heavy traffic
-  if (maxP <= 0.0) {
-    if (activeLane == 1) nextLane = 2;
-    else if (activeLane == 2) nextLane = 3;
-    else nextLane = 1;
-  }
-
-  int greenSecs = 0;
-  if (nextLane == 1) {
-    greenSecs = runLane(G1, Y1, R1, density1, ambulance1, 1);
-    wait1 = 0; wait2 += greenSecs + 3; wait3 += greenSecs + 3;
-  } else if (nextLane == 2) {
-    greenSecs = runLane(G2, Y2, R2, density2, ambulance2, 2);
-    wait2 = 0; wait1 += greenSecs + 3; wait3 += greenSecs + 3;
-  } else if (nextLane == 3) {
-    greenSecs = runLane(G3, Y3, R3, density3, ambulance3, 3);
-    wait3 = 0; wait1 += greenSecs + 3; wait2 += greenSecs + 3;
-  }
+  // --- DIRECTION 1 ---
+  runLane(G1, Y1, R1, density1, ambulance1, 1);
   
-  activeLane = nextLane;
+  // --- DIRECTION 2 ---
+  runLane(G2, Y2, R2, density2, ambulance2, 2);
+  
+  // --- DIRECTION 3 ---
+  runLane(G3, Y3, R3, density3, ambulance3, 3);
 }
 
-// ─── Core Logic: Runs a prioritized lane pattern with adaptive timing ───
-int runLane(int G, int Y, int R, int density, int &amb, int laneIdx) {
+// ─── Core Logic: Runs a strict lane pattern with adaptive timing ───
+void runLane(int G, int Y, int R, int density, int &amb, int laneIdx) {
   // 1. Force all red just to be architecturally safe
   allRed();
   
@@ -171,13 +143,12 @@ int runLane(int G, int Y, int R, int density, int &amb, int laneIdx) {
     parseSerialData();
   }
 
+  // 5. Trigger Yellow Transition Phase
   digitalWrite(G, LOW);
   digitalWrite(Y, HIGH); 
   delay(YELLOW_TIME_MS);            
   digitalWrite(Y, LOW);
   digitalWrite(R, HIGH); 
-  
-  return greenSecs;
 }
 
 // ─── Math: Computes the most optimal green time ───
