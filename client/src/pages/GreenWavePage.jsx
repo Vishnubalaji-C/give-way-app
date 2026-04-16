@@ -3,7 +3,7 @@ import { Wind, Radio, Shield, Zap, Activity, Navigation, ExternalLink } from 'lu
 import { useState, useEffect } from 'react';
 
 export default function GreenWavePage() {
-  const { state, send, junctions } = useWs();
+  const { state, send, junctions, alerts } = useWs();
   const [activeHandshake, setActiveHandshake] = useState(null);
 
   const triggerWave = () => {
@@ -110,16 +110,23 @@ export default function GreenWavePage() {
           <div className="glass p-8 rounded-3xl border border-white/5 flex flex-col h-full">
              <h3 className="text-lg font-bold text-white mb-6">Coordination Feed</h3>
              <div className="space-y-4 flex-1">
-                {[
-                   { time: '14:20:01', msg: 'System integrity check. All Nodes Online.', type: 'info' },
-                   { time: '14:20:05', msg: 'Sync established with Render Cloud Bridge.', type: 'success' },
-                   { time: '14:21:30', msg: 'Incoming handshake from JN-003 detected.', type: 'alert' },
-                   { time: '14:22:00', msg: 'Green Wave Logic: Wait Coefficient Adjusted.', type: 'info' },
-                ].map((log, i) => (
-                   <div key={i} className="flex gap-3 text-[10px] font-mono border-l-2 border-slate-800 pl-4 py-1">
-                      <span className="text-slate-500 shrink-0">{log.time}</span>
-                      <span className={log.type === 'alert' ? 'text-amber-500' : log.type === 'success' ? 'text-cyan-400' : 'text-slate-300'}>
-                         {log.msg}
+                {alerts.length === 0 && (
+                   <div className="flex gap-3 text-[10px] font-mono border-l-2 border-slate-800 pl-4 py-2">
+                      <span className="text-slate-600">Awaiting live coordination events...</span>
+                   </div>
+                )}
+                {alerts.slice(0, 6).map((log) => (
+                   <div key={log.id} className="flex gap-3 text-[10px] font-mono border-l-2 border-slate-800 pl-4 py-1">
+                      <span className="text-slate-500 shrink-0">
+                        {new Date(log.timestamp).toLocaleTimeString('en-IN', { hour12: false })}
+                      </span>
+                      <span className={
+                        log.type === 'emergency' ? 'text-red-400' :
+                        log.type === 'warning'   ? 'text-amber-500' :
+                        log.type === 'ghost'     ? 'text-purple-400' :
+                                                   'text-cyan-400'
+                      }>
+                        {log.message}
                       </span>
                    </div>
                 ))}

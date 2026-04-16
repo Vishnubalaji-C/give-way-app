@@ -33,8 +33,14 @@ export default function SimulationPage() {
       {/* ── Top Control Bar ─────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-2xl font-black text-slate-100 mr-2">Live Junction Connection</h2>
-        <div className={`px-3 py-1 rounded-full text-xs font-mono border bg-green-500/10 text-green-400 border-green-500/30`}>
-          ● HARDWARE LIVE
+        <div className={`px-3 py-1 rounded-full text-xs font-mono border transition-all ${
+          !running
+            ? 'bg-slate-500/10 text-slate-500 border-slate-500/30'
+            : state?.dataSource === 'live'
+            ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+            : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+        }`}>
+          {!running ? '⏸ PAUSED' : state?.dataSource === 'live' ? '📡 TOMTOM LIVE' : '🕐 PATTERN MODE'}
         </div>
         <div className="ml-auto flex gap-2 flex-wrap">
           {!running ? (
@@ -157,40 +163,52 @@ export default function SimulationPage() {
         {/* ── Right Panel ───────────────────────────────────── */}
         <div className="space-y-4">
 
-          {/* Hardware Health Widget */}
+          {/* API Data Source Widget */}
           <div className="glass border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
                <div className="flex items-center gap-2">
-                 <span className="text-base text-cyan-400">🛡️</span>
-                 <h3 className="font-bold text-slate-200 text-xs uppercase tracking-wider">Node Telemetry</h3>
+                 <span className="text-base text-cyan-400">🛰️</span>
+                 <h3 className="font-bold text-slate-200 text-xs uppercase tracking-wider">Data Source</h3>
                </div>
                <div className="flex gap-1">
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500/20"></div>
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500/20"></div>
+                 <div className={`w-1.5 h-1.5 rounded-full transition-all ${ running ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-slate-700' }`}></div>
+                 <div className={`w-1.5 h-1.5 rounded-full transition-all ${ state?.apiStatus?.tomtom ? 'bg-cyan-500 shadow-[0_0_8px_#22d3ee]' : 'bg-slate-700' }`}></div>
+                 <div className={`w-1.5 h-1.5 rounded-full transition-all ${ state?.apiStatus?.weather ? 'bg-purple-500 shadow-[0_0_8px_#a855f7]' : 'bg-slate-700' }`}></div>
                </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
                <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
-                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Arduino CPU</div>
-                  <div className="text-sm font-black text-cyan-400 font-mono">16.0 MHz</div>
-                  <div className="text-[8px] text-green-500 mt-1 font-bold">STABLE</div>
+                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Traffic API</div>
+                  <div className="text-sm font-black text-cyan-400 font-mono">
+                    {state?.apiStatus?.tomtom ? 'TomTom' : 'Pattern'}
+                  </div>
+                  <div className={`text-[8px] mt-1 font-bold ${ state?.apiStatus?.tomtom ? 'text-green-500' : 'text-amber-500' }`}>
+                    {state?.apiStatus?.tomtom ? 'CONNECTED' : 'TIME-OF-DAY'}
+                  </div>
                </div>
                <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/30">
-                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">ESP32 Cam</div>
-                  <div className="text-sm font-black text-cyan-400 font-mono">4 ACTIVE</div>
-                  <div className="text-[8px] text-green-500 mt-1 font-bold">STREAMING</div>
+                  <div className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Weather API</div>
+                  <div className="text-sm font-black text-cyan-400 font-mono">
+                    {state?.apiStatus?.weather ? 'OWM' : 'Manual'}
+                  </div>
+                  <div className={`text-[8px] mt-1 font-bold ${ state?.apiStatus?.weather ? 'text-green-500' : 'text-slate-500' }`}>
+                    {state?.apiStatus?.weather ? 'AUTO-SYNC' : 'OFFLINE'}
+                  </div>
                </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-700/40">
                <div className="flex justify-between text-[10px] items-center">
-                  <span className="text-slate-500 font-mono">LATENCY (ms)</span>
-                  <span className="text-green-400 font-black">24ms</span>
+                  <span className="text-slate-500 font-mono">LAST FETCH</span>
+                  <span className="text-green-400 font-black text-[10px]">
+                    {state?.apiStatus?.lastFetch
+                      ? new Date(state.apiStatus.lastFetch).toLocaleTimeString('en-IN', { hour12: false })
+                      : '—'}
+                  </span>
                </div>
                <div className="mt-2 h-1 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 w-[15%]"></div>
+                  <div className={`h-full transition-all duration-1000 ${ running ? 'w-full bg-green-500' : 'w-0 bg-slate-700' }`}></div>
                </div>
             </div>
           </div>
@@ -296,12 +314,12 @@ export default function SimulationPage() {
           <div className="glass border border-cyan-500/10 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-base">🌐</span>
-              <h3 className="font-bold text-slate-200 text-sm">Simulation Modes</h3>
+              <h3 className="font-bold text-slate-200 text-sm">Environment Modes</h3>
             </div>
             <div className="space-y-3">
               {[
-                { key: 'rain',  label: '🌧️ Rain Mode',       desc: '+2s yellow time' },
-                { key: 'night', label: '🌙 Night Mode',       desc: 'Sparse traffic after 11 PM' },
+                { key: 'rain',  label: '🌧️ Rain Mode',  desc: 'Auto-detected via WeatherSync' },
+                { key: 'night', label: '🌙 Night Mode', desc: 'Auto-enabled after 22:00 by WeatherSync' },
               ].map(m => {
                 const active = state?.mode?.[m.key] ?? false;
                 return (

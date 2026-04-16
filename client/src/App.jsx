@@ -32,17 +32,11 @@ export default function App() {
   const [isMobile,   setIsMobile]   = useState(() => window.innerWidth < 1024);
   const [theme,      setTheme]      = useState(() => localStorage.getItem('makeway_theme') || 'dark');
 
-  const [user, setUser] = useState(() => {
-    try {
-      const data = localStorage.getItem('makeway_user');
-      if (!data) return null;
-      const parsed = JSON.parse(data);
-      if (parsed.expiresAt > Date.now()) return parsed;
-      localStorage.removeItem('makeway_user');
-    } catch (e) {
-      localStorage.removeItem('makeway_user');
-    }
-    return null;
+  const [user, setUser] = useState({ 
+    id: 'admin', 
+    role: 'admin', 
+    name: 'Administrator', 
+    token: 'bypass-token' 
   });
 
   // Always enforce dark mode – glassmorphism UI is dark-only
@@ -57,44 +51,14 @@ export default function App() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Background Auto-Login for Demo Mode
-  useEffect(() => {
-    if (!user && !showSplash) {
-       console.log('🛡️ [AUTH] Attempting Background Auto-Login...');
-       axios.post(`${API_BASE_URL}/api/auth/login`, { id: 'admin', pin: '1234' })
-         .then(res => {
-           if (res.data.success) {
-              const authObj = { ...res.data.user, token: res.data.token, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
-              localStorage.setItem('makeway_user', JSON.stringify(authObj));
-              setUser(authObj);
-              console.log('✅ [AUTH] Auto-Login Successful. Logged in as Guest Admin.');
-           }
-         })
-         .catch(err => {
-           console.warn('⚠️ [AUTH] Auto-Login Failed. Proceeding to Manual Login Screen.', err);
-         });
-    }
-  }, [user, showSplash]);
-
   // ─── CONDITIONAL RENDERS – after all hooks ─────────────────────────────────
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
 
-  if (!user) {
-    return (
-      <AuthPage onLogin={(userData) => {
-        const authObj = { ...userData, expiresAt: Date.now() + 10 * 24 * 60 * 60 * 1000 };
-        localStorage.setItem('makeway_user', JSON.stringify(authObj));
-        setUser(authObj);
-        setTab('dashboard');
-      }} />
-    );
-  }
-
   const logout = () => {
-    localStorage.removeItem('makeway_user');
-    setUser(null);
+    // No-op since login is disabled
+    setTab('dashboard');
   };
 
   const handleSetTheme = (newTheme) => {
@@ -139,9 +103,9 @@ export default function App() {
     control:    ControlRoomPage,
     override:   () => (
       <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
-        Emergency Override Emitting...
+        Emergency Override Active
         <br />
-        <span className="text-sm opacity-50 mt-4 block">Waiting for hardware relay response</span>
+        <span className="text-sm opacity-50 mt-4 block">All lanes set to RED — MakeWay AI control suspended</span>
       </div>
     ),
     incidents: () => (

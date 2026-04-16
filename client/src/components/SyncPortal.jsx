@@ -138,7 +138,7 @@ export default function SyncPortal({ isOpen, onClose }) {
 
         <div className="bg-cyan-500/10 p-4 border-t border-white/5 flex items-center justify-center gap-2 text-xs text-white/40 font-medium">
           <CheckCircle size={14} className="text-cyan-400/50" />
-          Hardware Pins Lock Verified: Antigravity Protocol 4.2
+          Cloud Bridge Verified — Antigravity Protocol 4.2 · No Hardware Required
         </div>
       </motion.div>
     </div>

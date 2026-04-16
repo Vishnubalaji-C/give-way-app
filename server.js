@@ -12,6 +12,7 @@ require('dotenv').config();
 const path    = require('path');
 const fs      = require('fs');
 const dgram   = require('dgram');
+const { SerialPort } = require('serialport');
 
 const app    = express();
 const server = http.createServer(app);
@@ -181,6 +182,12 @@ const PHASE_GREEN   = 15;     // base green phase duration
 
 const PCE = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
 
+// ─── External API Keys & Data Source State ────────────────────────────────────
+const TOMTOM_KEY = process.env.TOMTOM_API_KEY || '';
+const OWM_KEY    = process.env.OWM_API_KEY    || '';
+let   dataSource = 'paused'; // 'live' | 'pattern' | 'paused'
+let   apiStatus  = { tomtom: false, weather: false, lastFetch: null };
+
 // ─── Multi-Junction Location Registry ─────────────────────────────────────────
 // Each deployed hardware set gets a unique junction entry with location metadata
 const junctions = {
@@ -259,8 +266,37 @@ setInterval(() => {
 
 let state = buildInitialState(db.analytics);
 let auditLog = db.auditLog;
-let worldTimer = null;
-let snapTimer = null;
+let worldTimer       = null;
+let snapTimer        = null;
+let weatherPollTimer = null;
+
+// ─── Arduino Physical Bridge ───────────────────────────────────────────────────
+let arduinoPort = null;
+
+async function connectArduino() {
+  try {
+    const ports = await SerialPort.list();
+    // Auto-detect Arduino boards based on manufacturer or known USB chips
+    const portInfo = ports.find(p => p.manufacturer?.includes('Arduino') || p.manufacturer?.includes('CH340') || p.manufacturer?.includes('FTDI')) || ports[0];
+    
+    if (portInfo) {
+      arduinoPort = new SerialPort({ path: portInfo.path, baudRate: 115200 });
+      console.log(`🔌 [HARDWARE] Physical Bridge Active on ${portInfo.path}`);
+      arduinoPort.on('error', err => console.log('Arduino Error: ', err.message));
+    } else {
+      console.log('🔌 [HARDWARE] No Arduino detected. Running in software-only mode.');
+    }
+  } catch (err) {
+    console.log('🔌 [HARDWARE] Serial probe failed:', err.message);
+  }
+}
+connectArduino();
+
+function sendToArduino(laneId, action) {
+  if (arduinoPort && arduinoPort.isOpen) {
+    arduinoPort.write(`${laneId}${action}\n`); // e.g., "1G", "2Y", "3R"
+  }
+}
 
 function buildInitialState(persisted = null) {
   const lanes = {};
@@ -356,6 +392,7 @@ function switchLane(nextId) {
   outgoingLane.signal = 'yellow';
   outgoingLane.phase  = 'yellow';
   state.phaseTimer    = yellowTime; // Update timer to Yellow duration
+  sendToArduino(outgoingId, 'Y'); // Hardware CMD
   broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 
   setTimeout(() => {
@@ -364,6 +401,7 @@ function switchLane(nextId) {
     state.lanes[outgoingId].phase  = 'red';
     state.lanes[outgoingId].greenTimer = 0;
     state.lanes[outgoingId].staticCycles = 0;
+    sendToArduino(outgoingId, 'R'); // Hardware CMD
 
     // Activate new lane
     state.lanes[nextId].signal    = 'green';
@@ -374,6 +412,7 @@ function switchLane(nextId) {
     state.lanes[nextId].isEmergency = false; // Reset on green entry
     state.activeLane = nextId;
     state.phaseTimer = state.lanes[nextId].greenTimer;
+    sendToArduino(nextId, 'G'); // Hardware CMD
 
     broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
   }, yellowTime * 1000);
@@ -427,22 +466,125 @@ function processEdgeData(laneId, vehicles) {
    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 }
 
-// ─── Traffic Simulation Generator (Demo / Dashboard Testing) ──────────────────
-function generateTraffic() {
-  if (!simulationRunning) return;
+// ─── Time-of-Day Traffic Pattern Engine (Chennai-specific) ───────────────────
+// Returns 0.2–1.0 based on real Chennai traffic rhythm — used as fallback/baseline
+function getTimeOfDayMultiplier() {
+  const hour = new Date().getHours();
+  if (hour >= 7  && hour < 10) return 1.0;   // Morning rush
+  if (hour >= 10 && hour < 12) return 0.65;  // Mid-morning
+  if (hour >= 12 && hour < 14) return 0.75;  // Lunch peak
+  if (hour >= 14 && hour < 17) return 0.55;  // Afternoon lull
+  if (hour >= 17 && hour < 20) return 1.0;   // Evening rush (heaviest)
+  if (hour >= 20 && hour < 23) return 0.45;  // Night wind-down
+  return 0.2;                                 // Late night / early morning
+}
 
-  LANES.forEach(id => {
-    const lane = state.lanes[id];
-    // Generate realistic random vehicle counts for simulation
-    const vehicles = {
-      ambulance: Math.random() < 0.03 ? 1 : 0,   // 3% chance of ambulance
-      bus:       Math.floor(Math.random() * 3),     // 0-2 buses
-      car:       Math.floor(Math.random() * 12 + 1),// 1-12 cars
-      bike:      Math.floor(Math.random() * 8),     // 0-7 bikes
-      lorry:     Math.floor(Math.random() * 4),     // 0-3 lorries
-    };
-    processEdgeData(id, vehicles);
-  });
+// ─── Speed Ratio → PCE Vehicle Count Mapper ──────────────────────────────────
+// speedRatio = TomTom currentSpeed / freeFlowSpeed  (lower → more congested)
+function speedRatioToVehicles(speedRatio, multiplier, laneIndex) {
+  const congestion = Math.max(0, Math.min(1, 1 - speedRatio));
+  const seed = (laneIndex + 1) * 0.15; // per-lane directional variation
+  return {
+    ambulance: Math.random() < (congestion > 0.8 ? 0.08 : 0.02) ? 1 : 0,
+    bus:       Math.max(0, Math.round((1 + congestion * 3 + seed) * multiplier)),
+    car:       Math.max(1, Math.round((3 + congestion * 14 + seed * 2) * multiplier)),
+    bike:      Math.max(0, Math.round((2 + congestion * 7  + seed) * multiplier)),
+    lorry:     Math.max(0, Math.round((congestion * 4 + seed * 0.5) * multiplier)),
+  };
+}
+
+// ─── Live Traffic Data Fetcher (TomTom API → Time-of-Day fallback) ─────────────
+async function fetchLiveTrafficData() {
+  if (!simulationRunning) return;
+  const jn = junctions[activeJunction];
+  if (!jn) return;
+
+  const multiplier = getTimeOfDayMultiplier();
+
+  // Each lane maps to a slightly different GPS coordinate (approach directions)
+  const laneCoords = [
+    { lat: jn.lat - 0.0008, lng: jn.lng           }, // Lane 1 – South approach
+    { lat: jn.lat,          lng: jn.lng + 0.0008  }, // Lane 2 – East approach
+    { lat: jn.lat,          lng: jn.lng - 0.0008  }, // Lane 3 – West approach
+  ];
+
+  for (let i = 0; i < LANES.length; i++) {
+    const laneId = LANES[i];
+    const { lat, lng } = laneCoords[i];
+    let resolved = false;
+
+    if (TOMTOM_KEY) {
+      try {
+        const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${lat},${lng}&key=${TOMTOM_KEY}`;
+        const res  = await fetch(url, { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          const data = await res.json();
+          const seg  = data?.flowSegmentData;
+          if (seg && seg.freeFlowSpeed > 0) {
+            const ratio    = seg.currentSpeed / seg.freeFlowSpeed;
+            const vehicles = speedRatioToVehicles(ratio, multiplier, i);
+            processEdgeData(laneId, vehicles);
+            resolved = true;
+            apiStatus.tomtom  = true;
+            apiStatus.lastFetch = Date.now();
+            dataSource = 'live';
+          }
+        }
+      } catch (_) {
+        apiStatus.tomtom = false;
+      }
+    }
+
+    if (!resolved) {
+      // Time-of-day pattern engine: deterministic ratio derived from hour + lane variance
+      const hour  = new Date().getHours();
+      const base  = 0.40 + (getTimeOfDayMultiplier() * 0.45);
+      const noise = (Math.sin(Date.now() / 30000 + i) + 1) / 2 * 0.15; // slow drift
+      const patternRatio = Math.min(1, base + noise);
+      processEdgeData(laneId, speedRatioToVehicles(patternRatio, multiplier, i));
+      dataSource = 'pattern';
+      apiStatus.lastFetch = Date.now();
+    }
+  }
+}
+
+// ─── OpenWeatherMap Auto Weather-Mode Sync ─────────────────────────────────────
+async function fetchWeatherData() {
+  const jn = junctions[activeJunction];
+  if (!jn || !OWM_KEY) return;
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${jn.lat}&lon=${jn.lng}&appid=${OWM_KEY}&units=metric`;
+    const res  = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return;
+    const data = await res.json();
+    const weatherId      = data?.weather?.[0]?.id ?? 800;
+    const hour           = new Date().getHours();
+    const isRaining      = weatherId >= 200 && weatherId < 700;
+    const isNight        = hour >= 22 || hour < 6;
+    const isThunderstorm = weatherId >= 200 && weatherId < 300;
+
+    if (isRaining !== state.mode.rain) {
+      state.mode.rain = isRaining;
+      addAlert('info', isRaining
+        ? `🌧️ WeatherSync: Rain detected at ${jn.name}. Yellow time extended to 5s.`
+        : `☀️ WeatherSync: Conditions cleared. Normal timing restored.`, null);
+    }
+    if (isNight !== state.mode.night) {
+      state.mode.night = isNight;
+      addAlert('info', isNight
+        ? `🌙 WeatherSync: Night mode active — sparse traffic expected.`
+        : `🌅 WeatherSync: Day mode restored.`, null);
+    }
+    if (isThunderstorm) {
+      addAlert('warning', `⛈️ Thunderstorm alert at ${jn.name}! Caution advised.`, null);
+    }
+    apiStatus.weather = true;
+    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+    console.log(`[WEATHER] ${jn.name}: ${data.weather[0].description}, ${data.main.temp}°C`);
+  } catch (err) {
+    apiStatus.weather = false;
+    console.warn('[WEATHER] OpenWeatherMap unavailable:', err.message);
+  }
 }
 
 // ─── World Clock Tick ─────────────────────────────────────────────────────────
@@ -541,29 +683,40 @@ function handleClientMessage(msg) {
     case 'START_SIM':
       if (!simulationRunning) {
         simulationRunning = true;
+        dataSource = TOMTOM_KEY ? 'live' : 'pattern';
         clearInterval(snapTimer);
         clearInterval(worldTimer);
-        snapTimer  = setInterval(generateTraffic, SNAP_INTERVAL);
-        worldTimer = setInterval(tick, TICK_INTERVAL);
-        generateTraffic();
-        addAlert('info', '▶ Simulation started — MakeWay engine active.', null);
+        clearInterval(weatherPollTimer);
+        fetchLiveTrafficData();
+        snapTimer        = setInterval(fetchLiveTrafficData, SNAP_INTERVAL);
+        worldTimer       = setInterval(tick, TICK_INTERVAL);
+        fetchWeatherData();
+        weatherPollTimer = setInterval(fetchWeatherData, 600000); // every 10 min
+        addAlert('info', TOMTOM_KEY
+          ? '📡 Live feed active — MakeWay connected to TomTom traffic network.'
+          : '🕐 Pattern engine active — time-of-day traffic modeling engaged.', null);
       }
       break;
 
     case 'STOP_SIM':
       simulationRunning = false;
+      dataSource = 'paused';
       clearInterval(snapTimer);
       clearInterval(worldTimer);
-      addAlert('info', '⏸ Simulation paused.', null);
+      clearInterval(weatherPollTimer);
+      addAlert('info', '⏸ Live feed paused.', null);
       break;
 
     case 'RESET_SIM':
       simulationRunning = false;
+      dataSource = 'paused';
       clearInterval(snapTimer);
       clearInterval(worldTimer);
+      clearInterval(weatherPollTimer);
       state = buildInitialState();
       auditLog = [];
       overrideMode = 'auto';
+      apiStatus = { tomtom: false, weather: false, lastFetch: null };
       broadcast({ type: 'RESET', payload: sanitizeState() });
       break;
 
@@ -672,7 +825,9 @@ function sanitizeState() {
   return {
     ...JSON.parse(JSON.stringify(state)),
     simulationRunning,
-    overrideMode
+    overrideMode,
+    dataSource,
+    apiStatus,
   };
 }
 
@@ -894,6 +1049,18 @@ app.post('/api/junctions/switch', requireAuth, (req, res) => {
   broadcast({ type: 'JUNCTION_SWITCH', payload: { junction: junctions[activeJunction], state: sanitizeState() } });
   logAudit('JUNCTION_SWITCH', `Switched monitoring to ${junctions[activeJunction].name} (${junctionId})`);
   res.json({ success: true, junction: junctions[activeJunction] });
+});
+
+// ─── Data Source Status API ─────────────────────────────────────────────────
+app.get('/api/data-source', (req, res) => {
+  res.json({
+    dataSource,
+    apiStatus,
+    simulationRunning,
+    tomtomEnabled: !!TOMTOM_KEY,
+    owmEnabled: !!OWM_KEY,
+    timeOfDayMultiplier: getTimeOfDayMultiplier(),
+  });
 });
 
 // ─── Frontend React Navigation Fallback ───────────────────────────────────────
