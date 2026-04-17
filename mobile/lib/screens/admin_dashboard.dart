@@ -99,7 +99,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'LINK: 172.18.99.1 · ${_latency}ms'.toUpperCase(),
+                  'CLOUD: render.com · ${_latency}ms'.toUpperCase(),
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF00E5FF), letterSpacing: 1),
                 ),
               ],
