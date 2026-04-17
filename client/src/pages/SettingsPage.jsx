@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useWs } from '../context/WsContext';
 import { Shield, Zap, Book, SlidersHorizontal, UserCheck } from 'lucide-react';
 
-const LANES = ['N', 'S', 'E', 'W'];
-const LANE_LABELS = { N: 'North', S: 'South', E: 'East', W: 'West' };
+const LANES = ['1', '2', '3'];
+const LANE_LABELS = { '1': 'Primary', '2': 'Secondary', '3': 'Transverse' };
 
 export default function SettingsPage({ user, onUpdateUser }) {
   const { state, auditLog, send } = useWs();
@@ -20,7 +20,7 @@ export default function SettingsPage({ user, onUpdateUser }) {
   const lanes = state?.lanes ?? {};
 
   const OVERRIDE_MODES = [
-    { id: 'auto',      label: '🤖 GiveWay AI',     desc: 'Full autonomous edge hardware control' },
+    { id: 'auto',      label: '🤖 MakeWay AI',    desc: 'Full autonomous adaptive traffic control' },
     { id: 'vip',       label: '👑 VIP Corridor',    desc: 'Escort mode favoring pre-planned route' },
     { id: 'festival',  label: '🎉 Festival Mode',   desc: 'Load sharing for extremely dense crowds' },
     { id: 'emergency', label: '🚨 All-Stop',         desc: 'Lockdown mode: Red lights enforced on all lanes' },

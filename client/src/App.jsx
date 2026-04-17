@@ -10,7 +10,6 @@ import AnalyticsPage   from './pages/AnalyticsPage';
 import SettingsPage    from './pages/SettingsPage';
 import MapPage         from './pages/MapPage';
 import GreenWavePage   from './pages/GreenWavePage';
-import AuthPage        from './pages/AuthPage';
 import SimulationPage  from './pages/SimulationPage';
 import ControlRoomPage from './pages/ControlRoomPage';
 import { API_BASE_URL } from './config';
@@ -32,11 +31,13 @@ export default function App() {
   const [isMobile,   setIsMobile]   = useState(() => window.innerWidth < 1024);
   const [theme,      setTheme]      = useState(() => localStorage.getItem('makeway_theme') || 'dark');
 
-  const [user, setUser] = useState({ 
-    id: 'admin', 
-    role: 'admin', 
-    name: 'Administrator', 
-    token: 'bypass-token' 
+  const [user, setUser] = useState(() => {
+    // Load from localStorage or default to admin role
+    try {
+      const stored = localStorage.getItem('makeway_user');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return { role: 'admin', name: 'Administrator' };
   });
 
   // Always enforce dark mode – glassmorphism UI is dark-only
