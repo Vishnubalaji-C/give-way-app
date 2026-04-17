@@ -71,8 +71,7 @@ export default function App() {
     if (updatedUser.role && updatedUser.role !== user.role) {
       try {
         const res = await axios.patch(`${API_BASE_URL}/api/auth/role`, 
-          { role: updatedUser.role },
-          { headers: { Authorization: `Bearer ${user.token}` } }
+          { role: updatedUser.role }
         );
         if (res.data.success) {
           const newUser = { ...user, ...res.data.user };

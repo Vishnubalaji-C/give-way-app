@@ -5,80 +5,25 @@ import 'ws_service.dart';
 class ApiService {
   static String get baseUrl => WsService.baseUrl;
 
-  static Future<Map<String, dynamic>> register({
-    required String id,
-    required String pin,
-    required String role,
-    String? badge,
-    String? station,
-    String? dept,
-    String? access,
-    String? fullName,
-  }) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'id': id,
-        'pin': pin,
-        'role': role,
-        'badge': badge,
-        'station': station,
-        'dept': dept,
-        'access': access,
-        'fullName': fullName,
-      }),
-    );
-    final data = jsonDecode(res.body);
-    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Registration failed');
-    return data;
-  }
-
-  static Future<Map<String, dynamic>> login({
-    required String id,
-    required String pin,
-  }) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'id': id, 'pin': pin}),
-    );
-    final data = jsonDecode(res.body);
-    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Login failed');
-    return data;
-  }
-
-  static Future<Map<String, dynamic>> getState(String token) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/state'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  static Future<Map<String, dynamic>> getState() async {
+    final res = await http.get(Uri.parse('$baseUrl/api/state'));
     return jsonDecode(res.body);
   }
 
-  static Future<List<dynamic>> getAlerts(String token) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/alerts'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  static Future<List<dynamic>> getAlerts() async {
+    final res = await http.get(Uri.parse('$baseUrl/api/alerts'));
     return jsonDecode(res.body);
   }
 
-  static Future<Map<String, dynamic>> getAnalytics(String token) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/analytics'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  static Future<Map<String, dynamic>> getAnalytics() async {
+    final res = await http.get(Uri.parse('$baseUrl/api/analytics'));
     return jsonDecode(res.body);
   }
 
-  static Future<Map<String, dynamic>> switchRole(String token, String role) async {
+  static Future<Map<String, dynamic>> switchRole(String role) async {
     final res = await http.patch(
       Uri.parse('$baseUrl/api/auth/role'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'role': role}),
     );
     final data = jsonDecode(res.body);

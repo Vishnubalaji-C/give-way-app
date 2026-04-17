@@ -58,7 +58,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> _fetchAnalytics() async {
     try {
-      final data = await ApiService.getAnalytics(widget.user['token']);
+      final data = await ApiService.getAnalytics();
       setState(() => _analytics = data);
     } catch (e) {
       debugPrint('Failed to fetch analytics: $e');

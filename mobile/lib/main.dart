@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/auth_screen.dart';
+
 import 'screens/police_dashboard.dart';
 import 'screens/admin_dashboard.dart';
 import 'services/api_service.dart';
@@ -37,46 +37,22 @@ class _MakeWayAppState extends State<MakeWayApp> {
 
   Future<void> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final role = prefs.getString('role');
-    final id = prefs.getString('userId');
-    final name = prefs.getString('userName');
-    final expiresAt = prefs.getInt('expiresAt') ?? 0;
+    await Future.delayed(const Duration(milliseconds: 1500)); // Play Splash Screen
+    final role = prefs.getString('role') ?? 'police';
+    final name = prefs.getString('userName') ?? 'Tactical Officer';
 
-    if (token != null && expiresAt > DateTime.now().millisecondsSinceEpoch) {
-      if (mounted) {
-        setState(() {
-          _user = {'token': token, 'role': role, 'id': id, 'name': name};
-          _loading = false;
-        });
-      }
-    } else {
-      await prefs.clear();
-      if (mounted) setState(() => _loading = false);
+    if (mounted) {
+      setState(() {
+        _user = {'role': role, 'name': name};
+        _loading = false;
+      });
     }
-  }
-
-  Future<void> _onLogin(Map<String, dynamic> userData) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', userData['token']);
-    await prefs.setString('role', userData['role']);
-    await prefs.setString('userId', userData['id']);
-    await prefs.setString('userName', userData['name'] ?? '');
-    await prefs.setInt('expiresAt',
-        DateTime.now().millisecondsSinceEpoch + 7 * 24 * 60 * 60 * 1000);
-    setState(() => _user = userData);
-  }
-
-  Future<void> _onLogout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    setState(() => _user = null);
   }
 
   Future<void> _switchRole(String newRole) async {
     if (_user == null) return;
     try {
-      final res = await ApiService.switchRole(_user!['token'], newRole);
+      final res = await ApiService.switchRole(newRole);
       if (res['success'] == true) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('role', newRole);
@@ -143,21 +119,19 @@ class _MakeWayAppState extends State<MakeWayApp> {
       ),
       home: _loading
           ? const _SplashScreen()
-          : _user == null
-              ? AuthScreen(onLogin: _onLogin)
-              : _user!['role'] == 'police'
-                      ? PoliceDashboard(
-                      user: _user!,
-                      onLogout: _onLogout,
-                      onToggleTheme: _toggleTheme,
-                      onSwitchRole: _switchRole,
-                    )
-                  : AdminDashboard(
-                      user: _user!,
-                      onLogout: _onLogout,
-                      onToggleTheme: _toggleTheme,
-                      onSwitchRole: _switchRole,
-                    ),
+          : _user!['role'] == 'police'
+              ? PoliceDashboard(
+                  user: _user!,
+                  onLogout: () {},
+                  onToggleTheme: _toggleTheme,
+                  onSwitchRole: _switchRole,
+                )
+              : AdminDashboard(
+                  user: _user!,
+                  onLogout: () {},
+                  onToggleTheme: _toggleTheme,
+                  onSwitchRole: _switchRole,
+                ),
     );
   }
 }

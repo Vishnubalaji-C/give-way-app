@@ -155,21 +155,7 @@ function ensureGuestAccount() {
 ensureGuestAccount();
 
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
-// Require valid Bearer token for API operations
-async function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Confidential Access: Missing or invalid token' });
-  }
-  const token = authHeader.split(' ')[1];
-  const user = db.users.find(u => u.token === token);
-  
-  if (!user) {
-    return res.status(403).json({ error: 'Access Denied: Invalid Unique credentials' });
-  }
-  req.user = user;
-  next();
-}
+// Auth layer removed. Frictionless RBAC toggling is now active.
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const LANES        = ['1', '2', '3'];
@@ -832,75 +818,15 @@ function sanitizeState() {
 }
 
 // ─── Secure Mobile/Web Auth APIs (JSON System) ────────────────────────────────
-app.post('/api/auth/register', async (req, res) => {
-  const id = String(req.body.id || '');
-  const pin = String(req.body.pin || '');
-  const { role, badge, station, dept, access, fullName } = req.body;
-  if (!id || !pin || !role) return res.status(400).json({ error: 'Missing core credentials' });
-  
-  if (db.users.find(u => String(u.id) === id)) {
-    return res.status(409).json({ error: 'This Unique ID is already registered. Please choose a different Officer/Admin ID.' });
-  }
-
-  if (role === 'police' && badge && db.users.find(u => u.meta?.badge === badge)) {
-    return res.status(409).json({ error: 'This Badge Number is already assigned to another active officer.' });
-  }
-
-  const token = uuidv4() + '-' + Date.now().toString(36);
-  const newUserParams = {
-    id, pin, role, token,
-    name: fullName ? fullName : (role === 'police' ? `Officer ${id}` : `${dept} Admin`),
-    meta: role === 'police' ? { badge, station } : { dept, access },
-    createdAt: new Date().toISOString()
-  };
-
-  db.users.push(newUserParams);
-  saveToDisk();
-  
-  logAudit('USER_REGISTER', `${newUserParams.name} registered into the system via ${role} terminal.`);
-  const { pin: _p, ...safeUser } = newUserParams;
-  res.json({ success: true, user: safeUser, token });
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  const id = String(req.body.id || '');
-  const pin = String(req.body.pin || '');
-  const user = db.users.find(u => String(u.id) === id && String(u.pin) === pin);
-  
-  if (!user) {
-    return res.status(401).json({ error: 'Authentication Failed: Invalid ID or PIN.' });
-  }
-
-  user.token = uuidv4() + '-' + Date.now().toString(36);
-  saveToDisk();
-
-  logAudit('USER_LOGIN', `${user.name} established a secure uplink.`);
-  const { pin: _p, ...safeUser } = user;
-  res.json({ success: true, user: safeUser, token: user.token });
-});
-
-app.patch('/api/auth/role', requireAuth, (req, res) => {
+app.patch('/api/auth/role', (req, res) => {
   const { role } = req.body;
   if (!['admin', 'police'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role requested.' });
   }
 
-  // Update logic for the authenticated user
-  const userIndex = db.users.findIndex(u => u.id === req.user.id);
-  if (userIndex === -1) return res.status(404).json({ error: 'User session invalid.' });
-
-  db.users[userIndex].role = role;
+  logAudit('ROLE_SWITCH', `Terminal instantly transitioned to ${role} persona.`);
   
-  // Explicitly update default names if they were system-generated
-  if (db.users[userIndex].name.includes('Officer') || db.users[userIndex].name.includes('Admin')) {
-    db.users[userIndex].name = (role === 'police' ? `Officer ${db.users[userIndex].id}` : `Central Admin`);
-  }
-
-  saveToDisk();
-  logAudit('ROLE_SWITCH', `User ${req.user.id} transitioned to ${role} persona.`);
-  
-  const { pin, ...safeUser } = db.users[userIndex];
-  res.json({ success: true, user: safeUser });
+  res.json({ success: true, user: { role, name: role === 'police' ? 'Tactical Officer' : 'Central Admin' } });
 });
 
 // ─── Secure QR Discovery API ──────────────────────────────────────────────────
@@ -930,9 +856,9 @@ app.get('/api/sync/token', (req, res) => {
 });
 
 // ─── REST APIs ────────────────────────────────────────────────────────────────
-app.get('/api/state', requireAuth, (req, res) => res.json(sanitizeState()));
-app.get('/api/alerts', requireAuth, (req, res) => res.json(state.alerts));
-app.get('/api/audit', requireAuth, (req, res) => res.json(auditLog));
+app.get('/api/state', (req, res) => res.json(sanitizeState()));
+app.get('/api/alerts', (req, res) => res.json(state.alerts));
+app.get('/api/audit', (req, res) => res.json(auditLog));
 
 app.get('/api/analytics', (req, res) => {
   res.json({
@@ -952,7 +878,7 @@ app.get('/api/analytics', (req, res) => {
 // ─── Dynamic Junction Location Update ────────────────────────────────────────
 // Called by the frontend after it reverse-geocodes the browser's GPS position.
 // This replaces the hardcoded static coordinates with real on-the-ground data.
-app.patch('/api/junctions/:id', requireAuth, (req, res) => {
+app.patch('/api/junctions/:id', (req, res) => {
   const { id } = req.params;
   const { name, address, zone, lat, lng, city, state: stateField } = req.body;
 
@@ -1041,7 +967,7 @@ app.get('/api/junctions/:id', (req, res) => {
   res.json(junction);
 });
 
-app.post('/api/junctions/switch', requireAuth, (req, res) => {
+app.post('/api/junctions/switch', (req, res) => {
   const { junctionId } = req.body;
   if (!junctions[junctionId]) return res.status(404).json({ error: 'Junction not found' });
   activeJunction = junctionId;
