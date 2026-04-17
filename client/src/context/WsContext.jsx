@@ -50,14 +50,10 @@ export function WsProvider({ children }) {
           const dynamicAddress = geo.display_name?.split(',').slice(0, 3).join(',') || `${road}, ${suburb}`;
           const dynamicZone    = `${district} — ${stateVal}`;
 
-          // Step 4: Retrieve stored token and PATCH the active junction (JN-001)
-          const stored = localStorage.getItem('makeway_user');
-          const token  = stored ? JSON.parse(stored)?.token : null;
-          if (!token) return;
-
+          // Step 4: PATCH the active junction (JN-001) with real location
           await fetch(`${API_BASE_URL}/api/junctions/JN-001`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: dynamicName, address: dynamicAddress, zone: dynamicZone, lat, lng, city, state: stateVal }),
           });
 
@@ -77,17 +73,13 @@ export function WsProvider({ children }) {
           const ipGeo = await ipRes.json();
           if (ipGeo.latitude && ipGeo.longitude) {
              const dynamicName = `${ipGeo.city || 'Local'} Junction`;
-             const stored = localStorage.getItem('makeway_user');
-             const token  = stored ? JSON.parse(stored)?.token : null;
-             if (token) {
-               await fetch(`${API_BASE_URL}/api/junctions/JN-001`, {
-                 method: 'PATCH',
-                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                 body: JSON.stringify({ name: dynamicName, address: ipGeo.city, zone: ipGeo.region, lat: ipGeo.latitude, lng: ipGeo.longitude, city: ipGeo.city, state: ipGeo.region }),
-               });
-               const refreshed = await fetch(`${API_BASE_URL}/api/junctions`).then(r => r.json());
-               if (Array.isArray(refreshed)) setJunctions(refreshed);
-             }
+             await fetch(`${API_BASE_URL}/api/junctions/JN-001`, {
+               method: 'PATCH',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ name: dynamicName, address: ipGeo.city, zone: ipGeo.region, lat: ipGeo.latitude, lng: ipGeo.longitude, city: ipGeo.city, state: ipGeo.region }),
+             });
+             const refreshed = await fetch(`${API_BASE_URL}/api/junctions`).then(r => r.json());
+             if (Array.isArray(refreshed)) setJunctions(refreshed);
           }
         } catch(e) {}
       },
@@ -164,14 +156,11 @@ export function WsProvider({ children }) {
     }
   }, [connect]);
 
-  const switchJunction = useCallback(async (junctionId, token) => {
+  const switchJunction = useCallback(async (junctionId) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/junctions/switch`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ junctionId }),
       });
       const data = await res.json();
