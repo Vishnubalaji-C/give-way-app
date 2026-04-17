@@ -28,15 +28,14 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
-    callback(new Error('Not allowed by CORS'));
+    callback(null, true); // Allow all in a frictionless/local setting
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Api-Version'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   credentials: true
 }));
 
@@ -830,35 +829,17 @@ app.patch('/api/auth/role', (req, res) => {
 });
 
 // ─── Secure QR Discovery API ──────────────────────────────────────────────────
-app.get('/api/sync/token', (req, res) => {
-  // Returns current IP (detected or from env) and the active uplink token
-  const os = require('os');
-  const networks = os.networkInterfaces();
-  let localIp = '127.0.0.1';
-  
-  // Find typical local WiFi/Ethernet IP
-  for (const name of Object.keys(networks)) {
-    for (const net of networks[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        localIp = net.address;
-        break;
-      }
-    }
-  }
-
-  res.json({
-    success: true,
-    ip: localIp,
-    port: PORT,
-    token: uplinkToken,
-    sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64')
-  });
-});
-
-// ─── REST APIs ────────────────────────────────────────────────────────────────
+// ─── REST APIs & State Management ─────────────────────────────────────────────
 app.get('/api/state', (req, res) => res.json(sanitizeState()));
 app.get('/api/alerts', (req, res) => res.json(state.alerts));
 app.get('/api/audit', (req, res) => res.json(auditLog));
+app.get('/api/junctions', (req, res) => {
+  // Mark junctions as offline if no ping in 5 minutes
+  Object.values(junctions).forEach(j => {
+    if (Date.now() - j.lastPing > 300000) j.status = 'offline';
+  });
+  res.json(Object.values(junctions));
+});
 
 app.get('/api/analytics', (req, res) => {
   res.json({
@@ -906,16 +887,9 @@ app.patch('/api/junctions/:id', (req, res) => {
   res.json({ success: true, junction: junctions[id] });
 });
 
-// ─── Junction List API ────────────────────────────────────────────────────────
-app.get('/api/junctions', (req, res) => {
-  res.json(Object.values(junctions));
-});
-
-
 const edgeRequestLog = new Map(); // tracks last request per junction/lane
 
 app.post('/api/edge-data', (req, res) => {
-  // Expected payload: { laneId: 'N', secret: 'GIVEWAY_NODE_KEY', junctionId: 'JN-001', vehicles: { ambulance:0, bus:1, car:4, bike:3 } }
   const { laneId, secret, vehicles, junctionId } = req.body;
   
   if (secret !== (process.env.MAKEWAY_NODE_KEY || 'MAKEWAY_NODE_KEY')) {
@@ -925,21 +899,18 @@ app.post('/api/edge-data', (req, res) => {
   const now = Date.now();
   const requestId = `${junctionId}-${laneId}`;
   
-  // Rate-limiting: Max 1 request per 1.5 seconds per node
   if (edgeRequestLog.has(requestId) && (now - edgeRequestLog.get(requestId)) < 1500) {
-    return res.status(429).json({ error: 'System busy: Node rate limit exceeded' });
+    return res.status(429).json({ error: 'System busy: Rate limit exceeded' });
   }
   edgeRequestLog.set(requestId, now);
 
   if (!state.lanes[laneId]) return res.status(400).json({ error: 'Invalid Lane ID' });
   
-  // Update junction heartbeat if junctionId provided
   if (junctionId && junctions[junctionId]) {
     junctions[junctionId].lastPing = now;
     junctions[junctionId].status = 'online';
   }
   
-  // Real-world integration logic routed through Antigravity Processor
   if (req.body.priorityTrigger) {
     state.lanes[laneId].priorityTrigger = true;
     addAlert('emergency', `🚨 Hardware Override: Priority Triggered on Lane ${laneId}!`, laneId);
@@ -948,17 +919,7 @@ app.post('/api/edge-data', (req, res) => {
   }
 
   processEdgeData(laneId, { ...vehicles, pedestrian: req.body.pedestrian });
-  
-  res.json({ success: true, newScore: state.lanes[laneId].pceScore, junction: junctionId });
-});
-
-// ─── Junction Location APIs ───────────────────────────────────────────────────
-app.get('/api/junctions', (req, res) => {
-  // Mark junctions as offline if no ping in 5 minutes
-  Object.values(junctions).forEach(j => {
-    if (Date.now() - j.lastPing > 300000) j.status = 'offline';
-  });
-  res.json(Object.values(junctions));
+  res.json({ success: true, newScore: state.lanes[laneId].pceScore });
 });
 
 app.get('/api/junctions/:id', (req, res) => {
@@ -1019,8 +980,8 @@ setInterval(() => {
     const heartbeat = JSON.stringify({
       service: 'MAKEWAY_MASTER',
       port: PORT,
-      // The "Signature" for privacy/security
-      sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64'),
+      // Unified Software Node Signature
+      sig: Buffer.from(process.env.MAKEWAY_NODE_KEY || 'MAKEWAY_NODE_KEY').toString('base64'),
       timestamp: Date.now()
     });
     const message = Buffer.from(heartbeat);
