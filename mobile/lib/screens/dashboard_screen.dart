@@ -75,8 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final lanes = (_state['lanes'] as Map<String, dynamic>?) ?? {};
-    final isAdmin = widget.user['role'] == 'admin';
-    final accent = isAdmin ? const Color(0xFFFFB700) : const Color(0xFF00E5FF);
+    final accent = const Color(0xFF00E5FF);
 
     return Scaffold(
       backgroundColor: const Color(0xFF030712),
@@ -86,8 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: _buildAppTitle(),
         actions: [
           IconButton(
-            icon: Icon(Icons.person_search_rounded, color: accent, size: 20),
-            onPressed: () => _showPersonaSwitcher(context),
+            icon: Icon(Icons.logout_rounded, color: accent, size: 20),
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white24, size: 20),
@@ -335,21 +333,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }),
-        if (isAdmin) ...[
-          const SizedBox(height: 32),
-          const Text('EXECUTION PROTOCOLS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _actionBtn('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
-              _actionBtn('EMERGENCY', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
-              _actionBtn('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
-              _actionBtn('PEDESTRIAN', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
-            ],
-          ),
-        ],
+        const SizedBox(height: 32),
+        const Text('EXECUTION PROTOCOLS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _actionBtn('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
+            _actionBtn('EMERGENCY', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
+            _actionBtn('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
+            _actionBtn('PEDESTRIAN', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
+          ],
+        ),
         const SizedBox(height: 100),
       ],
     );

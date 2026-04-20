@@ -171,8 +171,8 @@ app.post('/api/auth/register', (req, res) => {
   const newUser = {
     id,
     pin,
-    role: role || 'police',
-    name: fullName || (role === 'admin' ? 'Admin User' : 'Police Officer'),
+    role: 'admin',
+    name: fullName || 'GiveWay Operator',
     meta: { badge, station, dept, access },
     token: uuidv4(),
     createdAt: new Date().toISOString()

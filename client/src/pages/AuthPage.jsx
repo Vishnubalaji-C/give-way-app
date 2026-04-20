@@ -5,16 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AuthPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('police');
   const [fullName, setFullName] = useState('');
   const [uniqueId, setUniqueId] = useState('');
   const [pin, setPin] = useState('');
-  
-  const [badge, setBadge] = useState('');
-  const [station, setStation] = useState('');
-  
   const [dept, setDept] = useState('');
-  const [access, setAccess] = useState('Super Admin');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,7 +18,6 @@ export default function AuthPage({ onLogin }) {
     setIsLogin(!isLogin);
     setError('');
     setSuccess('');
-    // Unique ID is persisted for UX continuity
   };
 
   const handleSubmit = async (e) => {
@@ -38,7 +31,7 @@ export default function AuthPage({ onLogin }) {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
         ? { id: uniqueId, pin }
-        : { id: uniqueId, pin, role, badge, station, dept, access, fullName };
+        : { id: uniqueId, pin, role: 'admin', dept, fullName };
 
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
@@ -126,43 +119,23 @@ export default function AuthPage({ onLogin }) {
         </AnimatePresence>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          
-          <div className="flex bg-white/5 rounded-2xl p-1.5 border border-white/5">
-            <button 
-              type="button" 
-              onClick={() => setRole('police')} 
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${role === 'police' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-white/20 hover:text-white/40'}`}
-            >
-              <User size={14} /> Police Duty
-            </button>
-            <button 
-              type="button" 
-              onClick={() => setRole('admin')} 
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${role === 'admin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-white/20 hover:text-white/40'}`}
-            >
-              <ShieldAlert size={14} /> Control Room
-            </button>
-          </div>
-
           <div className="space-y-4">
             {!isLogin && (
               <InputGroup 
-                label="Full Legal Name" 
+                label="Full Name" 
                 icon={<User size={18} />} 
                 value={fullName} 
                 onChange={(e) => setFullName(e.target.value)} 
                 placeholder="e.g. John Doe"
-                role={role}
               />
             )}
 
             <InputGroup 
-              label={role === 'police' ? 'Officer Unique ID' : 'Admin System ID'} 
+              label="Operator ID" 
               icon={<Fingerprint size={18} />} 
               value={uniqueId} 
               onChange={(e) => setUniqueId(e.target.value)} 
-              placeholder={role === 'police' ? "e.g., PL-8849" : "e.g., ADM-091"}
-              role={role}
+              placeholder="e.g., ADM-091"
             />
 
             <InputGroup 
@@ -172,53 +145,16 @@ export default function AuthPage({ onLogin }) {
               value={pin} 
               onChange={(e) => setPin(e.target.value)} 
               placeholder="••••••"
-              role={role}
             />
 
-            {!isLogin && role === 'police' && (
-              <>
-                <InputGroup 
-                  label="Badge Number" 
-                  icon={<ShieldCheck size={18} />} 
-                  value={badge} 
-                  onChange={(e) => setBadge(e.target.value)} 
-                  placeholder="e.g. TN-POL-1029"
-                  role={role}
-                />
-                <InputGroup 
-                  label="Assigned Control Station" 
-                  icon={<Globe size={18} />} 
-                  value={station} 
-                  onChange={(e) => setStation(e.target.value)} 
-                  placeholder="e.g. Mount Road District"
-                  role={role}
-                />
-              </>
-            )}
-
-            {!isLogin && role === 'admin' && (
-              <>
-                <InputGroup 
-                  label="Central Department" 
-                  icon={<Globe size={18} />} 
-                  value={dept} 
-                  onChange={(e) => setDept(e.target.value)} 
-                  placeholder="e.g. Smart City Infrastructure"
-                  role={role}
-                />
-                <div className="space-y-2">
-                  <label className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] ml-1">System Access Level</label>
-                  <select 
-                    value={access}
-                    onChange={(e) => setAccess(e.target.value)}
-                    className="w-full bg-white/[0.02] border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:bg-white/[0.04] transition-all focus:border-amber-500"
-                  >
-                    <option value="Super Admin" className="bg-[#030712]">Super Admin</option>
-                    <option value="Limited Monitor" className="bg-[#030712]">Limited Monitor</option>
-                    <option value="Read Only" className="bg-[#030712]">Read Only</option>
-                  </select>
-                </div>
-              </>
+            {!isLogin && (
+              <InputGroup 
+                label="Department" 
+                icon={<Globe size={18} />} 
+                value={dept} 
+                onChange={(e) => setDept(e.target.value)} 
+                placeholder="e.g. Smart City Infrastructure"
+              />
             )}
           </div>
 
@@ -227,7 +163,7 @@ export default function AuthPage({ onLogin }) {
             whileTap={{ scale: 0.98 }}
             disabled={loading} 
             type="submit" 
-            className={`w-full py-4 rounded-2xl font-black tracking-[0.2em] text-xs text-white shadow-2xl transition-all ${role === 'police' ? 'bg-cyan-500 shadow-cyan-500/25' : 'bg-amber-500 shadow-amber-500/25'} mt-6 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full py-4 rounded-2xl font-black tracking-[0.2em] text-xs text-white shadow-2xl transition-all bg-cyan-500 shadow-cyan-500/25 mt-6 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? 'SYNCHRONIZING...' : (isLogin ? 'AUTHORIZE ACCESS' : 'INITIALIZE IDENTITY')}
           </motion.button>
@@ -236,8 +172,8 @@ export default function AuthPage({ onLogin }) {
         <div className="mt-10 space-y-4 text-center">
           <button 
             type="button"
-            onClick={() => { setUniqueId('admin'); setPin('1234'); setRole('admin'); }}
-            className={`text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full border border-white/5 bg-white/5 text-amber-500/80 hover:bg-amber-500/10 hover:border-amber-500/20 transition-all flex items-center justify-center gap-2 mx-auto`}
+            onClick={() => { setUniqueId('admin'); setPin('1234'); }}
+            className={`text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full border border-white/5 bg-white/5 text-cyan-500/80 hover:bg-cyan-500/10 hover:border-cyan-500/20 transition-all flex items-center justify-center gap-2 mx-auto`}
           >
             <ShieldCheck size={14} /> One-Tap Demo Access
           </button>
@@ -247,7 +183,7 @@ export default function AuthPage({ onLogin }) {
             onClick={toggleMode} 
             className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors flex items-center justify-center gap-2 mx-auto"
           >
-            {isLogin ? "Neural Identity Registration" : "Global Authorization Gateway"} <ChevronRight size={12} />
+            {isLogin ? "New Operator Registration" : "Authorization Gateway"} <ChevronRight size={12} />
           </button>
         </div>
       </motion.div>
@@ -255,15 +191,12 @@ export default function AuthPage({ onLogin }) {
   );
 }
 
-function InputGroup({ label, icon, value, onChange, placeholder, role, type = "text" }) {
-  const accent = role === 'police' ? 'focus:border-cyan-500' : 'focus:border-amber-500';
-  const iconColor = role === 'police' ? 'text-cyan-500' : 'text-amber-500';
-
+function InputGroup({ label, icon, value, onChange, placeholder, type = "text" }) {
   return (
     <div className="space-y-2">
       <label className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] ml-1">{label}</label>
       <div className="relative group">
-        <div className={`absolute left-4 top-1/2 -translate-y-1/2 ${iconColor} opacity-40 group-focus-within:opacity-100 transition-opacity`}>
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 opacity-40 group-focus-within:opacity-100 transition-opacity">
           {icon}
         </div>
         <input 
@@ -272,7 +205,7 @@ function InputGroup({ label, icon, value, onChange, placeholder, role, type = "t
           onChange={onChange} 
           required 
           placeholder={placeholder} 
-          className={`w-full bg-white/[0.02] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:bg-white/[0.04] transition-all ${accent} ${type === 'password' ? 'tracking-[0.5em]' : ''}`} 
+          className={`w-full bg-white/[0.02] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:bg-white/[0.04] transition-all focus:border-cyan-500 ${type === 'password' ? 'tracking-[0.5em]' : ''}`} 
         />
       </div>
     </div>

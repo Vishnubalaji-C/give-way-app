@@ -13,7 +13,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
   bool _isLogin = true;
-  String _role = 'police';
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -73,7 +72,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         result = await ApiService.register({
           'id': id,
           'pin': pin,
-          'role': _role,
+          'role': 'admin',
           'fullName': name,
         });
         setState(() {
@@ -187,27 +186,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         ),
                       ),
 
-                    // Role Switcher
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.02),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
-                      ),
-                      child: Row(
-                        children: [
-                          _roleBtn('POLICE', 'police', const Color(0xFF00E5FF)),
-                          _roleBtn('ADMIN', 'admin', const Color(0xFFFFB700)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
                     if (!_isLogin)
                       _buildField('Full Legal Name', _nameController, Icons.person_rounded),
                     
-                    _buildField(_role == 'police' ? 'Officer ID' : 'System Admin ID', _idController, Icons.fingerprint_rounded),
+                    _buildField('Operator ID', _idController, Icons.fingerprint_rounded),
                     _buildField('Authorization PIN', _pinController, Icons.lock_rounded, isPassword: true),
 
                     const SizedBox(height: 16),
@@ -215,7 +197,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _role == 'police' ? const Color(0xFF00E5FF) : const Color(0xFFFFB700),
+                          backgroundColor: const Color(0xFF00E5FF),
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -239,7 +221,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                             onPressed: () {
                               _idController.text = 'admin';
                               _pinController.text = '1234';
-                              setState(() => _role = 'admin');
                               _submit();
                             },
                             child: Text(
@@ -248,7 +229,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 2,
-                                color: const Color(0xFFFFB700).withOpacity(0.8),
+                                color: const Color(0xFF00E5FF).withOpacity(0.8),
                               ),
                             ),
                           ),
@@ -307,7 +288,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildField(String label, TextEditingController controller, IconData icon, {bool isPassword = false}) {
-    final accent = _role == 'police' ? const Color(0xFF00E5FF) : const Color(0xFFFFB700);
+    const accent = Color(0xFF00E5FF);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
