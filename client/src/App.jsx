@@ -75,7 +75,7 @@ export default function App() {
 
   const handleSetTheme = (newTheme) => {
     setTheme(newTheme);
-    localStorage.setItem('giveaway_theme', newTheme);
+    localStorage.setItem('giveway_theme', newTheme);
   };
 
   const handleUpdateUser = async (updatedUser) => {
@@ -87,7 +87,7 @@ export default function App() {
         );
         if (res.data.success) {
           const newUser = { ...user, ...res.data.user };
-          localStorage.setItem('giveaway_user', JSON.stringify(newUser));
+          localStorage.setItem('giveway_user', JSON.stringify(newUser));
           setUser(newUser);
           console.log(`📡 [AUTH] Unified Persona Switch: Active context is now ${updatedUser.role.toUpperCase()}`);
           return;
@@ -98,7 +98,7 @@ export default function App() {
     }
 
     const newUser = { ...user, ...updatedUser };
-    localStorage.setItem('giveaway_user', JSON.stringify(newUser));
+    localStorage.setItem('giveway_user', JSON.stringify(newUser));
     setUser(newUser);
   };
 

@@ -297,6 +297,60 @@ const junctions = {
   },
 };
 
+// ─── Hardware Architecture (Physical Bridge) ──────────────────────────────────
+const SERIAL_PORT = process.env.SERIAL_PORT || 'COM3';
+const IS_CLOUD    = !!process.env.RENDER || !!process.env.RENDER_EXTERNAL_URL;
+let arduinoPort   = null;
+let parser        = null;
+
+if (!IS_CLOUD) {
+  try {
+    arduinoPort = new SerialPort({ path: SERIAL_PORT, baudRate: 115200, autoOpen: true });
+    parser = arduinoPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+    console.log(`🔌 [HARDWARE] Physical Bridge Active on ${SERIAL_PORT}`);
+  } catch (err) {
+    console.warn(`⚠️ [HARDWARE] Serial Bridge disconnected: ${err.message}. Running in Cloud-Virtual mode.`);
+  }
+} else {
+  console.log('☁️ [HARDWARE] Cloud deployment detected. Serial Bridge disabled — running in Virtual mode.');
+}
+
+function sendToArduino(lane, action) {
+  if (!arduinoPort || !arduinoPort.writable) return;
+  const cmd = `${lane}${action}\n`;
+  arduinoPort.write(cmd);
+}
+
+if (parser) {
+  parser.on('data', (data) => {
+    const line = data.toString().trim();
+    if (!line) return;
+
+    if (line.startsWith('HW_RFID:')) {
+      const parts = line.split(':');
+      const laneId = parts[1];
+      const tagID  = parts[2];
+      if (state.lanes[laneId]) {
+        state.lanes[laneId].priorityTrigger = true;
+        addAlert('emergency', `🚨 [HARDWARE] Authorized Priority Tag: ${tagID} on Lane ${laneId}`, laneId);
+        computePriorities();
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      }
+    }
+
+    if (line.startsWith('HW_PULSE:')) {
+      const parts = line.split(':');
+      const laneId = parts[1];
+      const density = parseInt(parts[2]);
+      if (state.lanes[laneId]) {
+        state.lanes[laneId].density = density;
+        state.lanes[laneId].lastHardwareUpdate = Date.now();
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      }
+    }
+  });
+}
+
 let activeJunction = 'JN-001'; // Currently viewed junction
 
 // ─── State ────────────────────────────────────────────────────────────────────
