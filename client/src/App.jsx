@@ -1,16 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { WsProvider } from './context/WsContext';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navbar          from './components/Navbar';
 import BottomNav       from './components/BottomNav';
 import SplashScreen    from './components/SplashScreen';
-import DashboardPage   from './pages/DashboardPage';
-import CameraFeedPage  from './pages/CameraFeedPage';
-import AnalyticsPage   from './pages/AnalyticsPage';
-import SettingsPage    from './pages/SettingsPage';
-import MapPage         from './pages/MapPage';
-import ControlRoomPage from './pages/ControlRoomPage';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
+
+const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
+const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
+const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
+const SettingsPage    = lazy(() => import('./pages/SettingsPage'));
+const MapPage         = lazy(() => import('./pages/MapPage'));
+const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
+
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center h-[50vh] opacity-80">
+    <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+    <span className="mt-5 text-[10px] font-black text-cyan-400 tracking-[0.3em] uppercase animate-pulse">Syncing...</span>
+  </div>
+);
 
 // One-time migration: wipe old theme so dark mode always loads.
 (function migrateTheme() {
@@ -135,8 +144,21 @@ export default function App() {
           isMobile={isMobile}
         />
 
-        <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
-          <Page user={user} onUpdateUser={handleUpdateUser} />
+        <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 15, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -15, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full h-full"
+            >
+              <Suspense fallback={<PageLoader />}>
+                <Page user={user} onUpdateUser={handleUpdateUser} />
+              </Suspense>
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {isMobile && (
