@@ -13,6 +13,7 @@ const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
 const SettingsPage    = lazy(() => import('./pages/SettingsPage'));
 const MapPage         = lazy(() => import('./pages/MapPage'));
 const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
+const AuthPage        = lazy(() => import('./pages/AuthPage'));
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center h-[50vh] opacity-80">
@@ -41,7 +42,7 @@ export default function App() {
       const stored = localStorage.getItem('giveway_user');
       if (stored) return JSON.parse(stored);
     } catch {}
-    return { role: 'admin', name: 'Administrator' };
+    return null;
   });
 
   // Always enforce dark mode – glassmorphism UI is dark-only
@@ -62,8 +63,14 @@ export default function App() {
   }
 
   const logout = () => {
-    // No-op since login is disabled
+    localStorage.removeItem('giveway_user');
+    setUser(null);
     setTab('dashboard');
+  };
+
+  const handleLogin = (userData) => {
+    localStorage.setItem('giveway_user', JSON.stringify(userData));
+    setUser(userData);
   };
 
   const handleSetTheme = (newTheme) => {
@@ -134,35 +141,43 @@ export default function App() {
       />
 
       <div className="relative z-10 min-h-screen flex flex-col">
-        <Navbar
-          tab={tab}
-          setTab={setTab}
-          user={user}
-          onLogout={logout}
-          theme={theme}
-          onChangeTheme={handleSetTheme}
-          isMobile={isMobile}
-        />
+        {!user ? (
+          <Suspense fallback={<PageLoader />}>
+            <AuthPage onLogin={handleLogin} />
+          </Suspense>
+        ) : (
+          <>
+            <Navbar
+              tab={tab}
+              setTab={setTab}
+              user={user}
+              onLogout={logout}
+              theme={theme}
+              onChangeTheme={handleSetTheme}
+              isMobile={isMobile}
+            />
 
-        <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={tab}
-              initial={{ opacity: 0, y: 15, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -15, scale: 0.98 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full h-full"
-            >
-              <Suspense fallback={<PageLoader />}>
-                <Page user={user} onUpdateUser={handleUpdateUser} />
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
-        </main>
+            <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={tab}
+                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="w-full h-full"
+                >
+                  <Suspense fallback={<PageLoader />}>
+                    <Page user={user} onUpdateUser={handleUpdateUser} />
+                  </Suspense>
+                </motion.div>
+              </AnimatePresence>
+            </main>
 
-        {isMobile && (
-          <BottomNav tab={tab} setTab={setTab} />
+            {isMobile && (
+              <BottomNav tab={tab} setTab={setTab} />
+            )}
+          </>
         )}
       </div>
     </WsProvider>

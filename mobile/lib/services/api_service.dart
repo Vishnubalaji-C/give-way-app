@@ -30,4 +30,26 @@ class ApiService {
     if (res.statusCode != 200) throw Exception(data['error'] ?? 'Role switch failed');
     return data;
   }
+
+  static Future<Map<String, dynamic>> login(String id, String pin) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'id': id, 'pin': pin}),
+    );
+    final data = jsonDecode(res.body);
+    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Login failed');
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> register(Map<String, dynamic> details) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(details),
+    );
+    final data = jsonDecode(res.body);
+    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Registration failed');
+    return data;
+  }
 }

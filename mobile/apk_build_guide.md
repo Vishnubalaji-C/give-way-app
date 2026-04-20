@@ -1,6 +1,6 @@
-# 📱 GiveWay Mobile — APK Build Guide
+# 📱 GiveWay Mobile Application — APK Deployment Guide
 
-Follow these steps to generate the Android Application Package (APK) on your local computer.
+This guide provides the official steps to build and deploy the **GiveWay Terminal** (Flutter) to your Android device for the project defense.
 
 ## 📋 Prerequisites
 1. **Flutter SDK**: Ensure Flutter is installed and added to your system PATH.

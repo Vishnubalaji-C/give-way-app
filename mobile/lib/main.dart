@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'screens/police_dashboard.dart';
-import 'screens/admin_dashboard.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/auth_screen.dart';
 import 'services/api_service.dart';
 import 'services/ws_service.dart';
 import 'screens/scanner_screen.dart';
@@ -42,15 +42,38 @@ class _GiveWayAppState extends State<GiveWayApp> {
   Future<void> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     await Future.delayed(const Duration(milliseconds: 1500)); // Play Splash Screen
+    
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     final role = prefs.getString('role') ?? 'police';
     final name = prefs.getString('userName') ?? 'Tactical Officer';
 
     if (mounted) {
       setState(() {
-        _user = {'role': role, 'name': name};
+        if (isLoggedIn) {
+          _user = {'role': role, 'name': name};
+        }
         _loading = false;
       });
     }
+  }
+
+  Future<void> _handleLogin(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('role', userData['role']);
+    await prefs.setString('userName', userData['name']);
+    
+    setState(() {
+      _user = userData;
+    });
+  }
+
+  Future<void> _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    setState(() {
+      _user = null;
+    });
   }
 
   Future<void> _switchRole(String newRole) async {
@@ -123,17 +146,11 @@ class _GiveWayAppState extends State<GiveWayApp> {
       ),
       home: _loading
           ? const _SplashScreen()
-          : _user!['role'] == 'police'
-              ? PoliceDashboard(
+          : _user == null
+              ? AuthScreen(onLogin: _handleLogin)
+              : DashboardScreen(
                   user: _user!,
-                  onLogout: () {},
-                  onToggleTheme: _toggleTheme,
-                  onSwitchRole: _switchRole,
-                )
-              : AdminDashboard(
-                  user: _user!,
-                  onLogout: () {},
-                  onToggleTheme: _toggleTheme,
+                  onLogout: _handleLogout,
                   onSwitchRole: _switchRole,
                 ),
     );

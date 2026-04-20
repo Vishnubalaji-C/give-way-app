@@ -1,3 +1,4 @@
+/**
  * GiveWay — Adaptive Traffic Equity System
  * Backend: Node.js + Express + ws (WebSocket)
  */
@@ -154,8 +155,64 @@ function ensureGuestAccount() {
 }
 ensureGuestAccount();
 
+// ─── Identity & Global Authorization API ──────────────────────────────────────
+app.post('/api/auth/register', (req, res) => {
+  const { id, pin, role, fullName, badge, station, dept, access } = req.body;
+  
+  if (!id || !pin) {
+    return res.status(400).json({ success: false, error: 'Identity ID and PIN are required for authorization.' });
+  }
+
+  const existing = db.users.find(u => String(u.id) === String(id));
+  if (existing) {
+    return res.status(400).json({ success: false, error: 'Identity ID already registered in GiveWay Matrix.' });
+  }
+
+  const newUser = {
+    id,
+    pin,
+    role: role || 'police',
+    name: fullName || (role === 'admin' ? 'Admin User' : 'Police Officer'),
+    meta: { badge, station, dept, access },
+    token: uuidv4(),
+    createdAt: new Date().toISOString()
+  };
+
+  db.users.push(newUser);
+  saveToDisk();
+
+  console.log(`👤 [AUTH] New Identity Initialized: ${newUser.id} (${newUser.role.toUpperCase()})`);
+  res.json({ success: true, user: { id: newUser.id, role: newUser.role, name: newUser.name } });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { id, pin } = req.body;
+  const user = db.users.find(u => String(u.id) === String(id) && String(u.pin) === String(pin));
+
+  if (!user) {
+    return res.status(401).json({ success: false, error: 'Authorization Failed: Identity or PIN invalid.' });
+  }
+
+  console.log(`🔓 [AUTH] Terminal Access Granted: ${user.id} (${user.role.toUpperCase()})`);
+  res.json({
+    success: true,
+    token: user.token,
+    user: { id: user.id, role: user.role, name: user.name, meta: user.meta }
+  });
+});
+
+app.patch('/api/auth/role', (req, res) => {
+  const { role } = req.body;
+  // In a real app, we'd verify the token. Here, we'll just allow the persona switch for the demo.
+  if (!['admin', 'police'].includes(role)) {
+    return res.status(400).json({ success: false, error: 'Invalid persona context.' });
+  }
+
+  console.log(`📡 [AUTH] Persona Context Switched to: ${role.toUpperCase()}`);
+  res.json({ success: true, user: { role } });
+});
+
 // ─── Middleware: Secure Mobile & Web Access ──────────────────────────────────
-// Auth layer removed. Frictionless RBAC toggling is now active.
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const LANES        = ['1', '2', '3'];
@@ -364,6 +421,9 @@ function buildInitialState(persisted = null) {
       greenTimer: id === '1' ? PHASE_GREEN : 0,
       phase: id === '1' ? 'green' : 'red',
       ghostFlag: false,
+      densityLastChangedAt: Date.now(),
+      lastHardwareUpdate: Date.now(),
+      fallbackActive: false,
       isEmergency: false,
       isPedestrian: false,
       priorityTrigger: false
@@ -527,34 +587,24 @@ function processEdgeData(laneId, vehicles) {
                       vehicles.bike * PCE.bike + 
                       (vehicles.lorry || 0) * PCE.lorry;
    
-   if (lane.signal === 'green' && newDensity > 10) {
-      if (Math.abs(lane.previousDensity - newDensity) <= 2) {
-         lane.staticCycles++;
-         if (lane.staticCycles >= 3 && !lane.ghostFlag) { // 3 cycles (e.g. 3 ticks) of same density on green
-            lane.ghostFlag = true;
-            addAlert('ghost', `👻 Antigravity Ghost Lane detected on Lane ${laneId}! Possible accident/breakdown.`, laneId);
-         }
-      } else {
-         lane.staticCycles = 0;
-         lane.ghostFlag = false;
-      }
-   } else {
-      lane.staticCycles = 0;
-      lane.ghostFlag = false;
-   }
-   
-   lane.previousDensity = newDensity;
-   lane.vehicles = vehicles;
-   lane.isEmergency = vehicles.ambulance > 0;
-   
-   // Store Pedestrian & Priority state
-   if (vehicles.pedestrian && !lane.isPedestrian) {
-      addAlert('ghost', `🚶‍♂️ Pedestrian detected on Lane ${laneId}! Entering Safety Mode.`, laneId);
-   }
-   lane.isPedestrian = vehicles.pedestrian || false;
+    // Intelligence Resilience Update
+    lane.lastHardwareUpdate = Date.now();
+    if (Math.abs(lane.density - newDensity) > 2) {
+       lane.densityLastChangedAt = Date.now();
+    }
 
-   computePriorities();
-   broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+    lane.previousDensity = newDensity;
+    lane.vehicles = vehicles;
+    lane.isEmergency = (vehicles.ambulance > 0);
+    
+    // Store Pedestrian & Priority state
+    if (vehicles.pedestrian && !lane.isPedestrian) {
+       addAlert('ghost', `🚶‍♂️ Pedestrian detected on Lane ${laneId}! Entering Safety Mode.`, laneId);
+    }
+    lane.isPedestrian = vehicles.pedestrian || false;
+
+    computePriorities();
+    broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 }
 
 // ─── Time-of-Day Traffic Pattern Engine (Chennai-specific) ───────────────────
@@ -739,7 +789,81 @@ function tick() {
     }
   }
 
+  // ─── Resilience & Error Recovery Logic ──────────────────────────────────────
+  const NOW = Date.now();
+  
+  LANES.forEach(id => {
+    const lane = state.lanes[id];
+
+    // 1. Predictive Ghost Lane Detection (10s Static Window)
+    if (simulationRunning && lane.signal === 'green' && lane.density > 10) {
+      const densityChanged = Math.abs(lane.density - (lane.previousDensity || 0)) > 2;
+      
+      if (densityChanged) {
+        lane.densityLastChangedAt = NOW;
+        if (lane.ghostFlag) {
+           lane.ghostFlag = false;
+           console.log(`✅ [RECOVERY] Lane ${id} has moved. Clearing Ghost alert.`);
+        }
+      } else {
+        const staticDuration = (NOW - lane.densityLastChangedAt) / 1000;
+        if (staticDuration >= 10 && !lane.ghostFlag) {
+           lane.ghostFlag = true;
+           addAlert('ghost', `👻 ACCIDENT DETECTED: Lane ${id} static for 10s on GREEN. Possible blockage!`, id);
+           // Trigger Physical Buzzer Alert
+           if (arduinoPort && arduinoPort.isOpen) arduinoPort.write('B\n');
+        }
+      }
+    }
+
+    // 2. Virtual Sync Fallback (30s Silence Detection)
+    const hardwareSilence = (NOW - lane.lastHardwareUpdate) / 1000;
+    if (simulationRunning && hardwareSilence >= 30) {
+       if (!lane.fallbackActive) {
+          lane.fallbackActive = true;
+          addAlert('warning', `📡 NODE OFFLINE: Lane ${id} hardware silent. Activating Virtual Sync fallback...`, id);
+       }
+       // Only trigger fallback if simulation is in 'live' mode and we have a key
+       if (TOMTOM_KEY) {
+          fetchTomTomFallback(id);
+       }
+    } else if (lane.fallbackActive && hardwareSilence < 5) {
+       // Hardware has resumed
+       lane.fallbackActive = false;
+       addAlert('success', `🔌 NODE RESTORED: Lane ${id} hardware uplink re-established. Control handed back to Edge.`, id);
+    }
+  });
+
   broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+}
+
+// ─── Direct Fallback Controller ───────────────────────────────────────────────
+async function fetchTomTomFallback(laneId) {
+  const jn = junctions[activeJunction] || junctions['JN-001'];
+  // Simplified directional offset for fallback coordinates
+  const offsets = { '1': [-0.0008, 0], '2': [0, 0.0008], '3': [0, -0.0008] };
+  const [dLat, dLng] = offsets[laneId] || [0, 0];
+  
+  try {
+    const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${jn.lat + dLat},${jn.lng + dLng}&key=${TOMTOM_KEY}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+       const data = await res.json();
+       const seg  = data?.flowSegmentData;
+       if (seg) {
+          const ratio = seg.currentSpeed / seg.freeFlowSpeed;
+          // Use current generic multiplier
+          const multiplier = (new Date().getHours() >= 17 && new Date().getHours() < 20) ? 1.0 : 0.6;
+          const vehicles = speedRatioToVehicles(ratio, multiplier, parseInt(laneId) - 1);
+          
+          // Silently process — don't update lastHardwareUpdate!
+          const lane = state.lanes[laneId];
+          lane.previousDensity = lane.density;
+          lane.vehicles = vehicles;
+          computePriorities();
+       }
+    }
+  } catch (e) { /* ignore fallback errors */ }
 }
 
 // ─── Alert Manager ────────────────────────────────────────────────────────────

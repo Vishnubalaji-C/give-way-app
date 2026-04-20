@@ -47,7 +47,7 @@ export default function DashboardPage({ user }) {
               <ShieldCheck size={14} /> System Secure · GiveWay v4.2
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
-              {greeting}, <span className="brand-gradient">Officer</span>
+              {greeting}, <span className="brand-gradient">{user?.name?.split(' ')[0] || 'Officer'}</span>
             </h1>
             <p className="text-white/40 mt-4 text-sm sm:text-lg max-w-2xl font-medium leading-relaxed">
               Monitoring <span className="text-white font-bold">{state?.junction?.name || 'Central Hub'}</span>. Edge-AI is currently optimizing flow for <span className="text-green-400 font-bold">Priority PCE</span> throughput.
@@ -68,33 +68,35 @@ export default function DashboardPage({ user }) {
           </div>
           
           <div className="flex bg-black/40 border border-white/5 rounded-2xl p-6 gap-6 items-center flex-wrap backdrop-blur-md">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-3">System Control</span>
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => send(state?.simulationRunning ? 'STOP_SIM' : 'START_SIM')}
-                  className={`px-6 py-3 rounded-xl font-bold text-xs transition-all flex items-center gap-2 active:scale-95 shadow-lg ${
-                    state?.simulationRunning 
-                      ? 'bg-red-500/20 text-red-500 border border-red-500/30 hover:bg-red-500/30' 
-                      : 'bg-green-500 text-black border border-green-400 hover:bg-green-400'
-                  }`}
-                >
-                  {state?.simulationRunning ? <StopCircle size={16}/> : <PlayCircle size={16}/>}
-                  {state?.simulationRunning ? 'HALT SYSTEM' : 'BOOT SYSTEM'}
-                </button>
-                <button 
-                  onClick={() => {
-                    if (window.confirm('Reset will wipe all simulation state. Are you sure?')) {
-                      send('RESET_SIM');
-                    }
-                  }}
-                  className="p-3 rounded-xl bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white transition-all shadow-xl"
-                  title="Purge Global State"
-                >
-                  <RotateCcw size={16} />
-                </button>
+            {user?.role === 'admin' && (
+              <div className="flex flex-col">
+                <span className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-3">System Control</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => send(state?.simulationRunning ? 'STOP_SIM' : 'START_SIM')}
+                    className={`px-6 py-3 rounded-xl font-bold text-xs transition-all flex items-center gap-2 active:scale-95 shadow-lg ${
+                      state?.simulationRunning 
+                        ? 'bg-red-500/20 text-red-500 border border-red-500/30 hover:bg-red-500/30' 
+                        : 'bg-green-500 text-black border border-green-400 hover:bg-green-400'
+                    }`}
+                  >
+                    {state?.simulationRunning ? <StopCircle size={16}/> : <PlayCircle size={16}/>}
+                    {state?.simulationRunning ? 'HALT SYSTEM' : 'BOOT SYSTEM'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('Reset will wipe all simulation state. Are you sure?')) {
+                        send('RESET_SIM');
+                      }
+                    }}
+                    className="p-3 rounded-xl bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white transition-all shadow-xl"
+                    title="Purge Global State"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>
