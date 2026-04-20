@@ -132,13 +132,14 @@ export default function App() {
           onLogout={logout}
           theme={theme}
           onChangeTheme={handleSetTheme}
+          isMobile={isMobile}
         />
 
         <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
           <Page user={user} onUpdateUser={handleUpdateUser} />
         </main>
 
-        {(user.role === 'police' || isMobile) && (
+        {isMobile && (
           <BottomNav tab={tab} setTab={setTab} />
         )}
       </div>

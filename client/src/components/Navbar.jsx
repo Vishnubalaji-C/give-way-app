@@ -3,7 +3,7 @@ import SyncPortal from './SyncPortal';
 import { useWs } from '../context/WsContext';
 import { Tablet, Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, Map, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
 
-export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme }) {
+export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme, isMobile }) {
   const { connected, state, junctions, switchJunction } = useWs();
   const [latency, setLatency] = useState(0);
 
@@ -29,7 +29,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
       {/* ----------------------------------------------------- */}
       {/* 1. MOBILE APP NAVIGATION BAR (For On-Ground Police) */}
       {/* ----------------------------------------------------- */}
-      {user?.role === 'police' && (
+      {isMobile && (
       <nav className="sticky top-0 z-50 bg-[#02050a]/95 backdrop-blur-2xl border-b border-cyan-500/10">
         {/* A. Status & Identity Bar (The Top Header) */}
         <div className="flex items-center justify-between px-4 py-3">
@@ -121,7 +121,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
       {/* ----------------------------------------------------- */}
       {/* 2. WEB DASHBOARD NAVIGATION BAR (For Central Control Room) */}
       {/* ----------------------------------------------------- */}
-      {user?.role === 'admin' && (
+      {!isMobile && (
       <nav className="sticky top-0 z-50 flex flex-col bg-[#02050a]/90 backdrop-blur-2xl border-b border-cyan-500/10 shadow-2xl">
         {/* A. The Global Utility Bar (Top-Most) */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/50 bg-black/40 xl:gap-8 overflow-x-auto no-scrollbar">
@@ -246,6 +246,8 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Grid View' },
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
+              { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
+              { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${

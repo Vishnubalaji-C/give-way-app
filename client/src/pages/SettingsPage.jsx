@@ -159,54 +159,6 @@ export default function SettingsPage({ user, onUpdateUser }) {
 
       </div>
 
-      {/* ── Simulated Authority (Demo Switcher) ───────────────── */}
-      <div className="bg-glass border border-white/5 rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-cyan-500/10 transition-all duration-700" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-white/5 rounded-2x flex items-center justify-center text-white/40 border border-white/10 group-hover:border-white/20 transition-colors">
-              <UserCheck size={24} />
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-white tracking-tight">Authority Simulation</h3>
-              <p className="text-xs text-white/30 uppercase tracking-widest font-bold mt-1">Persona Redirection & Multi-Role Demo Controls</p>
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
-            <button 
-              onClick={() => onUpdateUser({ role: 'admin' })}
-              className={`p-6 rounded-3xl border transition-all flex flex-col gap-2 text-left ${user.role === 'admin' ? 'bg-amber-500/10 border-amber-500/40 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-black uppercase tracking-widest ${user.role === 'admin' ? 'text-amber-400' : 'text-white/20'}`}>Command Level</span>
-                {user.role === 'admin' && <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />}
-              </div>
-              <span className="text-lg font-bold text-white">System Administrator</span>
-              <span className="text-[10px] text-white/40 leading-relaxed font-medium">Full global oversight, green-wave triggers, and system analytics access.</span>
-            </button>
-
-            <button 
-              onClick={() => onUpdateUser({ role: 'police' })}
-              className={`p-6 rounded-3xl border transition-all flex flex-col gap-2 text-left ${user.role === 'police' ? 'bg-cyan-500/10 border-cyan-500/40 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-black uppercase tracking-widest ${user.role === 'police' ? 'text-cyan-400' : 'text-white/20'}`}>Tactical Level</span>
-                {user.role === 'police' && <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />}
-              </div>
-              <span className="text-lg font-bold text-white">Police Field Officer</span>
-              <span className="text-[10px] text-white/40 leading-relaxed font-medium">Simplified on-the-ground interface with mobile-optimized navigation.</span>
-            </button>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-white/5">
-            <p className="text-[9px] text-white/10 font-mono uppercase tracking-[0.2em] max-w-lg">
-              Encryption Note: Switching personas executes local state redirection. Authentication persistence remains cached for 10 days until manual identity revocation (Logout).
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
