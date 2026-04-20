@@ -98,7 +98,7 @@ def run_yolo_and_lbph(image):
         # LBPH secondary verification
         final_class, lbph_conf = lbph_texture_verification(crop, base_class)
 
-        # MakeWay Standard PCE Weight Mapping (must match server.js & ArduinoMaster.ino)
+        # GiveWay Standard PCE Weight Mapping (must match server.js & ArduinoMaster.ino)
         PCE = {"car": 1.0, "bike": 0.5, "bus": 15.0, "lorry": 8.0, "ambulance": 500.0, "pedestrian": 0.0}
         weight = PCE.get(final_class, 0.0)
         pce_score += weight
@@ -207,8 +207,8 @@ def process_frame():
 
 
 if __name__ == '__main__':
-    print("[MAKEWAY] Inference Server starting...")
-    print("[MAKEWAY] Routes: /detect (ESP32 raw JPEG) | /api/inference (Base64 JSON)")
-    print("[MAKEWAY] PCE: AMB=500 | BUS=15 | CAR=1 | BIKE=0.5 | LORRY=8")
+    print("[GIVEWAY] Inference Server starting...")
+    print("[GIVEWAY] Routes: /detect (ESP32 raw JPEG) | /api/inference (Base64 JSON)")
+    print("[GIVEWAY] PCE: AMB=500 | BUS=15 | CAR=1 | BIKE=0.5 | LORRY=8")
     # Run on Port 5000 (Local ML Inference Server)
     app.run(host='0.0.0.0', port=5000, debug=DEBUG_MODE)

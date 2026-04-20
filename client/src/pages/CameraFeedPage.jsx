@@ -6,10 +6,10 @@ import { API_BASE_URL } from '../config';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PCE_WEIGHTS  = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
-const NODE_SECRET  = 'MAKEWAY_NODE_KEY';
+const NODE_SECRET  = 'GIVEWAY_NODE_KEY';
 const POST_INTERVAL = 5000; // ms — how often counts are sent to PCE engine
 
-// COCO-SSD label → MakeWay vehicle type
+// COCO-SSD label → GiveWay vehicle type
 const COCO_MAP = {
   car:        'car',
   bus:        'bus',
@@ -34,7 +34,7 @@ const EMPTY_COUNTS = { ambulance: 0, bus: 0, car: 0, bike: 0, lorry: 0, person: 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CameraFeedPage() {
-  const { state } = useWs();
+  const { state, send } = useWs();
   const lanes = state?.lanes || {};
 
   // Refs
@@ -238,9 +238,15 @@ export default function CameraFeedPage() {
     };
 
     push(); // send immediately on start
+    
+    // REGISTER VIRTUAL NODE ON SERVER
+    if (detecting && state?.junction?.id) {
+       send('NODE_ONLINE', { junctionId: state.junction.id });
+    }
+
     postTimerRef.current = setInterval(push, POST_INTERVAL);
     return () => clearInterval(postTimerRef.current);
-  }, [detecting, selectedLane, state?.junction?.id]);
+  }, [detecting, selectedLane, state?.junction?.id, send]);
 
   // ── Emergency inject (manual button) ─────────────────────────────────────
   const injectEmergency = async () => {
@@ -270,10 +276,10 @@ export default function CameraFeedPage() {
       {/* ── Page Header ──────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tight">AI Vision Sensor</h1>
+          <h1 className="text-4xl font-black text-white tracking-tight">AI Vision Terminal</h1>
           <p className="text-white/40 mt-1 text-sm">
-            Live vehicle detection via <span className="text-cyan-400 font-bold">TensorFlow.js COCO-SSD</span> ·
-            No hardware required · Any webcam or phone camera
+            Live Edge Intelligence · <span className="text-cyan-400 font-bold uppercase tracking-tight">Propless Showcase Mode</span> ·
+            Active on Laptop Webcam & Mobile Lens
           </p>
         </div>
         <div className="flex gap-3 flex-wrap">

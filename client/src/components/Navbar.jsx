@@ -49,7 +49,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5 flex items-center justify-center gap-1">
               <Activity size={10} /> Latency: {latency}ms
             </div>
-            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">{user?.name} · {state?.junction?.poleId || ''}</div>
+            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">Officer · {state?.junction?.poleId || ''}</div>
           </div>
 
           {/* Right Side: Theme, Config & Status */}
@@ -114,12 +114,6 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <FileBarChart size={18} className={`relative z-10 ${tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
             <span className="text-[10px] font-black mt-1 relative z-10">ANALYTICS</span>
           </button>
-
-          <button onClick={() => setTab('simulation')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'simulation' ? 'bg-green-500/20 border-green-500 shadow-[0_0_15px_rgba(0,255,136,0.2)] text-green-300' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-green-500/30 border-transparent text-slate-300'}`}>
-            <div className="absolute inset-0 bg-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Radio size={18} className={`relative z-10 ${tab === 'simulation' ? 'text-green-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
-            <span className="text-[10px] font-black mt-1 relative z-10">LIVE SIM</span>
-          </button>
         </div>
       </nav>
       )}
@@ -135,11 +129,11 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-green-500 p-0.5 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
               <div className="w-full h-full bg-[#02050a] rounded-[10px] flex items-center justify-center overflow-hidden">
-                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MakeWay Logo" className="w-full h-full object-cover" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="GiveWay Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl brand-gradient tracking-tight leading-none uppercase">MakeWay</span>
+              <span className="font-black text-xl brand-gradient tracking-tight leading-none uppercase">GiveWay</span>
               <span className="text-[10px] font-bold text-cyan-400/60 tracking-[0.2em] uppercase mt-1">ATES Framework</span>
             </div>
           </div>
@@ -180,7 +174,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             </button>
             <div className="flex items-center gap-3 border-l border-slate-700/80 pl-4 xl:pl-6">
               <div className="text-right leading-tight">
-                <div className="text-xs xl:text-sm font-bold text-slate-200">{user?.name || 'Officer'}</div>
+                <div className="text-xs xl:text-sm font-bold text-slate-200">Officer</div>
                 <div className="text-[9px] xl:text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{user?.id || 'ID-OFFLINE'} ▾</div>
               </div>
               <div className="w-9 h-9 xl:w-10 xl:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shadow-inner group relative cursor-pointer">
@@ -250,9 +244,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             {[
               { id:'map', icon: <Map size={16}/>, label: 'Map View' },
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Grid View' },
-              { id:'simulation', icon: <Radio size={16}/>, label: 'Live Simulation' },
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
-              { id:'wave', icon: <Wind size={16}/>, label: 'Green-Wave Tool' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}

@@ -1,12 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WsService {
-  static const String _serverUrl = 'give-way-app.onrender.com';
+  static String _serverUrl = 'give-way-app.onrender.com';
 
-  static String get baseUrl => 'https://$_serverUrl';
-  static String get wsUrl   => 'wss://$_serverUrl';
+  static String get baseUrl => _serverUrl.startsWith('http') ? _serverUrl : 'https://$_serverUrl';
+  static String get wsUrl   => baseUrl.replaceFirst('http', 'ws');
+
+  static Future<void> updateUrl(String newUrl) async {
+    _serverUrl = newUrl;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('server_url', newUrl);
+  }
+
+  static Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _serverUrl = prefs.getString('server_url') ?? 'give-way-app.onrender.com';
+  }
 
   WebSocketChannel? _channel;
   final _stateController = StreamController<Map<String, dynamic>>.broadcast();

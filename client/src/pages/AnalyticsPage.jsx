@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
 
       {/* ── Wait Time Optimization ─────────────────────────── */}
       <motion.div variants={itemVars} className="bg-glass-card p-8">
-        <SectionHeader icon={<Timer size={18}/>} title="Optimization Gain: MakeWay AI vs. Legacy Fixed-Timer" />
+        <SectionHeader icon={<Timer size={18}/>} title="Optimization Gain: GiveWay AI vs. Legacy Fixed-Timer" />
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={analytics} barGap={12}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />

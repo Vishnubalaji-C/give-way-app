@@ -6,25 +6,29 @@ import 'screens/police_dashboard.dart';
 import 'screens/admin_dashboard.dart';
 import 'services/api_service.dart';
 import 'services/ws_service.dart';
+import 'screens/scanner_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize dynamic URL from local storage
+  await WsService.init();
   
   // Start Secure Software Discovery
   final ws = WsService();
   ws.startDiscovery();
   
-  runApp(const MakeWayApp());
+  runApp(const GiveWayApp());
 }
 
-class MakeWayApp extends StatefulWidget {
-  const MakeWayApp({super.key});
+class GiveWayApp extends StatefulWidget {
+  const GiveWayApp({super.key});
 
   @override
-  State<MakeWayApp> createState() => _MakeWayAppState();
+  State<GiveWayApp> createState() => _GiveWayAppState();
 }
 
-class _MakeWayAppState extends State<MakeWayApp> {
+class _GiveWayAppState extends State<GiveWayApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   Map<String, dynamic>? _user;
   bool _loading = true;
@@ -96,7 +100,7 @@ class _MakeWayAppState extends State<MakeWayApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MakeWay ATES',
+      title: 'GiveWay ATES',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
@@ -205,7 +209,7 @@ class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderS
                 ),
                 const SizedBox(height: 48),
                 Text(
-                  'MakeWay'.toUpperCase(),
+                  'GiveWay ATES v4.2'.toUpperCase(),
                   style: GoogleFonts.outfit(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -227,6 +231,35 @@ class _SplashScreenState extends State<_SplashScreen> with SingleTickerProviderS
                     fontWeight: FontWeight.w900,
                     letterSpacing: 3,
                     color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                const SizedBox(height: 48),
+                TextButton.icon(
+                  onPressed: () async {
+                    final synced = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (c) => ScannerScreen()),
+                    );
+                    if (synced == true) {
+                      // Restart discovery with new URL
+                      WsService().startDiscovery();
+                    }
+                  },
+                  icon: const Icon(Icons.qr_code_scanner, size: 16, color: Color(0xFF00E5FF)),
+                  label: Text(
+                    'LINK DEVICE'.toUpperCase(),
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF00E5FF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    backgroundColor: const Color(0xFF00E5FF).withOpacity(0.05),
+                    side: BorderSide(color: const Color(0xFF00E5FF).withOpacity(0.2)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],

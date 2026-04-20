@@ -173,7 +173,7 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'MakeWay ATES v4.2',
+                'GiveWay ATES v4.2',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),

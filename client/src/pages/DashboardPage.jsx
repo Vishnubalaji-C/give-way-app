@@ -8,7 +8,11 @@ export default function DashboardPage({ user }) {
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    setGreeting('Good Morning');
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good Morning');
+    else if (hour < 17) setGreeting('Good Afternoon');
+    else if (hour < 21) setGreeting('Good Evening');
+    else setGreeting('Good Night');
   }, []);
 
   const totalWait = Object.values(state?.lanes || {}).reduce((acc, curr) => acc + (curr.waitTime || 0), 0);
@@ -40,10 +44,10 @@ export default function DashboardPage({ user }) {
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 p-8 rounded-[2rem] bg-glass border border-white/5 shadow-2xl">
           <div className="flex-1">
             <div className="flex items-center gap-2 text-cyan-400 font-black text-[10px] tracking-[0.3em] mb-3 uppercase">
-              <ShieldCheck size={14} /> System Secure · MakeWay v4.2
+              <ShieldCheck size={14} /> System Secure · GiveWay v4.2
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
-              {greeting}, <span className="brand-gradient">{user?.name?.split(' ')[0] || 'Officer'}</span>
+              {greeting}, <span className="brand-gradient">Officer</span>
             </h1>
             <p className="text-white/40 mt-4 text-sm sm:text-lg max-w-2xl font-medium leading-relaxed">
               Monitoring <span className="text-white font-bold">{state?.junction?.name || 'Central Hub'}</span>. Edge-AI is currently optimizing flow for <span className="text-green-400 font-bold">Priority PCE</span> throughput.
@@ -56,15 +60,16 @@ export default function DashboardPage({ user }) {
               <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono text-white/50">
                 {user?.role?.toUpperCase() || 'GUEST'}
               </div>
-              <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-widest">
-                Lat: {state?.junction?.lat?.toFixed(3)}°N
+              <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping" />
+                Serial: Online
               </div>
             </div>
           </div>
           
           <div className="flex bg-black/40 border border-white/5 rounded-2xl p-6 gap-6 items-center flex-wrap backdrop-blur-md">
             <div className="flex flex-col">
-              <span className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-3">Junction Master Control</span>
+              <span className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-3">System Control</span>
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => send(state?.simulationRunning ? 'STOP_SIM' : 'START_SIM')}
@@ -94,34 +99,74 @@ export default function DashboardPage({ user }) {
         </div>
       </motion.div>
 
+      {/* ── Reviewer Tactical Hub (NEW) ────────────────────── */}
+      <motion.div variants={itemVars} className="p-8 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 shadow-inner">
+         <div className="flex items-center gap-3 mb-6">
+           <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/30">
+              <ShieldCheck size={16} />
+           </div>
+           <div>
+             <h3 className="text-sm font-black text-white uppercase tracking-wider">Reviewer Tactical Hub</h3>
+             <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instant Override Control Center</p>
+           </div>
+           <div className="ml-auto text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+             SAFETY_INTERVAL: 2.0s ACTIVE
+           </div>
+         </div>
+         
+         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <button 
+              onClick={() => send('SIMULATE_RFID', { laneId: '1', vehicleType: 'ambulance', tagId: 'AMB-EMG-101' })}
+              className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 transition-all group flex flex-col gap-2 items-start"
+             >
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-red-400 transition-colors">Lane 1 (South)</span>
+              <span className="text-xs font-bold text-white group-hover:text-white transition-colors">TRIGGER AMBULANCE</span>
+            </button>
+            <button 
+              onClick={() => send('SIMULATE_RFID', { laneId: '2', vehicleType: 'bus', tagId: 'BUS-PT-402' })}
+              className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all group flex flex-col gap-2 items-start"
+             >
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">Lane 2 (East)</span>
+              <span className="text-xs font-bold text-white group-hover:text-white transition-colors">TRIGGER BUS PRIORITY</span>
+            </button>
+            <button 
+              onClick={() => send('SIMULATE_TRAFFIC_BURST', { laneId: '3' })}
+              className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-500/40 hover:bg-amber-500/10 transition-all group flex flex-col gap-2 items-start"
+             >
+              <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-amber-400 transition-colors">Lane 3 (ESP32)</span>
+              <span className="text-xs font-bold text-white group-hover:text-white transition-colors">SIMULATE HIGH TRAFFIC</span>
+            </button>
+         </div>
+      </motion.div>
+
       {/* ── Core Metrics ───────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           icon={<Zap size={20} className="text-red-500" />} 
           title="Ambulances Cleared" 
           value={state?.totalAmbulances || 0} 
-          trend="+0s Average Delay"
+          trend="Direct Emergency Scans"
           delay={0.3}
         />
         <MetricCard 
           icon={<Navigation size={20} className="text-cyan-400" />} 
           title="Buses Serviced" 
           value={state?.totalBuses || 0} 
-          trend="Mass prioritized"
+          trend="Mass Prioritation"
           delay={0.4}
         />
         <MetricCard 
-          icon={<Cpu size={20} className="text-purple-400" />} 
-          title="AI Iterations" 
-          value={state?.tick || 0} 
-          trend="Computed @ Edge"
+          icon={<Activity size={20} className="text-indigo-400" />} 
+          title="Fuel Saved (Est)" 
+          value={`${state?.fuelSaved || 0}L`} 
+          trend="Efficiency Multiplier"
           delay={0.5}
         />
         <MetricCard 
           icon={<Activity size={20} className="text-amber-400" />} 
           title="Avg. Wait Time" 
           value={`${avgWait}s`} 
-          trend="Across all lanes"
+          trend="Fairness Equilibrator"
           delay={0.6}
         />
       </div>
@@ -131,12 +176,12 @@ export default function DashboardPage({ user }) {
         <motion.div variants={itemVars} className="bg-glass-card lg:col-span-2 p-8">
            <div className="flex items-center justify-between mb-8">
              <div>
-               <h2 className="text-xl font-black text-white uppercase tracking-tight">Real-Time Traffic Load</h2>
-               <p className="text-sm text-white/30 font-medium">Dynamic PCE Density across 4 approaches</p>
+               <h2 className="text-xl font-black text-white uppercase tracking-tight">Adaptive Traffic Load</h2>
+               <p className="text-sm text-white/30 font-medium">Equitable Resource Allocation per Node</p>
              </div>
              <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2">
                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-               <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Streaming</span>
+               <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">LIVE STREAMING</span>
              </div>
            </div>
            
@@ -154,14 +199,20 @@ export default function DashboardPage({ user }) {
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${lane.signal === 'green' ? 'bg-cyan-500 text-black' : 'bg-white/5 text-white/40'}`}>
                           {id}
                         </div>
-                        <span className="text-xs font-bold text-white/60 tracking-wider">LANE {id} NODE</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {isEmergency && <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded animate-pulse">EMERGENCY</span>}
-                        <span className={`text-xl font-black tabular-nums ${lane.signal === 'green' ? 'text-cyan-400' : 'text-white/30'}`}>
-                          {lane.density || 0}
-                        </span>
-                      </div>
+                         <div className="flex flex-col">
+                           <span className="text-xs font-bold text-white/60 tracking-wider">LANE {id} NODE</span>
+                           <div className="flex items-center gap-1.5">
+                             {(id === '1' || id === '2') && <div className="text-[8px] font-black text-cyan-400/60 flex items-center gap-1 uppercase tracking-tighter"><ShieldCheck size={8}/> RFID Secure (EM-18)</div>}
+                             {id === '3' && <div className="text-[8px] font-black text-amber-500/60 flex items-center gap-1 uppercase tracking-tighter"><Zap size={8}/> AI Optical (Pulsed)</div>}
+                           </div>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-3">
+                         {isEmergency && <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded animate-pulse">EMERGENCY</span>}
+                         <span className={`text-xl font-black tabular-nums ${lane.signal === 'green' ? 'text-cyan-400' : 'text-white/30'}`}>
+                           {lane.density || 0}
+                         </span>
+                       </div>
                     </div>
                     
                     <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">

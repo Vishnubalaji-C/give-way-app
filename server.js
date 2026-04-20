@@ -1,4 +1,3 @@
-/**
  * GiveWay — Adaptive Traffic Equity System
  * Backend: Node.js + Express + ws (WebSocket)
  */
@@ -12,7 +11,9 @@ require('dotenv').config();
 const path    = require('path');
 const fs      = require('fs');
 const dgram   = require('dgram');
+const os      = require('os');
 const { SerialPort } = require('serialport');
+const { ReadlineParser } = require('@serialport/parser-readline');
 
 const app    = express();
 const server = http.createServer(app);
@@ -53,7 +54,7 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    system: 'MakeWay-ATES-Master',
+    system: 'GiveWay-ATES-Master',
     build: '2026.04.11',
     junction: activeJunction
   });
@@ -63,7 +64,7 @@ app.get('/', (req, res) => {
 app.get(['/health', '/api/health'], (req, res) => {
   res.json({
     status: 'online',
-    system: 'MakeWay-ATES',
+    system: 'GiveWay-ATES',
     junction: activeJunction,
     time: new Date().toISOString(),
     uptime: process.uptime()
@@ -112,10 +113,10 @@ if (process.env.MONGODB_URI) {
     .then(() => console.log('🚀 [DATABASE] Securely connected to MongoDB Atlas!'))
     .catch(err => console.error('❌ [DATABASE] Connection Failure:', err));
     
-  const GenericDbModel = mongoose.model('MakewayData', new mongoose.Schema({ _id: String, value: Object }, { strict: false }));
+  const GenericDbModel = mongoose.model('GiveWayData', new mongoose.Schema({ _id: String, value: Object }, { strict: false }));
   
   // Load state from Mongo if exists
-  GenericDbModel.findById('makeway_db').then(doc => {
+  GenericDbModel.findById('giveway_db').then(doc => {
     if (doc && doc.value) {
       db = doc.value;
       console.log('[DATABASE] Loaded persisted logic from MongoDB Atlas.');
@@ -126,7 +127,7 @@ if (process.env.MONGODB_URI) {
   saveToDisk = function() {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
-      GenericDbModel.updateOne({ _id: 'makeway_db' }, { value: db }, { upsert: true })
+      GenericDbModel.updateOne({ _id: 'giveway_db' }, { value: db }, { upsert: true })
         .catch(err => console.error('CRITICAL: Mongoose Cloud Save Failed:', err));
     }, 3000);
   };
@@ -163,7 +164,8 @@ const TICK_INTERVAL = 1000;   // ms – 1-second world clock
 const FAIRNESS_CAP  = 120;    // seconds max wait
 const PENALTY_START = 90;     // seconds before exponential penalty
 const YELLOW_TIME   = 3;      // seconds (5 in Rain Mode)
-const PHASE_GREEN   = 15;     // base green phase duration
+const ALL_RED_TIME  = 2;      // professional safety clearance (NEW)
+const PHASE_GREEN   = 10;     // base green phase duration (shorter for faster rotation)
 
 const PCE = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
 
@@ -247,7 +249,21 @@ let overrideMode = 'auto'; // auto | vip | festival | emergency
 let uplinkToken = uuidv4().substring(0, 8).toUpperCase(); // 8-character secure sync token
 setInterval(() => {
   uplinkToken = uuidv4().substring(0, 8).toUpperCase();
-}, 300000); // Rotates every 5 minutes
+}, 300000); 
+
+// ─── Direct Mobile Sync API ───────────────────────────────────────────────────
+app.get('/api/sync/token', (req, res) => {
+  const localIp = getLocalIp();
+  res.json({
+    success: true,
+    ip: localIp,
+    port: PORT,
+    sig: process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY',
+    token: uplinkToken,
+    // Add a Direct Link for phone cameras to scan
+    directUrl: `http://${localIp}:${PORT}`
+  });
+});
 
 let state = buildInitialState(db.analytics);
 let auditLog = db.auditLog;
@@ -266,7 +282,54 @@ async function connectArduino() {
     
     if (portInfo) {
       arduinoPort = new SerialPort({ path: portInfo.path, baudRate: 115200 });
+      const parser = arduinoPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+
       console.log(`🔌 [HARDWARE] Physical Bridge Active on ${portInfo.path}`);
+      
+      parser.on('data', (data) => {
+        const line = data.trim();
+        if (!line) return;
+
+        // --- Handle Physical RFID Scans (Lanes 1 & 2) ---
+        if (line.startsWith('HW_RFID:')) {
+          const parts = line.split(':');
+          const laneId = parts[1];
+          const tagId = parts[2];
+          
+          if (state.lanes[laneId]) {
+            state.lanes[laneId].priorityTrigger = true;
+            addAlert('emergency', `📇 [HARDWARE RFID] Priority Tag Scanned: ${tagId} on Lane ${laneId}!`, laneId);
+            computePriorities();
+            broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+            
+            // Auto-reset trigger after 10s if not already cleared
+            setTimeout(() => {
+              if (state.lanes[laneId]) state.lanes[laneId].priorityTrigger = false;
+            }, 10000);
+          }
+        }
+
+        // --- Handle Physical ESP32 Pulses (Lane 3) ---
+        if (line.startsWith('HW_PULSE:')) {
+          const parts = line.split(':');
+          const laneId = parts[1];
+          const density = parseInt(parts[2]);
+
+          if (state.lanes[laneId]) {
+            // Map pulse to vehicle counts for Lane 3
+            // 5 = Low, 15 = Med, 30 = High
+            const mockVehicles = {
+               ambulance: 0,
+               bus: density > 20 ? 2 : (density > 10 ? 1 : 0),
+               car: Math.floor(density / 2),
+               bike: Math.floor(density / 3),
+               lorry: 0
+            };
+            processEdgeData(laneId, mockVehicles);
+          }
+        }
+      });
+
       arduinoPort.on('error', err => console.log('Arduino Error: ', err.message));
     } else {
       console.log('🔌 [HARDWARE] No Arduino detected. Running in software-only mode.');
@@ -326,24 +389,42 @@ function buildInitialState(persisted = null) {
     simulationRunning,
     overrideMode,
     isCongested: false,
+    isSwitching: false, // Prevents signal race conditions
   };
 }
 
-// ─── MakeWay Decision Engine ──────────────────────────────────────────────────
+function getLocalIp() {
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+// ─── GiveWay Decision Engine ──────────────────────────────────────────────────
 function computePriorities() {
   LANES.forEach(id => {
     const lane = state.lanes[id];
     const { ambulance, bus, car, bike, lorry } = lane.vehicles;
-    // PCE density score - Updated for full vehicle mix
-    lane.density = ambulance * PCE.ambulance + bus * PCE.bus + car * PCE.car + bike * PCE.bike + lorry * PCE.lorry;
+    
+    // PCE density score
+    lane.density = ambulance * PCE.ambulance + bus * PCE.bus + car * PCE.car + bike * PCE.bike + (lorry || 0) * PCE.lorry;
 
-    // Wait-Time Penalty (WTP) - Antigravity Logic
+    // Wait-Time Penalty (WTP)
     let penalty = 0;
     if (lane.signal === 'red' || lane.signal === 'yellow') {
        penalty = lane.waitTime * 1.5;
     }
 
-    lane.finalPriority = lane.density + penalty;
+    // --- CORNER-TO-CORNER FIX: GHOST LANE RECOVERY ---
+    // Penalize priority by 50% if an accident (Ghost Lane) is detected
+    // This stops the system from staying green on a blocked lane
+    lane.finalPriority = (lane.density + penalty) * (lane.ghostFlag ? 0.3 : 1.0);
+    
     lane.pceScore = lane.density;
   });
 
@@ -360,54 +441,79 @@ function computePriorities() {
 }
 
 function selectNextLane() {
-  // Strict sequential round-robin: 1 -> 2 -> 3 -> 1
-  const currentIndex = LANES.indexOf(state.activeLane);
-  const nextIndex = (currentIndex + 1) % LANES.length;
-  return LANES[nextIndex];
+  // ADAPTIVE PRIORITY: Select the "Top Traffic" lane based on PCE and Wait Time
+  const candidates = LANES.filter(id => id !== state.activeLane);
+  
+  // Sort by finalPriority (Density + Wait Time Penalty)
+  // This ensures we give priority to heavy lanes but also prevents starving quiet ones
+  candidates.sort((a, b) => state.lanes[b].finalPriority - state.lanes[a].finalPriority);
+  
+  const winner = candidates[0];
+  console.log(`🤖 [AI] Next Priority Selection: Lane ${winner} (Score: ${Math.round(state.lanes[winner].finalPriority)})`);
+  
+  return winner;
 }
 
 function switchLane(nextId) {
-  if (state.activeLane === nextId) return;
+  if (state.activeLane === nextId || state.isSwitching) return;
 
   const yellowTime = state.mode.rain ? 5 : YELLOW_TIME;
   const outgoingId = state.activeLane;
   const outgoingLane = state.lanes[outgoingId];
 
+  // 1. Lock system to prevent race conditions
+  state.isSwitching = true;
+
   // 1. Enter Yellow Transition
   outgoingLane.signal = 'yellow';
   outgoingLane.phase  = 'yellow';
-  state.phaseTimer    = yellowTime; // Update timer to Yellow duration
-  sendToArduino(outgoingId, 'Y'); // Hardware CMD
+  state.phaseTimer    = yellowTime; 
+  sendToArduino(outgoingId, 'Y'); 
   broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 
   setTimeout(() => {
-    // 2. Strict Red Transition (All-Red safety pause briefly)
-    state.lanes[outgoingId].signal = 'red';
-    state.lanes[outgoingId].phase  = 'red';
-    state.lanes[outgoingId].greenTimer = 0;
-    state.lanes[outgoingId].staticCycles = 0;
-    sendToArduino(outgoingId, 'R'); // Hardware CMD
-
-    // Activate new lane
-    state.lanes[nextId].signal    = 'green';
-    state.lanes[nextId].phase     = 'green';
-    state.lanes[nextId].waitTime  = 0;
-    state.lanes[nextId].greenTimer = computeGreenDuration(nextId);
-    state.lanes[nextId].staticCycles = 0;
-    state.lanes[nextId].isEmergency = false; // Reset on green entry
-    state.activeLane = nextId;
-    state.phaseTimer = state.lanes[nextId].greenTimer;
-    sendToArduino(nextId, 'G'); // Hardware CMD
-
+    // 2. CORNER-TO-CORNER FIX: All-Red Safety Clearance
+    // Set BOTH lanes to red for a brief moment
+    outgoingLane.signal = 'red';
+    outgoingLane.phase  = 'red';
+    sendToArduino(outgoingId, 'R');
+    
+    state.phaseTimer = ALL_RED_TIME;
+    console.log("🚦 [SAFETY] All-Red Clearance active.");
     broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+
+    setTimeout(() => {
+      // 3. Activate new lane
+      state.lanes[nextId].signal    = 'green';
+      state.lanes[nextId].phase     = 'green';
+      state.lanes[nextId].waitTime  = 0;
+      state.lanes[nextId].greenTimer = computeGreenDuration(nextId);
+      state.lanes[nextId].staticCycles = 0;
+      state.lanes[nextId].isEmergency = false; 
+      state.activeLane = nextId;
+      state.phaseTimer = state.lanes[nextId].greenTimer;
+      
+      // Release the lock
+      state.isSwitching = false;
+
+      sendToArduino(nextId, 'G'); 
+      broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+    }, ALL_RED_TIME * 1000);
+
   }, yellowTime * 1000);
 }
 
 function computeGreenDuration(laneId) {
   const lane = state.lanes[laneId];
   const base = PHASE_GREEN;
-  const bonus = Math.min(Math.floor(lane.density / 5), 15);
-  return Math.min(base + bonus, 30);
+  const pceValue = lane.density || 0;
+  
+  // Bonus time: 1 second per 2 PCE units, capped strictly.
+  const bonus = Math.floor(pceValue / 2);
+  const total = base + bonus;
+  
+  // USER REQUIREMENT: Cut-off must be 30 seconds maximum
+  return Math.min(total, 30);
 }
 
 // ─── Hardware Data Processor (No Simulation) ───────────────────────────────────
@@ -678,7 +784,7 @@ function handleClientMessage(msg) {
         fetchWeatherData();
         weatherPollTimer = setInterval(fetchWeatherData, 600000); // every 10 min
         addAlert('info', TOMTOM_KEY
-          ? '📡 Live feed active — MakeWay connected to TomTom traffic network.'
+          ? '📡 Live feed active — GiveWay connected to TomTom traffic network.'
           : '🕐 Pattern engine active — time-of-day traffic modeling engaged.', null);
       }
       break;
@@ -754,7 +860,7 @@ function handleClientMessage(msg) {
         addAlert('emergency', '🚨 Emergency All-Stop activated!', null);
       }
       if (overrideMode === 'auto') {
-        addAlert('info', '🤖 MakeWay AI control restored.', null);
+        addAlert('info', '🤖 GiveWay AI control restored.', null);
       }
       broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
       break;
@@ -775,7 +881,7 @@ function handleClientMessage(msg) {
       setTimeout(() => {
         if (overrideMode === 'pedestrian') {
           overrideMode = 'auto';
-          addAlert('info', '🤖 Pedestrian Phase Over. MakeWay AI resumed control.', null);
+          addAlert('info', '🤖 Pedestrian Phase Over. GiveWay AI resumed control.', null);
           broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
         }
       }, 15000);
@@ -789,9 +895,75 @@ function handleClientMessage(msg) {
       break;
     }
 
+    case 'SIMULATE_RFID': {
+      const { laneId, vehicleType, tagId } = msg.payload;
+      if (state.lanes[laneId]) {
+        state.lanes[laneId].vehicles[vehicleType || 'bus']++;
+        state.lanes[laneId].priorityTrigger = true;
+        addAlert('emergency', `📇 [RFID] Tag Detected: ${tagId || 'BUS-7742'} on Lane ${laneId}. Priority assigned.`, laneId);
+        
+        // PHYSICAL FEEDBACK: Beep the showcase buzzer
+        arduinoPort && arduinoPort.write('B\n');
+
+        computePriorities();
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+        
+        // Auto-reset trigger after 5s
+        setTimeout(() => {
+          if (state.lanes[laneId]) {
+            state.lanes[laneId].priorityTrigger = false;
+            broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+          }
+        }, 5000);
+      }
+      break;
+    }
+
+    case 'SIMULATE_GHOST_LANE': {
+      const { laneId } = msg.payload;
+      if (state.lanes[laneId]) {
+        state.lanes[laneId].ghostFlag = true;
+        state.lanes[laneId].vehicles.car = Math.max(state.lanes[laneId].vehicles.car, 12);
+        addAlert('ghost', `👻 [DEMO] Ghost Lane simulated on Lane ${laneId}! Static density detected on GREEN.`, laneId);
+        
+        // PHYSICAL FEEDBACK: Long beep for accident alert
+        arduinoPort && arduinoPort.write('B\n');
+        setTimeout(() => arduinoPort && arduinoPort.write('B\n'), 300);
+
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      }
+      break;
+    }
+
+    case 'SIMULATE_TRAFFIC_BURST': {
+      const { laneId } = msg.payload;
+      if (state.lanes[laneId]) {
+        state.lanes[laneId].vehicles.car += 25;
+        state.lanes[laneId].vehicles.bike += 15;
+        addAlert('warning', `🚦 [DEMO] Traffic Burst on Lane ${laneId}! High density influx detected.`, laneId);
+        computePriorities();
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      }
+      break;
+    }
+
     case 'GET_AUDIT':
       broadcast({ type: 'AUDIT_LOG', payload: auditLog });
       break;
+
+    case 'NODE_ONLINE': {
+      const { junctionId } = msg.payload;
+      if (junctions[junctionId]) {
+        junctions[junctionId].lastPing = Date.now();
+        junctions[junctionId].status = 'online';
+        // Add a temporary virtual node if not already reflected
+        if (state.junction.id === junctionId) {
+          state.junction.cameraNodes = Math.max(state.junction.cameraNodes, 4);
+        }
+        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      }
+      break;
+    }
   }
 }
 
@@ -892,7 +1064,7 @@ const edgeRequestLog = new Map(); // tracks last request per junction/lane
 app.post('/api/edge-data', (req, res) => {
   const { laneId, secret, vehicles, junctionId } = req.body;
   
-  if (secret !== (process.env.MAKEWAY_NODE_KEY || 'MAKEWAY_NODE_KEY')) {
+  if (secret !== (process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY')) {
     return res.status(401).json({ error: 'Unauthorized Node Access' });
   }
   
@@ -950,6 +1122,51 @@ app.get('/api/data-source', (req, res) => {
   });
 });
 
+// ─── Secure Device Sync (Cross-Platform Pairing) ───────────────────────────
+const syncTokens = new Map(); // token -> systemState
+
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+
+app.get('/api/sync/token', (req, res) => {
+  const token = uuidv4().split('-')[0].toUpperCase();
+  const localIp = getLocalIp();
+  
+  // Token expires in 5 minutes
+  syncTokens.set(token, {
+    ip: localIp,
+    port: PORT,
+    createdAt: Date.now()
+  });
+
+  setTimeout(() => syncTokens.delete(token), 300000);
+
+  res.json({
+    success: true,
+    token,
+    ip: localIp,
+    port: PORT,
+    directUrl: process.env.RENDER_EXTERNAL_URL || `http://${localIp}:${PORT}`
+  });
+});
+
+app.post('/api/sync/verify', (req, res) => {
+  const { token } = req.body;
+  if (syncTokens.has(token)) {
+    return res.json({ success: true, user: db.users.find(u => u.role === 'admin') });
+  }
+  res.status(401).json({ success: false, error: 'Token expired or invalid' });
+});
+
 // ─── Frontend React Navigation Fallback ───────────────────────────────────────
 app.get('*', (req, res) => {
   const target = path.join(__dirname, 'client/dist/index.html');
@@ -962,8 +1179,17 @@ app.get('*', (req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
+// Secure Exit Logic: Ensure db is saved before process dies
+process.on('SIGINT', () => {
+  console.log('🛑 [SYSTEM] Shutdown detected. Saving final state...');
+  const tempFile = DB_FILE + '.tmp';
+  fs.writeFileSync(tempFile, JSON.stringify(db, null, 2));
+  fs.renameSync(tempFile, DB_FILE);
+  process.exit();
+});
+
 server.listen(PORT, () => {
-  console.log(`🚀 MakeWay Advanced ATES Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 GiveWay Advanced Traffic System (ATES) Backend running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket Gateway: ws://localhost:${PORT}`);
 });
 
@@ -978,10 +1204,10 @@ udpSocket.on('error', (err) => {
 setInterval(() => {
   try {
     const heartbeat = JSON.stringify({
-      service: 'MAKEWAY_MASTER',
+      service: 'GIVEWAY_MASTER',
       port: PORT,
       // Unified Software Node Signature
-      sig: Buffer.from(process.env.MAKEWAY_NODE_KEY || 'MAKEWAY_NODE_KEY').toString('base64'),
+      sig: Buffer.from(process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY').toString('base64'),
       timestamp: Date.now()
     });
     const message = Buffer.from(heartbeat);

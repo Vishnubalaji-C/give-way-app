@@ -1,16 +1,16 @@
-# 🚦 MakeWay — Adaptive Traffic Equity System (ATES)
+# 🚦 GiveWay — Adaptive Traffic Equity System (ATES)
 ### Final "Shield" Edition — AI-Driven, PCE-Weighted Traffic Management (v4.2)
 
 ---
 
 ## 📖 Overview
-MakeWay is an advanced IoT and AI-driven smart city traffic management system. It dynamically controls traffic lights using real-time edge processing (YOLOv8) and a proprietary Passenger Car Equivalent (PCE) algorithm. The system prioritizes ambulances/emergency vehicles, balances junction loads, and optimizes traffic flow based on real-time vehicle density detected at the edge.
+GiveWay is an advanced IoT and AI-driven smart city traffic management system. It dynamically controls traffic lights using real-time edge processing (YOLOv8) and a proprietary Passenger Car Equivalent (PCE) algorithm. The system prioritizes ambulances/emergency vehicles, balances junction loads, and optimizes traffic flow based on real-time vehicle density detected at the edge.
 
 ---
 
 ## 🏗️ Project Structure
 ```text
-MakeWay/
+GiveWay/
 ├── server.js              # Node.js + WebSocket backend (Master Controller)
 ├── package.json           # Global ecosystem scripts
 ├── db.json                # Local persistence layer (Fallback)
@@ -69,7 +69,7 @@ The system uses a strict **3-approach sequential round-robin** (Pins 8 through 1
 ### C. Edge Node Communications
 Each **ESP32-CAM** node communicates with the Master via Serial (115200 Baud):
 - **Payload**: `LANE:X,AMB:n,BUS:n,CAR:n,BIKE:n,LORRY:n,PED:n`
-- **Discovery**: Nodes auto-discover the Master server via Secure UDP Heartbeat (`MAKEWAY_MASTER`).
+- **Discovery**: Nodes auto-discover the Master server via Secure UDP Heartbeat (`GIVEWAY_MASTER`).
 - **Sync**: Real-time cloud logging to the Command Center via the Render Node.js bridge.
 
 ---

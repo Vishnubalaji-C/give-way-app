@@ -20,7 +20,7 @@ export default function SettingsPage({ user, onUpdateUser }) {
   const lanes = state?.lanes ?? {};
 
   const OVERRIDE_MODES = [
-    { id: 'auto',      label: '🤖 MakeWay AI',    desc: 'Full autonomous adaptive traffic control' },
+    { id: 'auto',      label: '🤖 GiveWay AI',    desc: 'Full autonomous adaptive traffic control' },
     { id: 'vip',       label: '👑 VIP Corridor',    desc: 'Escort mode favoring pre-planned route' },
     { id: 'festival',  label: '🎉 Festival Mode',   desc: 'Load sharing for extremely dense crowds' },
     { id: 'emergency', label: '🚨 All-Stop',         desc: 'Lockdown mode: Red lights enforced on all lanes' },

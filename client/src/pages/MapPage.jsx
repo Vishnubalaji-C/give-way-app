@@ -13,7 +13,7 @@ export default function MapPage({ user }) {
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
             <h3 className="text-xl font-black text-white uppercase tracking-widest">Re-establishing Uplink</h3>
-            <p className="text-slate-400 text-sm mt-2">Connecting to MakeWay Matrix...</p>
+            <p className="text-slate-400 text-sm mt-2">Connecting to GiveWay Matrix...</p>
           </div>
         </div>
       )}

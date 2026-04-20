@@ -89,12 +89,12 @@ export default function AuthPage({ onLogin }) {
             className="w-24 h-24 rounded-3xl bg-white/[0.03] p-1 border border-white/10 shadow-2xl mb-6 group"
           >
             <div className="w-full h-full bg-[#030712] rounded-[1.4rem] flex items-center justify-center overflow-hidden">
-               <img src="/logo.png" alt="MakeWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+               <img src="/logo.png" alt="GiveWay Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
           </motion.div>
           
           <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
-            MakeWay <span className="brand-gradient">ATES</span>
+            GiveWay <span className="brand-gradient">ATES</span>
           </h1>
           <p className="text-white/30 text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2">
             <Globe size={12} className="text-cyan-400" /> Secure Terminal Authorization

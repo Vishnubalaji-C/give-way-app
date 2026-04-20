@@ -4,37 +4,32 @@ import Navbar          from './components/Navbar';
 import BottomNav       from './components/BottomNav';
 import SplashScreen    from './components/SplashScreen';
 import DashboardPage   from './pages/DashboardPage';
-import FeaturesPage    from './pages/FeaturesPage';
 import CameraFeedPage  from './pages/CameraFeedPage';
 import AnalyticsPage   from './pages/AnalyticsPage';
 import SettingsPage    from './pages/SettingsPage';
 import MapPage         from './pages/MapPage';
-import GreenWavePage   from './pages/GreenWavePage';
-import SimulationPage  from './pages/SimulationPage';
 import ControlRoomPage from './pages/ControlRoomPage';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
 
-// One-time migration: wipe old 'auto'/'light' theme so dark mode always loads.
+// One-time migration: wipe old theme so dark mode always loads.
 (function migrateTheme() {
-  const t = localStorage.getItem('makeway_theme');
+  const t = localStorage.getItem('giveway_theme');
   if (!t || t === 'auto' || t === 'light') {
-    localStorage.setItem('makeway_theme', 'dark');
+    localStorage.setItem('giveway_theme', 'dark');
   }
   document.documentElement.classList.remove('light-mode');
 })();
 
 export default function App() {
-  // ─── ALL HOOKS MUST BE BEFORE ANY CONDITIONAL RETURNS ─────────────────────
   const [showSplash, setShowSplash] = useState(true);
   const [tab,        setTab]        = useState('dashboard');
   const [isMobile,   setIsMobile]   = useState(() => window.innerWidth < 1024);
-  const [theme,      setTheme]      = useState(() => localStorage.getItem('makeway_theme') || 'dark');
+  const [theme,      setTheme]      = useState(() => localStorage.getItem('giveway_theme') || 'dark');
 
   const [user, setUser] = useState(() => {
-    // Load from localStorage or default to admin role
     try {
-      const stored = localStorage.getItem('makeway_user');
+      const stored = localStorage.getItem('giveway_user');
       if (stored) return JSON.parse(stored);
     } catch {}
     return { role: 'admin', name: 'Administrator' };
@@ -64,7 +59,7 @@ export default function App() {
 
   const handleSetTheme = (newTheme) => {
     setTheme(newTheme);
-    localStorage.setItem('makeway_theme', newTheme);
+    localStorage.setItem('giveaway_theme', newTheme);
   };
 
   const handleUpdateUser = async (updatedUser) => {
@@ -76,7 +71,7 @@ export default function App() {
         );
         if (res.data.success) {
           const newUser = { ...user, ...res.data.user };
-          localStorage.setItem('makeway_user', JSON.stringify(newUser));
+          localStorage.setItem('giveaway_user', JSON.stringify(newUser));
           setUser(newUser);
           console.log(`📡 [AUTH] Unified Persona Switch: Active context is now ${updatedUser.role.toUpperCase()}`);
           return;
@@ -87,25 +82,22 @@ export default function App() {
     }
 
     const newUser = { ...user, ...updatedUser };
-    localStorage.setItem('makeway_user', JSON.stringify(newUser));
+    localStorage.setItem('giveaway_user', JSON.stringify(newUser));
     setUser(newUser);
   };
 
   const PAGES = {
     dashboard:  DashboardPage,
-    simulation: SimulationPage,
-    features:   FeaturesPage,
     camera:     CameraFeedPage,
     analytics:  AnalyticsPage,
     settings:   SettingsPage,
     map:        MapPage,
-    wave:       GreenWavePage,
     control:    ControlRoomPage,
     override:   () => (
       <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
         Emergency Override Active
         <br />
-        <span className="text-sm opacity-50 mt-4 block">All lanes set to RED — MakeWay AI control suspended</span>
+        <span className="text-sm opacity-50 mt-4 block text-white/40">All lanes set to RED — GiveWay AI control suspended</span>
       </div>
     ),
     incidents: () => (

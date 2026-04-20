@@ -75,11 +75,11 @@ export default function SyncPortal({ isOpen, onClose }) {
             {loading ? (
               <div className="h-64 flex flex-col items-center justify-center gap-4">
                 <RefreshCw size={40} className="text-cyan-400 animate-spin" />
-                <span className="text-cyan-400 font-medium animate-pulse">Establishing Bridge...</span>
+                <span className="text-cyan-400 font-medium animate-pulse">Loading...</span>
               </div>
             ) : error ? (
               <div className="h-64 flex flex-col items-center justify-center text-center gap-4">
-                <p className="text-red-400 font-medium">{error}</p>
+                <p className="text-sm text-white/30 font-medium">Connection error</p>
                 <button 
                   onClick={fetchSyncToken}
                   className="px-4 py-2 bg-red-500/20 text-red-100 rounded-lg text-sm border border-red-500/30 font-bold hover:bg-red-500/30 transition-all"
@@ -91,12 +91,7 @@ export default function SyncPortal({ isOpen, onClose }) {
               <div className="flex flex-col items-center gap-6">
                 <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                   <QRCodeSVG 
-                    value={JSON.stringify({
-                      i: syncData.ip,
-                      p: syncData.port,
-                      s: syncData.sig,
-                      t: syncData.token
-                    })}
+                    value={syncData.directUrl || `http://${syncData.ip}:${syncData.port}`}
                     size={200}
                     level="H"
                     includeMargin={false}
@@ -138,7 +133,7 @@ export default function SyncPortal({ isOpen, onClose }) {
 
         <div className="bg-cyan-500/10 p-4 border-t border-white/5 flex items-center justify-center gap-2 text-xs text-white/40 font-medium">
           <CheckCircle size={14} className="text-cyan-400/50" />
-          Cloud Bridge Verified — Antigravity Protocol 4.2 · No Hardware Required
+          Secure Cloud Bridge Verified · GiveWay Enterprise Gateway
         </div>
       </motion.div>
     </div>

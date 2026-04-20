@@ -1,14 +1,14 @@
 {
-  "name": "makeway-root",
+  "name": "giveway-root",
   "version": "1.0.0",
-  "description": "MakeWay — Adaptive Traffic Equity System (ATES) v4.4 Production",
+  "description": "GiveWay — Adaptive Traffic Equity System (ATES) v4.4 Production",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "server": "node server.js",
     "start": "node server.js",
     "client": "npm run dev --prefix client",
-    "dev": "start \"MakeWay Backend\" cmd /k npm run server & start \"MakeWay Frontend\" cmd /k npm run client",
+    "dev": "start \"GiveWay Backend\" cmd /k npm run server & start \"GiveWay Frontend\" cmd /k npm run client",
     "build": "npm install --prefix client && npm run build --prefix client",
     "install:all": "npm install && npm install --prefix client"
   },
@@ -28,6 +28,6 @@
     "ATES",
     "PCE"
   ],
-  "author": "MakeWay Team",
+  "author": "GiveWay Team",
   "license": "MIT"
 }
