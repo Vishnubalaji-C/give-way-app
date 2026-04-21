@@ -158,17 +158,17 @@ export default function DashboardPage({ user }) {
           delay={0.4}
         />
         <MetricCard 
-          icon={<Activity size={20} className="text-indigo-400" />} 
-          title="Fuel Saved (Est)" 
-          value={`${state?.fuelSaved || 0}L`} 
-          trend="Efficiency Multiplier"
-          delay={0.5}
-        />
-        <MetricCard 
-          icon={<Activity size={20} className="text-amber-400" />} 
+          icon={<Timer size={20} className="text-amber-400" />} 
           title="Avg. Wait Time" 
           value={`${avgWait}s`} 
           trend="Fairness Equilibrator"
+          delay={0.5}
+        />
+        <MetricCard 
+          icon={<Activity size={20} className="text-white/20" />} 
+          title="Nodes Linked" 
+          value={Object.keys(state?.lanes || {}).length} 
+          trend="Hardware Presence"
           delay={0.6}
         />
       </div>

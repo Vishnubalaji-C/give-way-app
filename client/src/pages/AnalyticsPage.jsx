@@ -132,8 +132,8 @@ export default function AnalyticsPage() {
       </motion.div>
 
       {/* ── Core Throughput Metrics ────────────────────────── */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        <motion.div variants={itemVars} className="bg-glass-card lg:col-span-2 p-8">
+      <div className="grid lg:grid-cols-2 gap-6">
+        <motion.div variants={itemVars} className="bg-glass-card p-8">
           <SectionHeader icon={<TrendingUp size={18}/>} title="Hourly Throughput Analysis" />
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={analytics}>
@@ -172,23 +172,6 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         </motion.div>
       </div>
-
-      {/* ── Wait Time Optimization ─────────────────────────── */}
-      <motion.div variants={itemVars} className="bg-glass-card p-8">
-        <SectionHeader icon={<Timer size={18}/>} title="Optimization Gain: GiveWay AI vs. Legacy Fixed-Timer" />
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={analytics} barGap={12}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis dataKey="hour" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ background: '#030712', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }} />
-            <Legend wrapperStyle={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }} />
-            <Bar dataKey="giveway" name="ATES Optimized" fill="#10b981" radius={[6,6,0,0]} barSize={24}
-              style={{ filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }} />
-            <Bar dataKey="fixed" name="Legacy Timer" fill="rgba(239, 68, 68, 0.2)" radius={[6,6,0,0]} barSize={24} />
-          </BarChart>
-        </ResponsiveContainer>
-      </motion.div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Heatmap Section */}

@@ -206,9 +206,12 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           {/* Tabs */}
           <div className="flex items-center gap-2 flex-wrap">
             {[
+              { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Live Monitor' },
               { id:'map', icon: <Map size={16}/>, label: 'Map View' },
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
+              { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
               { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
+              { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${

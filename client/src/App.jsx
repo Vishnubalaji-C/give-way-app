@@ -7,8 +7,10 @@ import SplashScreen    from './components/SplashScreen';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
 
-const MapPage         = lazy(() => import('./pages/MapPage'));
+const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
 const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
+const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
+const MapPage         = lazy(() => import('./pages/MapPage'));
 const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
 const AuthPage        = lazy(() => import('./pages/AuthPage'));
 
@@ -100,14 +102,21 @@ export default function App() {
   };
 
   const PAGES = {
+    dashboard:  DashboardPage,
     map:        MapPage,
     camera:     CameraFeedPage,
+    analytics:  AnalyticsPage,
     control:    ControlRoomPage,
     override:   () => (
       <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
         Emergency Override Active
         <br />
         <span className="text-sm opacity-50 mt-4 block text-white/40">All lanes set to RED — GiveWay AI control suspended</span>
+      </div>
+    ),
+    incidents: () => (
+      <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse font-mono tracking-widest">
+        GHOST LANE TRACKER: SCANNING FOR BLOCKAGES...
       </div>
     ),
   };
