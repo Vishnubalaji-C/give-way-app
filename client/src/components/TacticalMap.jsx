@@ -39,22 +39,10 @@ export default function TacticalMap({ user, height = "100%", showControls = true
               <h2 className="text-[10px] font-black text-white mb-0.5 uppercase tracking-widest flex items-center gap-1.5">
                  <Navigation size={12} className="text-cyan-400" /> Tactical Grid
               </h2>
-           </div>
-
-           <div className="hidden sm:block glass p-1.5 rounded-xl border border-white/5 shadow-2xl max-h-[200px] overflow-y-auto no-scrollbar pointer-events-auto">
-              {junctions.map(j => (
-                 <button 
-                    key={j.id} 
-                    onClick={() => switchJunction(j.id, user?.token)}
-                    className={`w-full text-left p-2 rounded-lg transition-all mb-0.5 flex items-start gap-2 group ${state?.junction?.id === j.id ? 'bg-cyan-500/10 border border-cyan-500/30' : 'hover:bg-white/5 border border-transparent'}`}
-                 >
-                    <div className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${j.status === 'online' ? 'bg-cyan-500' : 'bg-red-500'}`}></div>
-                    <div className="min-w-0">
-                       <div className="text-[10px] font-bold text-slate-200 truncate">{j.name}</div>
-                    </div>
-                    {state?.junction?.id === j.id && <Zap size={10} className="ml-auto text-cyan-400 animate-pulse" />}
-                 </button>
-              ))}
+              <div className="mt-2 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>
+                <span className="text-[9px] font-bold text-slate-400 tracking-wider">UNIT: DI-MEGA-01 ACTIVE</span>
+              </div>
            </div>
         </div>
       )}

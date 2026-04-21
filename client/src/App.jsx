@@ -7,11 +7,8 @@ import SplashScreen    from './components/SplashScreen';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
 
-const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
-const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
-const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
-const SettingsPage    = lazy(() => import('./pages/SettingsPage'));
 const MapPage         = lazy(() => import('./pages/MapPage'));
+const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
 const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
 const AuthPage        = lazy(() => import('./pages/AuthPage'));
 
@@ -103,11 +100,8 @@ export default function App() {
   };
 
   const PAGES = {
-    dashboard:  DashboardPage,
-    camera:     CameraFeedPage,
-    analytics:  AnalyticsPage,
-    settings:   SettingsPage,
     map:        MapPage,
+    camera:     CameraFeedPage,
     control:    ControlRoomPage,
     override:   () => (
       <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
@@ -116,14 +110,9 @@ export default function App() {
         <span className="text-sm opacity-50 mt-4 block text-white/40">All lanes set to RED — GiveWay AI control suspended</span>
       </div>
     ),
-    incidents: () => (
-      <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse">
-        No new Ghost-Lane incidents currently detected.
-      </div>
-    ),
   };
 
-  const Page = PAGES[tab] || DashboardPage;
+  const Page = PAGES[tab] || MapPage;
 
   return (
     <WsProvider>

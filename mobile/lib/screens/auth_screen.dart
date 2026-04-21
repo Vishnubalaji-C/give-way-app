@@ -13,6 +13,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
   bool _isLogin = true;
+  String _role = 'admin';
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -171,7 +172,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     if (_error != null)
                       Container(
                         padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.bottom(24),
+                        margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
                           color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
@@ -304,8 +305,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               prefixIcon: Icon(icon, color: accent.withOpacity(0.5), size: 20),
               filled: true,
               fillColor: Colors.white.withOpacity(0.02),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: Border.all(color: Colors.white.withOpacity(0.05))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: Border.all(color: accent.withOpacity(0.3))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.05))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: accent.withOpacity(0.3))),
               hintText: 'Enter $label',
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.1), fontSize: 12),
             ),

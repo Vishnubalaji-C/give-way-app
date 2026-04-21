@@ -7,7 +7,10 @@ This is your **Complete Integrated Guide** for building the GiveWay Adaptive Tra
 ## 🖼️ Phase 1: Technical Schematic (Pinout Mapping)
 This diagram shows the "Digital Blueprint" of your system. Every pin on the Arduino Mega is mapped to its specific function.
 
-![Technical Schematic](hardware/docs/schematic_clear.png)
+![Technical Schematic](/C:/Users/MSI/.gemini/antigravity/brain/c2d5aa55-fa1b-4211-8fec-4c6857da9e93/giveway_master_schematic_1776775635683.png)
+
+> [!TIP]
+> This is a high-level representation. For the precise pin-by-pin wiring table and logical flow, refer to the **[Hardware Blueprint](file:///C:/Users/MSI/.gemini/antigravity/brain/c2d5aa55-fa1b-4211-8fec-4c6857da9e93/hardware_blueprint.md)** artifact.
 
 ---
 
@@ -40,7 +43,7 @@ Connect your components in this exact order to ensure the shared ground is stabl
 ## 🍞 Phase 3: Breadboard Wiring Model (830-Points)
 Use this section to organize the physical placement on your **full-sized breadboard**.
 
-![Breadboard Model](hardware/docs/schematic.png)
+![Breadboard Model](hardware/docs/wiring_diagram.png)
 
 ### 🗺️ Virtual Breadboard Map
 | Location | Component | Connection Logic |

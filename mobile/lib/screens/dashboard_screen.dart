@@ -85,7 +85,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: _buildAppTitle(),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout_rounded, color: accent, size: 20),
+            icon: Icon(Icons.person_rounded, color: accent, size: 20),
+            onPressed: () => _showPersonaSwitcher(context),
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white24, size: 20),

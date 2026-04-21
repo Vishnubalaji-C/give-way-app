@@ -143,22 +143,9 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
              Adaptive Traffic Equity System <br/> 2026 Vision Framework
           </div>
 
-          {/* Global Search */}
-          <div className="flex-1 max-w-xl mx-4 xl:mx-8 relative min-w-[200px]">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Search Junction, Pole, or Officer..." 
-                   className="w-full bg-slate-900/60 border border-slate-700/80 rounded-full py-2 pl-11 pr-4 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all placeholder:text-slate-500" />
-          </div>
+          {/* Global Search - REMOVED for clean UI */}
 
-          {/* Wireless Hardware Sync Indicator */}
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 text-[9px] font-bold text-green-400 group relative cursor-help">
-             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-             WIRELESS NODE SYNC ACTIVE
-             <div className="absolute top-10 left-0 bg-slate-900 border border-slate-800 p-3 rounded-xl w-64 hidden group-hover:block z-50 text-[10px] text-slate-300 leading-relaxed shadow-2xl">
-               <strong className="text-white block mb-1">🌍 Wireless Cloud Bridge</strong>
-               Your laptop and phone are perfectly synced through the Render WebSocket bridge. Any hardware data sent to the cloud is broadcast to all your devices instantly.
-             </div>
-          </div>
+          {/* Wireless Hardware Sync Indicator - REMOVED for clean UI */}
 
           {/* Emergency Broadcast & Role Switcher */}
           <div className="flex items-center gap-4 xl:gap-6 shrink-0">
@@ -207,34 +194,11 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               <span className="text-cyan-400/60">{state?.junction?.zone || ''}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden lg:inline text-[9px] text-slate-600 font-mono">
-              GPS: {state?.junction?.lat?.toFixed(4) || '---'}, {state?.junction?.lng?.toFixed(4) || '---'}
-            </span>
-            <div className="relative group">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/50 hover:border-cyan-500/40 text-[10px] font-bold text-slate-300 transition-all">
-                <Map size={12} className="text-cyan-400" /> Switch Junction ▾
-              </button>
-              <div className="absolute right-0 top-full mt-1 bg-slate-900 border border-cyan-500/20 rounded-xl p-2 hidden group-hover:flex flex-col gap-1 min-w-[280px] shadow-2xl z-50">
-                {(junctions || []).map(j => (
-                  <button key={j.id}
-                    onClick={() => switchJunction(j.id, user?.token)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs transition-colors text-left ${
-                      state?.junction?.id === j.id
-                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                    }`}>
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${j.status === 'online' ? 'bg-green-400' : 'bg-red-500'}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold truncate">{j.name}</div>
-                      <div className="text-[10px] text-slate-600 font-mono">{j.id} · {j.zone}</div>
-                    </div>
-                    {state?.junction?.id === j.id && <span className="text-[9px] text-cyan-400 font-mono">ACTIVE</span>}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline text-[9px] text-slate-600 font-mono">
+                GPS: {state?.junction?.lat?.toFixed(4) || '---'}, {state?.junction?.lng?.toFixed(4) || '---'}
+              </span>
             </div>
-          </div>
         </div>
 
         {/* B. The "View-Mode" Tab Bar (Contextual Navigation) */}
@@ -243,11 +207,8 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-2 flex-wrap">
             {[
               { id:'map', icon: <Map size={16}/>, label: 'Map View' },
-              { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Grid View' },
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
-              { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
               { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
-              { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${

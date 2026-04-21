@@ -237,63 +237,18 @@ let   apiStatus  = { tomtom: false, weather: false, lastFetch: null };
 const junctions = {
   'JN-001': {
     id: 'JN-001',
-    name: 'Anna Salai - Mount Road',
-    zone: 'Zone A — Central Chennai',
-    city: 'Chennai',
+    name: 'Dindigul - Natham - Singampunari - Tiruppattur - Karaikudi Road Junction',
+    zone: 'Zone A — Dindigul Central',
+    city: 'Dindigul',
     state: 'Tamil Nadu',
-    lat: 13.0604,
-    lng: 80.2496,
-    poleId: 'POLE-04',
-    address: 'Anna Salai & Cathedral Rd Junction, Teynampet',
+    lat: 10.3673,
+    lng: 77.9803,
+    poleId: 'DI-MEGA-01',
+    address: 'Dindigul-Natham Main Rd, Dindigul',
     status: 'online',
     lastPing: Date.now(),
-    deployedAt: '2026-01-15',
-    cameraNodes: 3,
-  },
-  'JN-002': {
-    id: 'JN-002',
-    name: 'Kathipara Junction',
-    zone: 'Zone B — South Chennai',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    lat: 13.0109,
-    lng: 80.2078,
-    poleId: 'POLE-12',
-    address: 'Kathipara Flyover Junction, Alandur',
-    status: 'online',
-    lastPing: Date.now(),
-    deployedAt: '2026-02-20',
-    cameraNodes: 3,
-  },
-  'JN-003': {
-    id: 'JN-003',
-    name: 'Tidel Park Signal',
-    zone: 'Zone C — IT Corridor',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    lat: 12.9878,
-    lng: 80.2465,
-    poleId: 'POLE-07',
-    address: 'Rajiv Gandhi Salai (OMR), Taramani',
-    status: 'online',
-    lastPing: Date.now(),
-    deployedAt: '2026-03-10',
-    cameraNodes: 3,
-  },
-  'JN-004': {
-    id: 'JN-004',
-    name: 'Koyambedu Junction',
-    zone: 'Zone D — West Chennai',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    lat: 13.0694,
-    lng: 80.1948,
-    poleId: 'POLE-02',
-    address: 'Koyambedu CMBT Signal, Koyambedu',
-    status: 'offline',
-    lastPing: Date.now() - 600000,
-    deployedAt: '2026-03-25',
-    cameraNodes: 3,
+    deployedAt: '2026-04-21',
+    cameraNodes: 1,
   },
 };
 
@@ -383,7 +338,7 @@ let snapTimer        = null;
 let weatherPollTimer = null;
 
 // ─── Arduino Physical Bridge ───────────────────────────────────────────────────
-let arduinoPort = null;
+// ─── Arduino Physical Bridge ───────────────────────────────────────────────────
 
 async function connectArduino() {
   try {

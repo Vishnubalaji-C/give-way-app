@@ -412,14 +412,32 @@ export default function CameraFeedPage() {
                   </div>
                 </div>
 
-                {/* Bottom-left: last sent timestamp */}
-                {lastSent && (
-                  <div className="absolute bottom-3 left-3 z-20">
-                    <div className="px-3 py-1.5 bg-black/70 backdrop-blur rounded-xl border border-cyan-500/20 text-[9px] font-mono text-cyan-400">
+                {/* Bottom-left: Hardware Sensor Sync (Unified) */}
+                <div className="absolute bottom-3 left-3 z-20 flex flex-col gap-2">
+                  <div className={`px-3 py-1.5 backdrop-blur-xl rounded-xl border flex items-center gap-2 text-[9px] font-black tracking-widest transition-all ${
+                    lanes[selectedLane]?.priorityTrigger 
+                      ? 'bg-red-500/20 border-red-500/40 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.4)] animate-pulse' 
+                      : 'bg-black/60 border-white/10 text-white/40'
+                  }`}>
+                    <ShieldCheck size={12} className={lanes[selectedLane]?.priorityTrigger ? 'text-red-400' : 'text-white/20'} />
+                    EM-18 RFID: {lanes[selectedLane]?.priorityTrigger ? 'AUTHORIZED PRIORITY' : 'SCANNING...'}
+                  </div>
+                  
+                  <div className={`px-3 py-1.5 backdrop-blur-xl rounded-xl border flex items-center gap-2 text-[9px] font-black tracking-widest transition-all ${
+                    lanes[selectedLane]?.density > 0 
+                      ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-100' 
+                      : 'bg-black/60 border-white/10 text-white/40'
+                  }`}>
+                    <Cpu size={12} className={lanes[selectedLane]?.density > 0 ? 'text-cyan-400' : 'text-white/20'} />
+                    ESP32 PULSE: {lanes[selectedLane]?.density > 0 ? `LEVEL ${Math.ceil(lanes[selectedLane].density / 10)} ACTIVE` : 'IDLE'}
+                  </div>
+
+                  {lastSent && (
+                    <div className="px-3 py-1.5 bg-black/70 backdrop-blur rounded-xl border border-cyan-500/20 text-[8px] font-mono text-cyan-400/60">
                       ✓ PUSHED TO PCE ENGINE · {new Date(lastSent).toLocaleTimeString('en-IN', { hour12: false })}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Bottom-right: frame counter */}
                 {detecting && (
