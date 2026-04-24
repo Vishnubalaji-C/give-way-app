@@ -8,6 +8,30 @@ import AppTutorial     from './components/AppTutorial';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
 
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, color: 'red', background: 'black', height: '100vh', zIndex: 99999, position: 'relative' }}>
+          <h1>React Crashed</h1>
+          <pre style={{ color: 'white' }}>{this.state.error?.toString()}</pre>
+          <pre style={{ color: 'gray' }}>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
 const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
 const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
@@ -135,62 +159,64 @@ export default function App() {
   const Page = PAGES[tab] || MapPage;
 
   return (
-    <WsProvider>
-      {/* Deep midnight dark grid background */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: '#030712',
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: '32px 32px',
-        }}
-      />
+    <ErrorBoundary>
+      <WsProvider>
+        {/* Deep midnight dark grid background */}
+        <div
+          className="fixed inset-0 pointer-events-none z-0"
+          style={{
+            background: '#030712',
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: '32px 32px',
+          }}
+        />
 
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {!user ? (
-          <Suspense fallback={<PageLoader />}>
-            <AuthPage onLogin={handleLogin} />
-          </Suspense>
-        ) : (
-          <>
-            <Navbar
-              tab={tab}
-              setTab={setTab}
-              user={user}
-              onLogout={logout}
-              theme={theme}
-              onChangeTheme={handleSetTheme}
-              isMobile={isMobile}
-            />
+        <div className="relative z-10 min-h-screen flex flex-col">
+          {!user ? (
+            <Suspense fallback={<PageLoader />}>
+              <AuthPage onLogin={handleLogin} />
+            </Suspense>
+          ) : (
+            <>
+              <Navbar
+                tab={tab}
+                setTab={setTab}
+                user={user}
+                onLogout={logout}
+                theme={theme}
+                onChangeTheme={handleSetTheme}
+                isMobile={isMobile}
+              />
 
-            <AppTutorial />
+              <AppTutorial />
 
-            <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={tab}
-                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full h-full"
-                >
-                  <Suspense fallback={<PageLoader />}>
-                    <Page user={user} onUpdateUser={handleUpdateUser} />
-                  </Suspense>
-                </motion.div>
-              </AnimatePresence>
-            </main>
+              <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={tab}
+                    initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full h-full"
+                  >
+                    <Suspense fallback={<PageLoader />}>
+                      <Page user={user} onUpdateUser={handleUpdateUser} />
+                    </Suspense>
+                  </motion.div>
+                </AnimatePresence>
+              </main>
 
-            {isMobile && (
-              <BottomNav tab={tab} setTab={setTab} />
-            )}
-          </>
-        )}
-      </div>
-    </WsProvider>
+              {isMobile && (
+                <BottomNav tab={tab} setTab={setTab} />
+              )}
+            </>
+          )}
+        </div>
+      </WsProvider>
+    </ErrorBoundary>
   );
 }
