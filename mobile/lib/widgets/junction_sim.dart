@@ -130,25 +130,28 @@ class _JunctionPainter extends CustomPainter {
     double dx = 0, dy = 0;
 
     switch (id) {
-      case 'N':
-        signalPos = Offset(cx - rw / 3, cy - rw / 1.5);
-        vehicleStart = Offset(cx - rw / 4, 20);
-        dy = 1;
-        break;
+      case '1': // South Approach
       case 'S':
         signalPos = Offset(cx + rw / 3, cy + rw / 1.5);
         vehicleStart = Offset(cx + rw / 4, size.height - 20);
         dy = -1;
         break;
+      case '2': // East Approach
       case 'E':
         signalPos = Offset(cx + rw / 1.5, cy - rw / 3);
         vehicleStart = Offset(size.width - 20, cy - rw / 4);
         dx = -1;
         break;
+      case '3': // West Approach
       case 'W':
         signalPos = Offset(cx - rw / 1.5, cy + rw / 3);
         vehicleStart = Offset(20, cy + rw / 4);
         dx = 1;
+        break;
+      case 'N':
+        signalPos = Offset(cx - rw / 3, cy - rw / 1.5);
+        vehicleStart = Offset(cx - rw / 4, 20);
+        dy = 1;
         break;
       default:
         return;

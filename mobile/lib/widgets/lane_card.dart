@@ -13,7 +13,7 @@ class LaneCard extends StatelessWidget {
     final waitTime = data['waitTime'] ?? 0;
     final ghostFlag = data['ghostFlag'] ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final names = {'N': 'NORTH', 'S': 'SOUTH', 'E': 'EAST', 'W': 'WEST'};
+    final names = {'1': 'SOUTH APP', '2': 'EAST APP', '3': 'WEST APP', 'N': 'NORTH', 'S': 'SOUTH', 'E': 'EAST', 'W': 'WEST'};
 
     final signalColor = signal == 'green'
         ? Colors.green
