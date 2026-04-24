@@ -1,5 +1,5 @@
 import { useWs } from '../context/WsContext';
-import { User, Activity, Navigation, Zap, Cpu, BellRing, ShieldCheck, PlayCircle, StopCircle, RotateCcw } from 'lucide-react';
+import { User, Activity, Navigation, Zap, Cpu, BellRing, ShieldCheck, PlayCircle, StopCircle, RotateCcw, Timer } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
