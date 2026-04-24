@@ -253,22 +253,10 @@ const junctions = {
 };
 
 // ─── Hardware Architecture (Physical Bridge) ──────────────────────────────────
+let arduinoPort = null;
+let parser      = null;
 const SERIAL_PORT = process.env.SERIAL_PORT || 'COM3';
 const IS_CLOUD    = !!process.env.RENDER || !!process.env.RENDER_EXTERNAL_URL;
-let arduinoPort   = null;
-let parser        = null;
-
-if (!IS_CLOUD) {
-  try {
-    arduinoPort = new SerialPort({ path: SERIAL_PORT, baudRate: 115200, autoOpen: true });
-    parser = arduinoPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
-    console.log(`🔌 [HARDWARE] Physical Bridge Active on ${SERIAL_PORT}`);
-  } catch (err) {
-    console.warn(`⚠️ [HARDWARE] Serial Bridge disconnected: ${err.message}. Running in Cloud-Virtual mode.`);
-  }
-} else {
-  console.log('☁️ [HARDWARE] Cloud deployment detected. Serial Bridge disabled — running in Virtual mode.');
-}
 
 function sendToArduino(lane, action) {
   if (!arduinoPort || !arduinoPort.writable) return;
@@ -276,40 +264,12 @@ function sendToArduino(lane, action) {
   arduinoPort.write(cmd);
 }
 
-if (parser) {
-  parser.on('data', (data) => {
-    const line = data.toString().trim();
-    if (!line) return;
-
-    if (line.startsWith('HW_RFID:')) {
-      const parts = line.split(':');
-      const laneId = parts[1];
-      const tagID  = parts[2];
-      if (state.lanes[laneId]) {
-        state.lanes[laneId].priorityTrigger = true;
-        addAlert('emergency', `🚨 [HARDWARE] Authorized Priority Tag: ${tagID} on Lane ${laneId}`, laneId);
-        computePriorities();
-        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
-      }
-    }
-
-    if (line.startsWith('HW_PULSE:')) {
-      const parts = line.split(':');
-      const laneId = parts[1];
-      const density = parseInt(parts[2]);
-      if (state.lanes[laneId]) {
-        state.lanes[laneId].density = density;
-        state.lanes[laneId].lastHardwareUpdate = Date.now();
-        broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
-      }
-    }
-  });
-}
+// Note: Hardware handling is now centralized in connectArduino() below.
 
 let activeJunction = 'JN-001'; // Currently viewed junction
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let simulationRunning = false;
+let simulationRunning = true; // AUTO-START: Logic begins immediately on boot
 let overrideMode = 'auto'; // auto | vip | festival | emergency
 
 let uplinkToken = uuidv4().substring(0, 8).toUpperCase(); // 8-character secure sync token
@@ -449,16 +409,13 @@ function buildInitialState(persisted = null) {
     totalCars: persisted?.vehicleMix?.car || 0,
     totalBikes: persisted?.vehicleMix?.bike || 0,
     totalLorry: persisted?.vehicleMix?.lorry || 0,
-    fuelSaved: persisted?.fuelSaved || 0,
-    co2Reduced: persisted?.co2Reduced || 0,
-    mode: { rain: false, night: false, pedestrian: false },
     alerts: [],
-    greenWave: { active: false, source: null, progress: 0 },
     junction: junctions[activeJunction] || junctions['JN-001'],
     simulationRunning,
     overrideMode,
     isCongested: false,
     isSwitching: false, // Prevents signal race conditions
+    mode: { rain: false, night: false },
   };
 }
 
@@ -767,9 +724,6 @@ function tick() {
   if (state.tick % 5 === 0) {
     const served = Object.values(state.lanes).reduce((acc, l) => acc + l.vehicles.car + l.vehicles.bus + l.vehicles.bike + l.vehicles.ambulance, 0);
     state.totalVehiclesServed += served;
-    state.fuelSaved   = parseFloat((state.totalVehiclesServed * 0.08).toFixed(1));
-    state.co2Reduced  = parseFloat((state.fuelSaved * 2.3).toFixed(1));
-    state.totalBuses += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.bus || 0), 0);
     state.totalAmbulances += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.ambulance || 0), 0);
     state.totalCars += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.car || 0), 0);
     state.totalBikes += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.bike || 0), 0);
@@ -777,8 +731,6 @@ function tick() {
     
     // Sync to persistent DB store
     db.analytics.totalServed = state.totalVehiclesServed;
-    db.analytics.fuelSaved   = state.fuelSaved;
-    db.analytics.co2Reduced  = state.co2Reduced;
     db.analytics.vehicleMix = {
       ambulance: state.totalAmbulances,
       bus: state.totalBuses,
@@ -789,14 +741,6 @@ function tick() {
     saveToDisk();
   }
 
-  // Green wave propagation
-  if (state.greenWave.active) {
-    state.greenWave.progress = Math.min(100, state.greenWave.progress + 2);
-    if (state.greenWave.progress >= 100) {
-      state.greenWave.active = false;
-      addAlert('info', '🌊 Green Wave completed — Junction B prepared.', null);
-    }
-  }
 
   // ─── Resilience & Error Recovery Logic ──────────────────────────────────────
   const NOW = Date.now();
@@ -1324,6 +1268,17 @@ process.on('SIGINT', () => {
 server.listen(PORT, () => {
   console.log(`🚀 GiveWay Advanced Traffic System (ATES) Backend running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket Gateway: ws://localhost:${PORT}`);
+  
+  // 🚀 AUTO-BOOT ENGINE: Start the decision logic immediately
+  if (simulationRunning) {
+    console.log("🤖 [ENGINE] Auto-starting Traffic Decision Matrix...");
+    dataSource = TOMTOM_KEY ? 'live' : 'pattern';
+    fetchLiveTrafficData();
+    snapTimer  = setInterval(fetchLiveTrafficData, SNAP_INTERVAL);
+    worldTimer = setInterval(tick, TICK_INTERVAL);
+    fetchWeatherData();
+    weatherPollTimer = setInterval(fetchWeatherData, 600000); 
+  }
 });
 
 // ─── Secure Auto-Discovery Heartbeat (Software-Side) ──────────────────────────

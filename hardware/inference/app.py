@@ -207,8 +207,11 @@ def process_frame():
 
 
 if __name__ == '__main__':
-    print("[GIVEWAY] Inference Server starting...")
-    print("[GIVEWAY] Routes: /detect (ESP32 raw JPEG) | /api/inference (Base64 JSON)")
-    print("[GIVEWAY] PCE: AMB=500 | BUS=15 | CAR=1 | BIKE=0.5 | LORRY=8")
-    # Run on Port 5000 (Local ML Inference Server)
-    app.run(host='0.0.0.0', port=5000, debug=DEBUG_MODE)
+    print("="*60)
+    print("🚀 GIVEWAY AI INFERENCE SERVER ONLINE")
+    print("="*60)
+    print(f"📍 Endpoint: http://localhost:5000/detect")
+    print(f"📊 PCE Standard: AMB=500 | BUS=15 | LORRY=8 | CAR=1 | BIKE=0.5")
+    print(f"🎬 Stream: http://localhost:5000/stream/<lane_id>")
+    print("="*60)
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

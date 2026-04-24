@@ -47,6 +47,14 @@ void setup() {
   
   pinMode(BUZZER, OUTPUT);
 
+  // --- STARTUP LED DANCE (Hardware Verification) ---
+  for(int i=0; i<3; i++) {
+    digitalWrite(R1, HIGH); digitalWrite(R2, HIGH); digitalWrite(R3, HIGH);
+    delay(100);
+    digitalWrite(R1, LOW); digitalWrite(R2, LOW); digitalWrite(R3, LOW);
+    delay(100);
+  }
+  
   allRed();
   Serial.println("GIVEWAY_V4_INIT_SUCCESS");
 }

@@ -1,0 +1,13 @@
+{
+  "laneId": "1",
+  "secret": "GIVEWAY_NODE_KEY",
+  "priorityTrigger": true,
+  "junctionId": "JN-001",
+  "vehicles": {
+    "ambulance": 1,
+    "bus": 0,
+    "car": 0,
+    "bike": 0,
+    "lorry": 0
+  }
+}
