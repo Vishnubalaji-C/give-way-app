@@ -7,6 +7,9 @@ import '../widgets/lane_card.dart';
 import '../widgets/alert_tile.dart';
 import '../widgets/junction_sim.dart';
 import '../widgets/analytics_charts.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'scanner_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -33,9 +36,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _latencyTimer;
   int _latency = 0;
 
+  final GlobalKey _keyStatus = GlobalKey();
+  final GlobalKey _keyMatrix = GlobalKey();
+  final GlobalKey _keyAction = GlobalKey();
+  final GlobalKey _keyLink = GlobalKey();
+  final GlobalKey _keyNav = GlobalKey();
+
   @override
   void initState() {
     super.initState();
+    _checkFirstLaunch();
     _ws.connect();
     _ws.stateStream.listen((s) {
       if (mounted) setState(() => _state = s);
@@ -54,6 +64,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
     _fetchAnalytics();
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeen = prefs.getBool('giveway_mobile_tutorial') ?? false;
+    if (!hasSeen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ShowCaseWidget.of(context).startShowCase([_keyStatus, _keyMatrix, _keyAction, _keyNav, _keyLink]);
+      });
+      await prefs.setBool('giveway_mobile_tutorial', true);
+    }
   }
 
   Future<void> _fetchAnalytics() async {
@@ -82,8 +103,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF030712),
-        title: _buildAppTitle(),
+        title: Showcase(
+          key: _keyStatus,
+          description: 'Top panel shows your active connection status, latency, and current persona.',
+          child: _buildAppTitle(),
+        ),
         actions: [
+          Showcase(
+            key: _keyLink,
+            description: 'Link new junction devices or cameras by scanning their QR code.',
+            child: IconButton(
+              icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.cyanAccent, size: 20),
+              onPressed: () async {
+                final synced = await Navigator.push(context, MaterialPageRoute(builder: (c) => ScannerScreen()));
+                if (synced == true) _ws.startDiscovery();
+              },
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.amber, size: 20),
+            onPressed: () {
+              ShowCaseWidget.of(context).startShowCase([_keyStatus, _keyMatrix, _keyAction, _keyNav, _keyLink]);
+            },
+            tooltip: 'Show Tutorial',
+          ),
           IconButton(
             icon: Icon(Icons.person_rounded, color: accent, size: 20),
             onPressed: () => _showPersonaSwitcher(context),
@@ -105,18 +148,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(canvasColor: const Color(0xFF030712)),
-        child: NavigationBar(
-          height: 65,
-          backgroundColor: const Color(0xFF030712),
-          indicatorColor: accent.withOpacity(0.1),
-          selectedIndex: _tabIndex,
-          onDestinationSelected: (i) => setState(() => _tabIndex = i),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'MATRIX'),
-            NavigationDestination(icon: Icon(Icons.sensors_rounded, size: 20), label: 'STREAMS'),
-            NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 20), label: 'COMMAND'),
-            NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTEL'),
-          ],
+        child: Showcase(
+          key: _keyNav,
+          description: 'Use the bottom navigation to switch between the Matrix, Sensor Streams, Command Control, and Intel views.',
+          child: NavigationBar(
+            height: 65,
+            backgroundColor: const Color(0xFF030712),
+            indicatorColor: accent.withOpacity(0.1),
+            selectedIndex: _tabIndex,
+            onDestinationSelected: (i) => setState(() => _tabIndex = i),
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'MATRIX'),
+              NavigationDestination(icon: Icon(Icons.sensors_rounded, size: 20), label: 'STREAMS'),
+              NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 20), label: 'COMMAND'),
+              NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTEL'),
+            ],
+          ),
         ),
       ),
     );
@@ -155,16 +202,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         _buildMissionBriefing(accent),
         const SizedBox(height: 24),
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.01),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: JunctionSim(state: _state),
+        Showcase(
+          key: _keyMatrix,
+          description: 'The Matrix view provides a live schematic of the current intersection and system stats.',
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.01),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: JunctionSim(state: _state),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -337,15 +388,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 32),
         const Text('EXECUTION PROTOCOLS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _actionBtn('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
-            _actionBtn('EMERGENCY', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
-            _actionBtn('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
-            _actionBtn('PEDESTRIAN', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
-          ],
+        Showcase(
+          key: _keyAction,
+          description: 'Control traffic signal overrides and trigger execution protocols instantly.',
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _actionBtn('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
+              _actionBtn('EMERGENCY', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
+              _actionBtn('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
+              _actionBtn('PEDESTRIAN', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
+            ],
+          ),
         ),
         const SizedBox(height: 100),
       ],

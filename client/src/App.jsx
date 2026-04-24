@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Navbar          from './components/Navbar';
 import BottomNav       from './components/BottomNav';
 import SplashScreen    from './components/SplashScreen';
+import AppTutorial     from './components/AppTutorial';
 import { API_BASE_URL } from './config';
 import axios           from 'axios';
 
@@ -14,12 +15,22 @@ const MapPage         = lazy(() => import('./pages/MapPage'));
 const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
 const AuthPage        = lazy(() => import('./pages/AuthPage'));
 
-const PageLoader = () => (
-  <div className="flex flex-col items-center justify-center h-[50vh] opacity-80">
-    <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
-    <span className="mt-5 text-[10px] font-black text-cyan-400 tracking-[0.3em] uppercase animate-pulse">Syncing...</span>
-  </div>
-);
+const PageLoader = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!show) return <div className="h-[50vh]"></div>;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[50vh] opacity-80">
+      <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></div>
+      <span className="mt-5 text-[10px] font-black text-cyan-400 tracking-[0.3em] uppercase animate-pulse">Syncing...</span>
+    </div>
+  );
+};
 
 // One-time migration: wipe old theme so dark mode always loads.
 (function migrateTheme() {
@@ -154,6 +165,8 @@ export default function App() {
               onChangeTheme={handleSetTheme}
               isMobile={isMobile}
             />
+
+            <AppTutorial />
 
             <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
               <AnimatePresence mode="wait">

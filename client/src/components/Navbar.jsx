@@ -71,19 +71,19 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
         {/* B. The "Action Quick-Bar" */}
         <div className="flex items-center justify-around px-3 pb-3 gap-2">
           {tab !== 'dashboard' && (
-            <button onClick={() => setTab('dashboard')} className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-slate-800/50 hover:bg-slate-700 hover:scale-105 transition-all border border-transparent">
+            <button onClick={() => setTab('dashboard')} className="nav-dashboard flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-slate-800/50 hover:bg-slate-700 hover:scale-105 transition-all border border-transparent">
               <ChevronLeft size={18} className="text-cyan-400" />
               <span className="text-[10px] font-black mt-1 text-slate-300">BACK</span>
             </button>
           )}
 
-          <button onClick={() => setTab('map')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'map' ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-indigo-500/30 border-transparent'}`}>
+          <button onClick={() => setTab('map')} className={`nav-map flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'map' ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-indigo-500/30 border-transparent'}`}>
             <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <Map size={18} className={`relative z-10 ${tab === 'map' ? 'text-indigo-400 group-hover:scale-110' : 'text-slate-400'} transition-transform`} />
             <span className={`text-[10px] font-black mt-1 relative z-10 ${tab === 'map' ? 'text-indigo-300' : 'text-slate-300'}`}>LIVE MAP</span>
           </button>
 
-          <button onClick={() => setTab('camera')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 md:hover:shadow-lg relative overflow-hidden group ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-cyan-500/30 border-transparent'}`}>
+          <button onClick={() => setTab('camera')} className={`nav-camera flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 md:hover:shadow-lg relative overflow-hidden group ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-cyan-500/30 border-transparent'}`}>
             <div className="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             {state?.junction?.cameraNodes > 0 && (
               <div className="absolute top-1 left-1 bg-cyan-500 text-[#02050a] text-[9px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.8)] z-20 group-hover:scale-110 transition-transform">
@@ -94,13 +94,13 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <span className={`text-[10px] font-black mt-1 relative z-10 ${tab === 'camera' ? 'text-cyan-300' : 'text-slate-300'}`}>LIVE FEED</span>
           </button>
           
-          <button onClick={() => setTab('control')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'control' ? 'bg-red-500/30 border-red-500 text-red-400 shadow-lg' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500'}`}>
+          <button onClick={() => setTab('control')} className={`nav-control flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'control' ? 'bg-red-500/30 border-red-500 text-red-400 shadow-lg' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500'}`}>
             <div className="absolute inset-0 bg-red-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
             <AlertTriangle size={18} className="relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-transform" />
             <span className="text-[10px] font-black mt-1 relative z-10">OVERRIDE</span>
           </button>
           
-          <button onClick={() => setTab('incidents')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border relative transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'incidents' ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-lg' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-amber-500/30 border-transparent text-slate-300'}`}>
+          <button onClick={() => setTab('incidents')} className={`nav-incidents flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border relative transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'incidents' ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-lg' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-amber-500/30 border-transparent text-slate-300'}`}>
             <div className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.8)] z-20 group-hover:scale-110 transition-transform">
               2
@@ -109,7 +109,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <span className="text-[10px] font-black mt-1 relative z-10">INCIDENTS</span>
           </button>
           
-          <button onClick={() => setTab('analytics')} className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'analytics' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-300' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-purple-500/30 border-transparent text-slate-300'}`}>
+          <button onClick={() => setTab('analytics')} className={`nav-analytics flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'analytics' ? 'bg-purple-500/20 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-300' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-purple-500/30 border-transparent text-slate-300'}`}>
             <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <FileBarChart size={18} className={`relative z-10 ${tab === 'analytics' ? 'text-purple-400' : 'text-slate-400'} group-hover:scale-110 transition-transform`} />
             <span className="text-[10px] font-black mt-1 relative z-10">ANALYTICS</span>
@@ -214,7 +214,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${
+                className={`nav-${t.id} flex items-center gap-2 px-3 xl:px-5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-all ${
                   tab === t.id
                     ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(0,229,255,0.15)]'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'

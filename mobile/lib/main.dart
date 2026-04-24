@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:showcaseview/showcaseview.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/api_service.dart';
@@ -148,10 +149,14 @@ class _GiveWayAppState extends State<GiveWayApp> {
           ? const _SplashScreen()
           : _user == null
               ? AuthScreen(onLogin: _handleLogin)
-              : DashboardScreen(
-                  user: _user!,
-                  onLogout: _handleLogout,
-                  onSwitchRole: _switchRole,
+              : ShowCaseWidget(
+                  builder: Builder(
+                    builder: (context) => DashboardScreen(
+                      user: _user!,
+                      onLogout: _handleLogout,
+                      onSwitchRole: _switchRole,
+                    ),
+                  ),
                 ),
     );
   }
