@@ -14,13 +14,11 @@ import 'scanner_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
-  final Function(String) onSwitchRole;
 
   const DashboardScreen({
     super.key,
     required this.user,
     required this.onLogout,
-    required this.onSwitchRole,
   });
 
   @override
@@ -126,10 +124,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ShowCaseWidget.of(context).startShowCase([_keyStatus, _keyMatrix, _keyAction, _keyNav, _keyLink]);
             },
             tooltip: 'Show Tutorial',
-          ),
-          IconButton(
-            icon: Icon(Icons.person_rounded, color: accent, size: 20),
-            onPressed: () => _showPersonaSwitcher(context),
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white24, size: 20),
@@ -486,52 +480,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showPersonaSwitcher(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('PERSONA SELECTOR', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
-            const SizedBox(height: 24),
-            _personaTile(ctx, 'System Administrator', 'admin', Icons.admin_panel_settings_rounded, const Color(0xFFFFB700)),
-            const SizedBox(height: 12),
-            _personaTile(ctx, 'Police Field Officer', 'police', Icons.local_police_rounded, const Color(0xFF00E5FF)),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _personaTile(BuildContext context, String title, String role, IconData icon, Color color) {
-    final active = widget.user['role'] == role;
-    return InkWell(
-      onTap: active ? null : () {
-        Navigator.pop(context);
-        widget.onSwitchRole(role);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: active ? color.withOpacity(0.1) : Colors.white.withOpacity(0.02),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: active ? color.withOpacity(0.3) : Colors.white.withOpacity(0.05)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: active ? color : Colors.white24, size: 24),
-            const SizedBox(width: 16),
-            Text(title, style: TextStyle(color: active ? Colors.white : Colors.white54, fontWeight: FontWeight.bold, fontSize: 16)),
-            const Spacer(),
-            if (active) Icon(Icons.check_circle_rounded, color: color, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
 }

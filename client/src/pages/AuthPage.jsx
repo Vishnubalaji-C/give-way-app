@@ -31,7 +31,7 @@ export default function AuthPage({ onLogin }) {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
         ? { id: uniqueId, pin }
-        : { id: uniqueId, pin, role: 'admin', dept, fullName };
+        : { id: uniqueId, pin, role: 'operator', dept, fullName };
 
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',

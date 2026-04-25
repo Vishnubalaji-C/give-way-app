@@ -113,24 +113,6 @@ export default function App() {
   };
 
   const handleUpdateUser = async (updatedUser) => {
-    // If role is being changed, sync with persistent backend first
-    if (updatedUser.role && updatedUser.role !== user.role) {
-      try {
-        const res = await axios.patch(`${API_BASE_URL}/api/auth/role`, 
-          { role: updatedUser.role }
-        );
-        if (res.data.success) {
-          const newUser = { ...user, ...res.data.user };
-          localStorage.setItem('giveway_user', JSON.stringify(newUser));
-          setUser(newUser);
-          console.log(`📡 [AUTH] Unified Persona Switch: Active context is now ${updatedUser.role.toUpperCase()}`);
-          return;
-        }
-      } catch (e) {
-        console.error('❌ [AUTH] Role Synchronization Failed:', e);
-      }
-    }
-
     const newUser = { ...user, ...updatedUser };
     localStorage.setItem('giveway_user', JSON.stringify(newUser));
     setUser(newUser);

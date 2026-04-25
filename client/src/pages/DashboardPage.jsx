@@ -58,7 +58,7 @@ export default function DashboardPage({ user }) {
                 L-IP: {window.location.hostname}
               </div>
               <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono text-white/50">
-                {user?.role?.toUpperCase() || 'GUEST'}
+                OPERATOR
               </div>
               <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping" />
@@ -68,7 +68,6 @@ export default function DashboardPage({ user }) {
           </div>
           
           <div className="flex bg-black/40 border border-white/5 rounded-2xl p-6 gap-6 items-center flex-wrap backdrop-blur-md">
-            {user?.role === 'admin' && (
               <div className="flex flex-col">
                 <span className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-3">System Control</span>
                 <div className="flex items-center gap-3">
@@ -96,7 +95,6 @@ export default function DashboardPage({ user }) {
                   </button>
                 </div>
               </div>
-            )}
           </div>
         </div>
       </motion.div>

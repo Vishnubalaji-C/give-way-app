@@ -61,8 +61,7 @@ class _GiveWayAppState extends State<GiveWayApp> {
   Future<void> _handleLogin(Map<String, dynamic> userData) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('role', userData['role']);
-    await prefs.setString('userName', userData['name']);
+    await prefs.setString('userName', userData['name'] ?? 'Tactical Officer');
     
     setState(() {
       _user = userData;
@@ -77,43 +76,7 @@ class _GiveWayAppState extends State<GiveWayApp> {
     });
   }
 
-  Future<void> _switchRole(String newRole) async {
-    if (_user == null) return;
-    try {
-      final res = await ApiService.switchRole(newRole);
-      if (res['success'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('role', newRole);
-        if (res['user'] != null && res['user']['name'] != null) {
-          await prefs.setString('userName', res['user']['name']);
-        }
-        
-        setState(() {
-          _user = {
-            ..._user!,
-            'role': newRole,
-            if (res['user'] != null && res['user']['name'] != null) 'name': res['user']['name'],
-          };
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Persona Switched to ${newRole.toUpperCase()}'),
-              backgroundColor: const Color(0xFF00E5FF),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Switch Failed: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
+
 
   void _toggleTheme() {
     setState(() {
@@ -154,7 +117,6 @@ class _GiveWayAppState extends State<GiveWayApp> {
                     builder: (context) => DashboardScreen(
                       user: _user!,
                       onLogout: _handleLogout,
-                      onSwitchRole: _switchRole,
                     ),
                   ),
                 ),

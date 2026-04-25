@@ -20,16 +20,7 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
-  static Future<Map<String, dynamic>> switchRole(String role) async {
-    final res = await http.patch(
-      Uri.parse('$baseUrl/api/auth/role'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'role': role}),
-    );
-    final data = jsonDecode(res.body);
-    if (res.statusCode != 200) throw Exception(data['error'] ?? 'Role switch failed');
-    return data;
-  }
+
 
   static Future<Map<String, dynamic>> login(String id, String pin) async {
     final res = await http.post(

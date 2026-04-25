@@ -13,7 +13,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
   bool _isLogin = true;
-  String _role = 'admin';
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -73,7 +72,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         result = await ApiService.register({
           'id': id,
           'pin': pin,
-          'role': 'admin',
+          'role': 'operator',
           'fullName': name,
         });
         setState(() {
@@ -260,33 +259,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _roleBtn(String label, String role, Color color) {
-    final active = _role == role;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _role = role),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: active ? color.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: active ? color.withOpacity(0.3) : Colors.transparent),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-                color: active ? color : Colors.white24,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildField(String label, TextEditingController controller, IconData icon, {bool isPassword = false}) {
     const accent = Color(0xFF00E5FF);
