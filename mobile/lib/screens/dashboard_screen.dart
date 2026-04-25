@@ -11,6 +11,11 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'scanner_screen.dart';
 
+import 'camera_screen.dart';
+import 'command_screen.dart';
+import 'analytics_screen.dart';
+import 'map_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
@@ -135,9 +140,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         index: _tabIndex,
         children: [
           _buildMatrixView(lanes, accent),
-          _buildSensorStream(lanes, accent),
-          _buildCommandCenter(lanes, accent),
-          _buildIntelligence(accent),
+          CameraScreen(state: _state),
+          CommandScreen(state: _state, ws: _ws, alerts: _alerts),
+          AnalyticsScreen(analytics: _analytics, state: _state),
+          MapScreen(state: _state),
         ],
       ),
       bottomNavigationBar: Theme(
@@ -152,16 +158,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             selectedIndex: _tabIndex,
             onDestinationSelected: (i) => setState(() => _tabIndex = i),
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'MATRIX'),
-              NavigationDestination(icon: Icon(Icons.sensors_rounded, size: 20), label: 'STREAMS'),
-              NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 20), label: 'COMMAND'),
-              NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTEL'),
+              NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 18), label: 'MATRIX'),
+              NavigationDestination(icon: Icon(Icons.videocam_rounded, size: 18), label: 'CAMERA'),
+              NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 18), label: 'COMMAND'),
+              NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 18), label: 'INTEL'),
+              NavigationDestination(icon: Icon(Icons.map_rounded, size: 18), label: 'MAP'),
             ],
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildAppTitle() {
     return Column(
@@ -266,160 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSensorStream(Map<String, dynamic> lanes, Color accent) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('NODE ANALYTICS SCAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 20),
-        ...lanes.entries.map((entry) {
-          final id = entry.key;
-          final l = entry.value;
-          final v = (l['vehicles'] as Map?) ?? {};
-          final detected = v.values.fold<int>(0, (a, b) => a + (b as int));
-          
-          return Container(
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.02),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Text('APPROACH L-$id', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                      const Spacer(),
-                      const Text('LIVE STREAM', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.bold, fontSize: 9)),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 160,
-                  width: double.infinity,
-                  color: Colors.black,
-                  child: Center(
-                    child: Text('LENS NODE SYNCING...'.toUpperCase(), style: const TextStyle(color: Colors.white10, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 5)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _feedChip('TARGETS: $detected', Colors.white38),
-                      _feedChip('PCE: ${(l['pceScore'] ?? 0).toStringAsFixed(0)}', accent),
-                      _feedChip('WAIT: ${l['waitTime']}s', Colors.white12),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 100),
-      ],
-    );
-  }
 
-  Widget _buildCommandCenter(Map<String, dynamic> lanes, Color accent) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('TACTICAL SIGNAL OVERRIDE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 20),
-        ...lanes.entries.map((entry) {
-          final id = entry.key;
-          final l = entry.value;
-          final signal = l['signal'] ?? 'red';
-          
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.02),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.04)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: signal == 'green' ? Colors.green : signal == 'yellow' ? Colors.amber : Colors.red,
-                    boxShadow: [
-                       BoxShadow(color: (signal == 'green' ? Colors.green : signal == 'yellow' ? Colors.amber : Colors.red).withOpacity(0.5), blurRadius: 10)
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('LANE $id', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                      Text('WAIT: ${l['waitTime']}s', style: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.bolt_rounded, color: Colors.green, size: 20),
-                  onPressed: () => _ws.send('FORCE_GREEN', {'laneId': id}),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.block_rounded, color: Colors.red, size: 20),
-                  onPressed: () => _ws.send('FORCE_RED', {'laneId': id}),
-                ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 32),
-        const Text('EXECUTION PROTOCOLS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 16),
-        Showcase(
-          key: _keyAction,
-          description: 'Control traffic signal overrides and trigger execution protocols instantly.',
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _actionBtn('AUTO-PILOT', Icons.smart_toy_rounded, Colors.green, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'auto'})),
-              _actionBtn('EMERGENCY', Icons.emergency_rounded, Colors.red, () => _ws.send('SET_OVERRIDE_MODE', {'mode': 'emergency'})),
-              _actionBtn('GREEN WAVE', Icons.tsunami_rounded, Colors.cyan, () => _ws.send('TRIGGER_GREEN_WAVE')),
-              _actionBtn('PEDESTRIAN', Icons.directions_walk_rounded, Colors.purpleAccent, () => _ws.send('REQUEST_PED_CROSSING')),
-            ],
-          ),
-        ),
-        const SizedBox(height: 100),
-      ],
-    );
-  }
-
-  Widget _buildIntelligence(Color accent) {
-    if (_tabIndex != 3) return const SizedBox();
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('SECURITY & ANALYTICS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 24),
-        AnalyticsCharts(analytics: _analytics),
-        const SizedBox(height: 32),
-        const Text('RECENT ALERT LOGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 16),
-        if (_alerts.isEmpty)
-           const Center(child: Text('LOG BUFFER EMPTY', style: TextStyle(color: Colors.white10, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)))
-        else
-          ..._alerts.take(10).map((a) => AlertTile(alert: a)),
-        const SizedBox(height: 100),
-      ],
-    );
-  }
 
   Widget _statCard(String label, String value, Color color) {
     return Container(

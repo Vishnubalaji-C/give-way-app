@@ -1074,7 +1074,7 @@ app.patch('/api/auth/role', (req, res) => {
 
   logAudit('ROLE_SWITCH', `Terminal instantly transitioned to ${role} persona.`);
   
-  res.json({ success: true, user: { role, name: role === 'police' ? 'Tactical Officer' : 'Central Admin' } });
+  res.json({ success: true, user: { role, name: role === 'police' ? 'Tactical Operator' : 'Central Admin' } });
 });
 
 // ─── Secure QR Discovery API ──────────────────────────────────────────────────
@@ -1239,7 +1239,7 @@ app.get('/api/sync/token', (req, res) => {
 app.post('/api/sync/verify', (req, res) => {
   const { token } = req.body;
   if (syncTokens.has(token)) {
-    return res.json({ success: true, user: db.users.find(u => u.role === 'admin') });
+    return res.json({ success: true, user: db.users.find(u => u.role === 'operator') || db.users[0] });
   }
   res.status(401).json({ success: false, error: 'Token expired or invalid' });
 });

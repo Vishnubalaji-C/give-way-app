@@ -49,7 +49,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5 flex items-center justify-center gap-1">
               <Activity size={10} /> Latency: {latency}ms
             </div>
-            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">Operator · {state?.junction?.poleId || ''}</div>
+            <div className="text-[9px] text-slate-500 font-bold uppercase mt-0.5">OPERATOR · {state?.junction?.poleId || ''}</div>
           </div>
 
           {/* Right Side: Theme, Config & Status */}
@@ -161,7 +161,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             </button>
             <div className="flex items-center gap-3 border-l border-slate-700/80 pl-4 xl:pl-6">
               <div className="text-right leading-tight">
-                <div className="text-xs xl:text-sm font-bold text-slate-200">Operator</div>
+                <div className="text-xs xl:text-sm font-bold text-slate-200">OPERATOR</div>
                 <div className="text-[9px] xl:text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{user?.id || 'ID-OFFLINE'} ▾</div>
               </div>
               <div className="w-9 h-9 xl:w-10 xl:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-600 shadow-inner group relative cursor-pointer">

@@ -46,7 +46,7 @@ class _GiveWayAppState extends State<GiveWayApp> {
     
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     final role = prefs.getString('role') ?? 'operator';
-    final name = prefs.getString('userName') ?? 'Tactical Officer';
+    final name = prefs.getString('userName') ?? 'Tactical Operator';
 
     if (mounted) {
       setState(() {
