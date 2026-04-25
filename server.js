@@ -142,7 +142,7 @@ function ensureGuestAccount() {
     const guestUser = {
       id: GUEST_ID,
       pin: GUEST_PIN,
-      role: 'admin',
+      role: 'operator',
       token: 'demo-guest-token-' + Date.now().toString(36),
       name: 'Guest Admin',
       meta: { dept: 'System Demo', access: 'All' },
@@ -171,7 +171,7 @@ app.post('/api/auth/register', (req, res) => {
   const newUser = {
     id,
     pin,
-    role: 'admin',
+    role: role || 'operator',
     name: fullName || 'GiveWay Operator',
     meta: { badge, station, dept, access },
     token: uuidv4(),
@@ -204,7 +204,7 @@ app.post('/api/auth/login', (req, res) => {
 app.patch('/api/auth/role', (req, res) => {
   const { role } = req.body;
   // In a real app, we'd verify the token. Here, we'll just allow the persona switch for the demo.
-  if (!['admin', 'police'].includes(role)) {
+  if (!['admin', 'police', 'operator'].includes(role)) {
     return res.status(400).json({ success: false, error: 'Invalid persona context.' });
   }
 

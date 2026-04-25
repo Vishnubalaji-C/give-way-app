@@ -22,7 +22,7 @@ export default function ControlRoomPage({ user }) {
   };
 
   const triggerGhost = () => {
-    const lane = LANES[Math.floor(Math.random() * 4)];
+    const lane = LANES[Math.floor(Math.random() * LANES.length)];
     setGhostLane(lane);
     setTimeout(() => setGhostLane(null), 6000);
   };
@@ -63,7 +63,7 @@ export default function ControlRoomPage({ user }) {
             <span className="text-cyan-400/60">{state?.junction?.id || ''}</span>
           </div>
         </div>
-        <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: {user?.name?.toUpperCase() || 'OFFICER'} {user?.id}</span>
+        <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: {user?.name?.toUpperCase() || 'OPERATOR'} {user?.id}</span>
       </div>
 
       {/* ── Tactical Live Map Integration ──────────────────── */}
@@ -243,7 +243,7 @@ export default function ControlRoomPage({ user }) {
               <span className="font-mono text-slate-600 tabular-nums min-w-max">
                 {new Date(e.timestamp).toLocaleTimeString('en-IN', { hour12: false })}
               </span>
-              <p className="text-slate-400 text-sm mt-2">Connecting to GiveWay Matrix...</p>
+
               <span className="text-amber-400 font-mono min-w-max">{e.action}</span>
               <span className="text-slate-400">{e.details}</span>
             </div>

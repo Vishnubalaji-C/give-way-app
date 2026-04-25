@@ -45,7 +45,7 @@ class _GiveWayAppState extends State<GiveWayApp> {
     await Future.delayed(const Duration(milliseconds: 1500)); // Play Splash Screen
     
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    final role = prefs.getString('role') ?? 'police';
+    final role = prefs.getString('role') ?? 'operator';
     final name = prefs.getString('userName') ?? 'Tactical Officer';
 
     if (mounted) {

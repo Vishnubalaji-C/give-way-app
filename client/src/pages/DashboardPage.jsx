@@ -47,7 +47,7 @@ export default function DashboardPage({ user }) {
               <ShieldCheck size={14} /> System Secure · GiveWay v4.2
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">
-              {greeting}, <span className="brand-gradient">{user?.name?.split(' ')[0] || 'Officer'}</span>
+              {greeting}, <span className="brand-gradient">{user?.name?.split(' ')[0] || 'Operator'}</span>
             </h1>
             <p className="text-white/40 mt-4 text-sm sm:text-lg max-w-2xl font-medium leading-relaxed">
               Monitoring <span className="text-white font-bold">{state?.junction?.name || 'Central Hub'}</span>. Edge-AI is currently optimizing flow for <span className="text-green-400 font-bold">Priority PCE</span> throughput.
