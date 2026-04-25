@@ -113,11 +113,9 @@ class _GiveWayAppState extends State<GiveWayApp> {
           : _user == null
               ? AuthScreen(onLogin: _handleLogin)
               : ShowCaseWidget(
-                  builder: Builder(
-                    builder: (context) => DashboardScreen(
-                      user: _user!,
-                      onLogout: _handleLogout,
-                    ),
+                  builder: (context) => DashboardScreen(
+                    user: _user!,
+                    onLogout: _handleLogout,
                   ),
                 ),
     );

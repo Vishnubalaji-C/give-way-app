@@ -1,6 +1,6 @@
 import { useWs } from '../context/WsContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, CameraOff, Play, Square, Zap, AlertTriangle, ChevronDown, Activity, Radio, Cpu } from 'lucide-react';
+import { Camera, CameraOff, Play, Square, Zap, AlertTriangle, ChevronDown, Activity, Radio, Cpu, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
