@@ -35,7 +35,7 @@ class ErrorBoundary extends React.Component {
 const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
 const CameraFeedPage  = lazy(() => import('./pages/CameraFeedPage'));
 const AnalyticsPage   = lazy(() => import('./pages/AnalyticsPage'));
-const MapPage         = lazy(() => import('./pages/MapPage'));
+
 const ControlRoomPage = lazy(() => import('./pages/ControlRoomPage'));
 const AuthPage        = lazy(() => import('./pages/AuthPage'));
 
@@ -120,7 +120,7 @@ export default function App() {
 
   const PAGES = {
     dashboard:  DashboardPage,
-    map:        MapPage,
+
     camera:     CameraFeedPage,
     analytics:  AnalyticsPage,
     control:    ControlRoomPage,
@@ -138,7 +138,7 @@ export default function App() {
     ),
   };
 
-  const Page = PAGES[tab] || MapPage;
+  const Page = PAGES[tab] || DashboardPage;
 
   return (
     <ErrorBoundary>

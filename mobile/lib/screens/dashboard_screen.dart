@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/ws_service.dart';
 import '../services/api_service.dart';
@@ -11,10 +12,11 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'scanner_screen.dart';
 
+import 'dashboard_tab.dart';
 import 'camera_screen.dart';
 import 'command_screen.dart';
 import 'analytics_screen.dart';
-import 'map_screen.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -98,7 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lanes = (_state['lanes'] as Map<String, dynamic>?) ?? {};
     final accent = const Color(0xFF00E5FF);
 
     return Scaffold(
@@ -136,15 +137,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _tabIndex,
-        children: [
-          _buildMatrixView(lanes, accent),
+      body: RefreshIndicator(
+        color: accent,
+        backgroundColor: const Color(0xFF1F2937),
+        onRefresh: () async {
+          HapticFeedback.mediumImpact();
+          await _fetchAnalytics();
+          _ws.send('GET_STATE');
+          await Future.delayed(const Duration(milliseconds: 800));
+        },
+        child: IndexedStack(
+          index: _tabIndex,
+          children: [
+            DashboardTab(state: _state, alerts: _alerts, ws: _ws, userName: widget.user['name'] ?? 'Operator'),
           CameraScreen(state: _state),
           CommandScreen(state: _state, ws: _ws, alerts: _alerts),
           AnalyticsScreen(analytics: _analytics, state: _state),
-          MapScreen(state: _state),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(canvasColor: const Color(0xFF030712)),
@@ -158,18 +168,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             selectedIndex: _tabIndex,
             onDestinationSelected: (i) => setState(() => _tabIndex = i),
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 18), label: 'MATRIX'),
-              NavigationDestination(icon: Icon(Icons.videocam_rounded, size: 18), label: 'CAMERA'),
-              NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 18), label: 'COMMAND'),
-              NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 18), label: 'INTEL'),
-              NavigationDestination(icon: Icon(Icons.map_rounded, size: 18), label: 'MAP'),
+              NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'HOME'),
+              NavigationDestination(icon: Icon(Icons.videocam_rounded, size: 20), label: 'LENS'),
+              NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 20), label: 'CONTROL'),
+              NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTEL'),
+
             ],
           ),
         ),
       ),
     );
   }
-
 
   Widget _buildAppTitle() {
     return Column(
@@ -197,143 +206,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
     );
   }
-
-  Widget _buildMatrixView(Map<String, dynamic> lanes, Color accent) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        _buildMissionBriefing(accent),
-        const SizedBox(height: 24),
-        Showcase(
-          key: _keyMatrix,
-          description: 'The Matrix view provides a live schematic of the current intersection and system stats.',
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.01),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: JunctionSim(state: _state),
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _statCard('TOTAL SERVED', '${_state['totalVehiclesServed'] ?? 0}', Colors.cyan),
-            _statCard('AMBULANCES', '${_state['totalAmbulances'] ?? 0}', Colors.redAccent),
-            _statCard('BUS PRIORITY', '${_state['totalBuses'] ?? 0}', Colors.purpleAccent),
-            _statCard('SYSTEM TICK', '${_state['tick'] ?? 0}', Colors.white24),
-          ],
-        ),
-        const SizedBox(height: 32),
-        const Text('JUNCTION FEED MATRIX (ACTIVE)', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
-        const SizedBox(height: 16),
-        ...lanes.entries.map((e) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: LaneCard(laneId: e.key, data: e.value),
-        )),
-        const SizedBox(height: 100),
-      ],
-    );
-  }
-
-  Widget _buildMissionBriefing(Color accent) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: accent.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: accent.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('SYSTEM OVERSIGHT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white30, letterSpacing: 2)),
-          const SizedBox(height: 8),
-          const Text('Metropolitan Infrastructure', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _statusChip('CORE: NOMINAL', Colors.green),
-              const SizedBox(width: 8),
-              _statusChip('MODE: ${_state['overrideMode']?.toUpperCase() ?? 'AUTO'}', accent),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-  Widget _statCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 1)),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statusChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.2))),
-      child: Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color, letterSpacing: 1)),
-    );
-  }
-
-  Widget _feedChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1)),
-    );
-  }
-
 
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import SyncPortal from './SyncPortal';
 import { useWs } from '../context/WsContext';
-import { Tablet, Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, Map, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
+import { Tablet, Wifi, WifiOff, CloudRain, ShieldAlert, Video, AlertTriangle, Siren, Search, Radio, LayoutGrid, Wind, FileBarChart, ChevronLeft, User, Activity, AlertCircle, Sun, Moon, Sparkles, LogOut } from 'lucide-react';
 
 export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeTheme, isMobile }) {
   const { connected, state, junctions, switchJunction } = useWs();
@@ -77,11 +77,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             </button>
           )}
 
-          <button onClick={() => setTab('map')} className={`nav-map flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'map' ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-indigo-500/30 border-transparent'}`}>
-            <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Map size={18} className={`relative z-10 ${tab === 'map' ? 'text-indigo-400 group-hover:scale-110' : 'text-slate-400'} transition-transform`} />
-            <span className={`text-[10px] font-black mt-1 relative z-10 ${tab === 'map' ? 'text-indigo-300' : 'text-slate-300'}`}>LIVE MAP</span>
-          </button>
+
 
           <button onClick={() => setTab('camera')} className={`nav-camera flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 md:hover:shadow-lg relative overflow-hidden group ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-cyan-500/30 border-transparent'}`}>
             <div className="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -194,11 +190,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
               <span className="text-cyan-400/60">{state?.junction?.zone || ''}</span>
             </div>
           </div>
-            <div className="flex items-center gap-2">
-              <span className="hidden lg:inline text-[9px] text-slate-600 font-mono">
-                GPS: {state?.junction?.lat?.toFixed(4) || '---'}, {state?.junction?.lng?.toFixed(4) || '---'}
-              </span>
-            </div>
+
         </div>
 
         {/* B. The "View-Mode" Tab Bar (Contextual Navigation) */}
@@ -207,7 +199,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-2 flex-wrap">
             {[
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Live Monitor' },
-              { id:'map', icon: <Map size={16}/>, label: 'Map View' },
+
               { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
               { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
@@ -227,7 +219,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           
           {/* Universal UX Safety Features */}
           <div className="flex items-center gap-4 ml-auto">
-            {tab !== 'dashboard' && tab !== 'map' && (
+            {tab !== 'dashboard' && (
               <button onClick={() => setTab('dashboard')} className="flex items-center gap-1.5 text-[10px] xl:text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 rounded-md bg-slate-800/50 border border-slate-700 hover:border-slate-500 transition-all">
                 <ChevronLeft size={14}/> BACK TO SIGNAL CONTROL
               </button>

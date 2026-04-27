@@ -113,6 +113,21 @@ void loop() {
     else if (cmd.length() == 2) {
        setSignal(cmd[0], cmd[1]);
     }
+    else if (cmd.startsWith("M:")) {
+       String mode = cmd.substring(2);
+       if (mode == "EMG") {
+         // Siren tone for Emergency All-Stop
+         tone(BUZZER, 2000, 1000);
+       } else if (mode == "VIP") {
+         // Solid acknowledgment beep
+         tone(BUZZER, 500, 500);
+       } else if (mode == "FES") {
+         // Cheerful double-beep
+         tone(BUZZER, 800, 200);
+         delay(250);
+         tone(BUZZER, 1000, 200);
+       }
+    }
   }
 
   // 2. High-Speed SoftwareSerial Fast-Poll

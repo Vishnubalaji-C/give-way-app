@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<div class="container">
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="masterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hubGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="4" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <style>
+    .text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 900; fill: #ffffff; text-transform: uppercase; letter-spacing: 1px; }
+    .subtitle { font-size: 10px; font-weight: 500; fill: #64748b; text-transform: uppercase; }
+    .node { stroke: #e2e8f0; stroke-width: 1; filter: url(#shadow); }
+    .conn { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 4,4; fill: none; }
+    .conn-solid { stroke: #4f46e5; stroke-width: 2; fill: none; }
+  </style>
+
+  <rect x="275" y="50" width="250" height="100" rx="12" fill="url(#masterGrad)" class="node" />
+  <text x="400" y="95" text-anchor="middle" class="title">MASTER CONTROLLER</text>
+  <text x="400" y="115" text-anchor="middle" class="title" font-size="10" fill="#94a3b8">Node.js / Express Server</text>
+
+  <rect x="300" y="250" width="200" height="80" rx="8" fill="url(#hubGrad)" class="node" />
+  <text x="400" y="290" text-anchor="middle" class="title" font-size="12">ARDUINO HUB</text>
+  <text x="400" y="305" text-anchor="middle" class="title" font-size="9" fill="#e0f2fe">Serial Protocol (COM3)</text>
+
+  <path d="M400 150 L400 250" class="conn-solid" />
+  <text x="410" y="200" class="text" font-size="10" fill="#4f46e5">COMMAND BUS</text>
+
+  <rect x="50" y="250" width="140" height="60" rx="6" fill="#f8fafc" class="node" />
+  <text x="120" y="275" text-anchor="middle" class="text">LANE 1 NODE</text>
+  <text x="120" y="290" text-anchor="middle" class="subtitle">RFID: EM-18</text>
+  <path d="M190 280 L325 280" class="conn" />
+
+  <rect x="50" y="350" width="140" height="60" rx="6" fill="#f8fafc" class="node" />
+  <text x="120" y="375" text-anchor="middle" class="text">LANE 2 NODE</text>
+  <text x="120" y="390" text-anchor="middle" class="subtitle">RFID: EM-18</text>
+  <path d="M190 380 L325 310" class="conn" />
+
+  <rect x="330" y="450" width="140" height="60" rx="6" fill="#f8fafc" class="node" />
+  <text x="400" y="475" text-anchor="middle" class="text">LANE 3 NODE</text>
+  <text x="400" y="490" text-anchor="middle" class="subtitle">AI: ESP32-CAM</text>
+  <path d="M400 450 L400 330" class="conn" />
+
+  <rect x="600" y="200" width="140" height="60" rx="6" fill="#f1f5f9" class="node" stroke="#06b6d4" stroke-width="2" />
+  <text x="670" y="225" text-anchor="middle" class="text">WEB TERMINAL</text>
+  <text x="670" y="240" text-anchor="middle" class="subtitle">Vercel / React</text>
+  <path d="M500 100 L670 100 L670 200" class="conn" stroke-dasharray="0" stroke="#06b6d4" />
+
+  <rect x="600" y="350" width="140" height="60" rx="6" fill="#f1f5f9" class="node" stroke="#06b6d4" stroke-width="2" />
+  <text x="670" y="375" text-anchor="middle" class="text">MOBILE APP</text>
+  <text x="670" y="390" text-anchor="middle" class="subtitle">Flutter / Android</text>
+  <path d="M500 120 L750 120 L750 380 L740 380" class="conn" stroke-dasharray="0" stroke="#06b6d4" />
+</svg>
+</div>
+</body>
+</html>

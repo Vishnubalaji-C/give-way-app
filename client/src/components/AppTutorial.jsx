@@ -23,10 +23,6 @@ export default function AppTutorial() {
       content: 'The Dashboard gives you an overview of all junctions, live metrics, and real-time alerts.',
     },
     {
-      target: '.nav-map',
-      content: 'View your traffic junctions visually on the interactive Map. Select a junction to see live status.',
-    },
-    {
       target: '.nav-camera',
       content: 'Access live CCTV feeds here to monitor intersections and ghost lanes in real-time.',
     },

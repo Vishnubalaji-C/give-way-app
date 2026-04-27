@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#e2e8f0; margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:40px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+<!-- Mobile Phone Frame -->
+<div style="background:#ffffff; width:375px; height:812px; border-radius:40px; border:12px solid #0f172a; box-shadow:0 25px 50px rgba(0,0,0,0.2); position:relative; overflow:hidden; display:flex; flex-direction:column;">
+  
+  <!-- Notch -->
+  <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:150px; height:30px; background:#0f172a; border-radius:0 0 15px 15px; z-index:100;"></div>
+
+  <!-- Status Bar -->
+  <div style="height:44px; display:flex; justify-content:space-between; align-items:center; padding:0 25px; font-size:12px; font-weight:bold; color:#0f172a;">
+    <span>9:41</span>
+    <div style="display:flex; gap:5px;">
+      <span>LTE</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+  <!-- App Header -->
+  <div style="padding:25px 20px 20px 20px; background:#1e293b; color:white;">
+    <h1 style="margin:0; font-size:26px; font-weight:900;">GiveWay<span style="color:#06b6d4;">Mobile</span></h1>
+    <p style="margin:5px 0 0 0; color:#94a3b8; font-size:13px;">Tactical Operator Access</p>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div style="flex:1; background:#f1f5f9; padding:20px; overflow-y:auto;">
+    
+    <!-- Status Card -->
+    <div style="background:#ffffff; border-radius:16px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.03); margin-bottom:25px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span style="font-size:13px; color:#64748b; font-weight:bold; letter-spacing:1px;">SYSTEM STATUS</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div style="width:10px; height:10px; background:#10b981; border-radius:50%; box-shadow:0 0 8px #10b981;"></div>
+          <span style="font-size:12px; color:#10b981; font-weight:bold;">ONLINE</span>
+        </div>
+      </div>
+      <h2 style="margin:0; font-size:20px; color:#0f172a;">Dindigul_Hub_01</h2>
+      <p style="margin:8px 0 0 0; font-size:14px; color:#475569;">Active Mode: <b style="color:#4f46e5;">Adaptive AI</b></p>
+    </div>
+
+    <!-- Live Grid Metrics -->
+    <h3 style="font-size:13px; color:#64748b; margin-bottom:12px; margin-top:0; letter-spacing:1px;">LIVE LANE METRICS</h3>
+    
+    <div style="display:flex; gap:15px; margin-bottom:20px;">
+      <!-- Lane 1 -->
+      <div style="flex:1; background:#ffffff; border-radius:16px; padding:18px; box-shadow:0 4px 10px rgba(0,0,0,0.03); border-top:5px solid #ef4444;">
+        <div style="font-size:12px; color:#64748b; font-weight:bold; margin-bottom:10px;">LANE 1 (MAIN)</div>
+        <div style="font-size:32px; font-weight:900; color:#0f172a;">85%</div>
+        <div style="font-size:12px; color:#ef4444; font-weight:bold; margin-top:5px;">High Density</div>
+      </div>
+      <!-- Lane 2 -->
+      <div style="flex:1; background:#ffffff; border-radius:16px; padding:18px; box-shadow:0 4px 10px rgba(0,0,0,0.03); border-top:5px solid #10b981;">
+        <div style="font-size:12px; color:#64748b; font-weight:bold; margin-bottom:10px;">LANE 2 (SUB)</div>
+        <div style="font-size:32px; font-weight:900; color:#0f172a;">45%</div>
+        <div style="font-size:12px; color:#10b981; font-weight:bold; margin-top:5px;">Low Density</div>
+      </div>
+    </div>
+
+    <!-- Active Timer -->
+    <div style="background:#ffffff; border-radius:16px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.03); margin-bottom:30px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:12px; color:#64748b; font-weight:bold; letter-spacing:0.5px;">CURRENT GREEN</div>
+        <div style="font-size:20px; font-weight:bold; color:#0f172a; margin-top:5px;">Lane 1</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px; color:#64748b; font-weight:bold; letter-spacing:0.5px;">TIME REMAINING</div>
+        <div style="font-size:28px; font-weight:900; color:#4f46e5; margin-top:5px;">24s</div>
+      </div>
+    </div>
+
+    <!-- Emergency Override Button -->
+    <div style="background:linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border-radius:16px; padding:25px; text-align:center; color:white; box-shadow:0 10px 20px rgba(239,68,68,0.3); margin-top:10px;">
+      <div style="font-size:22px; font-weight:900; letter-spacing:1px; margin-bottom:8px;">EMERGENCY</div>
+      <div style="font-size:14px; font-weight:bold; opacity:0.9;">FORCE ALL-RED STOP</div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <div style="height:80px; background:#ffffff; border-top:1px solid #e2e8f0; display:flex; justify-content:space-around; align-items:center; padding-bottom:15px;">
+    <!-- Home (Active) -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px; color:#4f46e5;">
+      <div style="width:26px; height:26px; background:#4f46e5; border-radius:8px; box-shadow:0 4px 6px rgba(79,70,229,0.3);"></div>
+      <span style="font-size:11px; font-weight:bold;">Dashboard</span>
+    </div>
+    <!-- Logs -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px; color:#94a3b8;">
+      <div style="width:26px; height:26px; border:2px solid #94a3b8; border-radius:8px;"></div>
+      <span style="font-size:11px; font-weight:bold;">Logs</span>
+    </div>
+    <!-- Settings -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px; color:#94a3b8;">
+      <div style="width:26px; height:26px; border:2px solid #94a3b8; border-radius:8px;"></div>
+      <span style="font-size:11px; font-weight:bold;">Settings</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+  <!-- Professional Dashboard Background -->
+  <rect width="100%" height="100%" fill="#0f172a" />
+  
+  <!-- Sidebar -->
+  <rect width="80" height="100%" fill="#1e293b" />
+  <circle cx="40" cy="40" r="15" fill="#06b6d4" />
+  <rect x="25" y="100" width="30" height="4" fill="#64748b" rx="2" />
+  <rect x="25" y="140" width="30" height="4" fill="#64748b" rx="2" />
+  <rect x="25" y="180" width="30" height="4" fill="#64748b" rx="2" />
+
+  <!-- Top Navigation Bar -->
+  <rect x="80" width="920" height="60" fill="#1e293b" />
+  <text x="110" y="38" font-family="Inter, sans-serif" font-size="18" font-weight="900" fill="#f8fafc">GIVEWAY <tspan fill="#06b6d4">ATES</tspan></text>
+  <text x="800" y="35" font-family="Inter, sans-serif" font-size="12" fill="#64748b">JUNCTION: DINDIGUL_HUB_01</text>
+
+  <!-- Main Hero Area -->
+  <rect x="110" y="90" width="860" height="200" rx="20" fill="linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)" />
+  <text x="140" y="140" font-family="Inter, sans-serif" font-size="28" font-weight="900" fill="#ffffff">Live Traffic Grid Monitor</text>
+  <text x="140" y="170" font-family="Inter, sans-serif" font-size="14" fill="#94a3b8">Autonomous AI Decision Engine — Active</text>
+
+  <!-- Density Bars Mockup -->
+  <rect x="140" y="210" width="200" height="10" rx="5" fill="#1e293b" />
+  <rect x="140" y="210" width="160" height="10" rx="5" fill="#ef4444" />
+  <text x="350" y="220" font-family="Inter, sans-serif" font-size="10" fill="#ef4444">LANE 1: 85% PCE</text>
+
+  <rect x="140" y="240" width="200" height="10" rx="5" fill="#1e293b" />
+  <rect x="140" y="240" width="90" height="10" rx="5" fill="#22c55e" />
+  <text x="350" y="250" font-family="Inter, sans-serif" font-size="10" fill="#22c55e">LANE 2: 45% PCE</text>
+
+  <!-- Tactical Control Cards -->
+  <rect x="110" y="320" width="260" height="340" rx="16" fill="#1e293b" stroke="#334155" />
+  <text x="130" y="355" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc">Manual Lane Control</text>
+  
+  <rect x="130" y="380" width="220" height="50" rx="12" fill="#06b6d4" fill-opacity="0.1" stroke="#06b6d4" stroke-width="1" />
+  <text x="145" y="410" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#06b6d4">FORCE GREEN: LANE 1</text>
+  
+  <rect x="130" y="440" width="220" height="50" rx="12" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="1" />
+  <text x="145" y="470" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#ef4444">EMERGENCY ALL-STOP</text>
+
+  <!-- Analytics Chart Mockup -->
+  <rect x="390" y="320" width="580" height="340" rx="16" fill="#1e293b" stroke="#334155" />
+  <text x="410" y="355" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc">Emergency Response Analytics</text>
+  <path d="M420 620 L940 620" stroke="#334155" stroke-width="2" />
+  <path d="M420 620 L420 380" stroke="#334155" stroke-width="2" />
+  <path d="M420 600 Q550 450 680 550 T940 400" stroke="#06b6d4" stroke-width="3" fill="none" />
+  <circle cx="940" cy="400" r="4" fill="#06b6d4" />
+
+  <!-- Legend -->
+  <text x="110" y="685" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#64748b">GIVEWAY COMMAND CENTER — INTERFACE FIG 8.3</text>
+</svg>

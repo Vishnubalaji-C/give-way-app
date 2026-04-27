@@ -467,6 +467,13 @@ function computePriorities() {
 }
 
 function selectNextLane() {
+  if (overrideMode === 'festival') {
+    // Round Robin: 1 -> 2 -> 3 -> 1
+    const currentIndex = LANES.indexOf(state.activeLane);
+    const nextIndex = (currentIndex + 1) % LANES.length;
+    return LANES[nextIndex];
+  }
+
   // ADAPTIVE PRIORITY: Select the "Top Traffic" lane based on PCE and Wait Time
   const candidates = LANES.filter(id => id !== state.activeLane);
   
@@ -530,6 +537,8 @@ function switchLane(nextId) {
 }
 
 function computeGreenDuration(laneId) {
+  if (overrideMode === 'festival') return 20;
+
   const lane = state.lanes[laneId];
   const base = PHASE_GREEN;
   const pceValue = lane.density || 0;
@@ -715,7 +724,7 @@ function tick() {
   // Phase management
   state.phaseTimer = Math.max(0, state.phaseTimer - 1);
 
-  if (state.phaseTimer === 0 && overrideMode === 'auto') {
+  if (state.phaseTimer === 0 && (overrideMode === 'auto' || overrideMode === 'festival')) {
     const nextLane = selectNextLane();
     switchLane(nextLane);
   }
@@ -932,13 +941,27 @@ function handleClientMessage(msg) {
     case 'SET_OVERRIDE_MODE': {
       overrideMode = msg.payload.mode;
       logAudit('MODE_CHANGE', `Override mode set to: ${overrideMode}`);
+      
+      let hwModeCmd = 'AUT';
       if (overrideMode === 'emergency') {
+        hwModeCmd = 'EMG';
         LANES.forEach(id => { state.lanes[id].signal = 'red'; state.lanes[id].phase = 'red'; });
         addAlert('emergency', '🚨 Emergency All-Stop activated!', null);
-      }
-      if (overrideMode === 'auto') {
+        LANES.forEach(id => sendToArduino(id, 'R'));
+      } else if (overrideMode === 'vip') {
+        hwModeCmd = 'VIP';
+        addAlert('warning', '👑 VIP Corridor active. Auto-switching suspended. Manual overrides enabled.', null);
+      } else if (overrideMode === 'festival') {
+        hwModeCmd = 'FES';
+        addAlert('info', '🎉 Festival Mode active. Using balanced round-robin timing.', null);
+      } else if (overrideMode === 'auto') {
         addAlert('info', '🤖 GiveWay AI control restored.', null);
       }
+      
+      if (arduinoPort && arduinoPort.isOpen) {
+        arduinoPort.write(`M:${hwModeCmd}\n`);
+      }
+
       broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
       break;
     }

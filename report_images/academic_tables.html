@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body {
+    background: #f1f5f9;
+    margin: 0;
+    padding: 60px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 80px;
+  }
+  .table-container {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    width: 800px;
+  }
+  .table-title {
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #cbd5e1;
+  }
+  td {
+    padding: 15px;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .highlight {
+    color: #4f46e5;
+    font-weight: 600;
+  }
+  .urgent {
+    color: #ef4444;
+    font-weight: bold;
+    background: #fef2f2;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- TABLE 1.1 -->
+  <div class="table-container">
+    <div class="table-title">Table 1.1: PCE Weighting Distribution</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Vehicle Class</th>
+          <th>Physical Footprint</th>
+          <th>PCE Weighting</th>
+          <th>Priority Justification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ambulance / Fire (Emergency)</td>
+          <td>Large / Non-standard</td>
+          <td><span class="urgent">50.0</span></td>
+          <td>Absolute tactical priority; immediate override required.</td>
+        </tr>
+        <tr>
+          <td>Public Bus</td>
+          <td>12.0m × 2.5m</td>
+          <td class="highlight">15.0</td>
+          <td>High passenger density; promotes public transit equity.</td>
+        </tr>
+        <tr>
+          <td>Heavy Lorry / Truck</td>
+          <td>10.0m × 2.5m</td>
+          <td class="highlight">8.0</td>
+          <td>High physical road footprint and slow acceleration.</td>
+        </tr>
+        <tr>
+          <td>Passenger Car</td>
+          <td>4.5m × 1.8m</td>
+          <td class="highlight">1.0</td>
+          <td>Baseline standard for Passenger Car Equivalent (PCE).</td>
+        </tr>
+        <tr>
+          <td>Two-Wheeler</td>
+          <td>2.0m × 0.8m</td>
+          <td class="highlight">0.5</td>
+          <td>Minimal footprint; can filter through traffic.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TABLE 6.1 -->
+  <div class="table-container">
+    <div class="table-title">Table 6.1: Hardware Pinout Configuration (Arduino Mega)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Mega Pin Name</th>
+          <th>Pin Type</th>
+          <th>System Function</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>EM-18 RFID (Lane 1)</td>
+          <td>RX1 (Pin 19)</td>
+          <td>Hardware Serial</td>
+          <td>Reads Emergency Vehicle tag IDs.</td>
+        </tr>
+        <tr>
+          <td>ESP32-CAM (Lane 3)</td>
+          <td>RX2 (Pin 17)</td>
+          <td>Hardware Serial</td>
+          <td>Receives AI density pulse data.</td>
+        </tr>
+        <tr>
+          <td>Lane 1: Red LED</td>
+          <td>Digital Pin 2</td>
+          <td>Output (5V)</td>
+          <td>Stop signal for Primary Lane.</td>
+        </tr>
+        <tr>
+          <td>Lane 1: Green LED</td>
+          <td>Digital Pin 4</td>
+          <td>Output (5V)</td>
+          <td>Go signal for Primary Lane.</td>
+        </tr>
+        <tr>
+          <td>Emergency Buzzer</td>
+          <td>Digital Pin 13</td>
+          <td>PWM Output</td>
+          <td>Audio alert during manual override/SOS.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TABLE 10.1 -->
+  <div class="table-container">
+    <div class="table-title">Table 10.1: System Accuracy and Latency</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Performance Metric</th>
+          <th>Expected Baseline</th>
+          <th>GiveWay ATES Results</th>
+          <th>Operational Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>YOLOv8 Detection Accuracy</td>
+          <td>> 85.0%</td>
+          <td class="highlight">96.8%</td>
+          <td>Highly reliable vehicle classification.</td>
+        </tr>
+        <tr>
+          <td>ESP32 to Mega Latency</td>
+          <td>< 500 ms</td>
+          <td class="highlight">42 ms</td>
+          <td>Near-instantaneous pulse transmission.</td>
+        </tr>
+        <tr>
+          <td>Cloud Sync (Vercel) Delay</td>
+          <td>< 2000 ms</td>
+          <td class="highlight">210 ms</td>
+          <td>Real-time dashboard updates without lag.</td>
+        </tr>
+        <tr>
+          <td>Emergency Override Speed</td>
+          <td>< 5.0 sec</td>
+          <td><span class="urgent">2.0 sec</span></td>
+          <td>Rapid clearance ensuring maximum safety.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TABLE 10.2 -->
+  <div class="table-container">
+    <div class="table-title">Table 10.2: Comparative Analysis: Fixed vs. Adaptive</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Traditional Fixed-Timer System</th>
+          <th>GiveWay ATES (Adaptive)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Decision Logic</b></td>
+          <td>Hardcoded Time Loops</td>
+          <td class="highlight">PCE Density + Wait-Time Penalty</td>
+        </tr>
+        <tr>
+          <td><b>Emergency Response</b></td>
+          <td>No provision (gets stuck)</td>
+          <td><span class="urgent">Instant RFID Preemption (Green Wave)</span></td>
+        </tr>
+        <tr>
+          <td><b>Peak Hour Efficiency</b></td>
+          <td>Poor (Empty lanes get green)</td>
+          <td class="highlight">Excellent (Dynamic allocation)</td>
+        </tr>
+        <tr>
+          <td><b>Hardware Complexity</b></td>
+          <td>Low (Basic Relays)</td>
+          <td>Medium (ESP32-CAMs, RFID, Mega Hub)</td>
+        </tr>
+        <tr>
+          <td><b>Cloud Monitoring</b></td>
+          <td>None</td>
+          <td class="highlight">Full Web & Mobile Operator Dashboards</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useWs } from '../context/WsContext';
 import { Shield, Zap, Radio, Book } from 'lucide-react';
-import TacticalMap from '../components/TacticalMap';
+
 
 const LANES = ['1', '2', '3'];
 const LANE_LABELS = { '1': 'Primary', '2': 'Secondary', '3': 'Transverse' };
@@ -9,7 +9,6 @@ const LANE_LABELS = { '1': 'Primary', '2': 'Secondary', '3': 'Transverse' };
 export default function ControlRoomPage({ user }) {
   const { state, alerts, auditLog, send } = useWs();
   const [activeMode, setActiveMode] = useState('auto');
-  const [ghostLane, setGhostLane] = useState(null);
   const [waveActive, setWaveActive] = useState(false);
   const [waveProgress, setWaveProgress] = useState(0);
 
@@ -23,8 +22,7 @@ export default function ControlRoomPage({ user }) {
 
   const triggerGhost = () => {
     const lane = LANES[Math.floor(Math.random() * LANES.length)];
-    setGhostLane(lane);
-    setTimeout(() => setGhostLane(null), 6000);
+    send('SIMULATE_GHOST_LANE', { laneId: lane });
   };
 
   const triggerGreenWave = () => {
@@ -66,16 +64,7 @@ export default function ControlRoomPage({ user }) {
         <span className="text-xs px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/30 font-mono">✅ BIOMETRIC: {user?.name?.toUpperCase() || 'OPERATOR'} {user?.id}</span>
       </div>
 
-      {/* ── Tactical Live Map Integration ──────────────────── */}
-      <div className="h-72 w-full rounded-2xl overflow-hidden border border-cyan-500/20 shadow-2xl relative mb-6">
-         <TacticalMap user={user} showControls={false} />
-         <div className="absolute top-4 right-4 z-[1000] pointer-events-none">
-            <div className="glass px-4 py-2 rounded-xl border border-cyan-500/30 flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
-               <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Live Tactical Grid</span>
-            </div>
-         </div>
-      </div>
+
 
       <div className="grid lg:grid-cols-2 gap-6">
 
@@ -154,7 +143,7 @@ export default function ControlRoomPage({ user }) {
             <CardTitle icon="👻" title="Ghost Lane Monitor" />
             <div className="grid grid-cols-2 gap-2 mb-4">
               {LANES.map(id => {
-                const isGhost = ghostLane === id;
+                const isGhost = lanes[id]?.ghostFlag;
                 return (
                   <div key={id} className={`p-3 rounded-xl border text-sm transition-all duration-500 ${
                     isGhost

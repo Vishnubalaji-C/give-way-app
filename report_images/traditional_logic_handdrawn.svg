@@ -1,0 +1,73 @@
+<svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hand-drawn feel background -->
+  <rect width="100%" height="100%" fill="#fdfdfd" />
+  
+  <!-- Style for "Hand-drawn" look: slightly shaky lines -->
+  <style>
+    .draw { fill: none; stroke: #333; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .text { font-family: 'Comic Sans MS', 'Marker Felt', cursive, sans-serif; font-size: 14px; fill: #333; font-weight: bold; }
+    .title { font-family: 'Comic Sans MS', cursive; font-size: 18px; fill: #d32f2f; font-weight: bold; }
+  </style>
+
+  <text x="120" y="40" class="title">Traditional Fixed-Timer (Legacy)</text>
+
+  <!-- Node 1: Start -->
+  <path d="M250,70 Q300,70 300,90 Q300,110 250,110 Q200,110 200,90 Q200,70 250,70" class="draw" />
+  <text x="225" y="95" class="text">START</text>
+
+  <!-- Arrow 1 -->
+  <path d="M250,110 L250,140" class="draw" />
+  <path d="M245,135 L250,140 L255,135" class="draw" />
+
+  <!-- Node 2: Phase 1 -->
+  <path d="M180,140 L320,140 L320,190 L180,190 Z" class="draw" transform="translate(2,2) rotate(1, 250, 165)" />
+  <text x="210" y="160" class="text">PHASE 1:</text>
+  <text x="200" y="180" class="text">LANE A - GREEN</text>
+
+  <!-- Node 3: Timer -->
+  <path d="M250,190 L250,220" class="draw" />
+  <path d="M245,215 L250,220 L255,215" class="draw" />
+  <path d="M200,220 L300,220 L310,250 L210,250 Z" class="draw" />
+  <text x="215" y="240" class="text">WAIT 60 SECS</text>
+
+  <!-- Arrow to Phase 2 -->
+  <path d="M250,250 L250,280" class="draw" />
+  <path d="M245,275 L250,280 L255,275" class="draw" />
+
+  <!-- Node 4: Phase 2 -->
+  <path d="M180,280 L320,280 L320,330 L180,330 Z" class="draw" transform="rotate(-1, 250, 305)" />
+  <text x="210" y="300" class="text">PHASE 2:</text>
+  <text x="200" y="320" class="text">LANE B - GREEN</text>
+
+  <!-- Node 5: Timer -->
+  <path d="M250,330 L250,360" class="draw" />
+  <path d="M245,355 L250,360 L255,355" class="draw" />
+  <path d="M200,360 L300,360 L310,390 L210,390 Z" class="draw" />
+  <text x="215" y="380" class="text">WAIT 60 SECS</text>
+
+  <!-- Arrow to Phase 3 -->
+  <path d="M250,390 L250,420" class="draw" />
+  <path d="M245,415 L250,420 L255,415" class="draw" />
+
+  <!-- Node 6: Phase 3 -->
+  <path d="M180,420 L320,420 L320,470 L180,470 Z" class="draw" transform="translate(-2,1)" />
+  <text x="210" y="440" class="text">PHASE 3:</text>
+  <text x="200" y="460" class="text">LANE C - GREEN</text>
+
+  <!-- Node 7: Timer -->
+  <path d="M250,470 L250,500" class="draw" />
+  <path d="M245,495 L250,500 L255,495" class="draw" />
+  <path d="M200,500 L300,500 L310,530 L210,530 Z" class="draw" />
+  <text x="215" y="520" class="text">WAIT 60 SECS</text>
+
+  <!-- Loop back to start -->
+  <path d="M250,530 L250,560 Q250,580 200,580 L100,580 Q50,580 50,540 L50,110 Q50,90 200,90" class="draw" />
+  <path d="M195,85 L200,90 L195,95" class="draw" />
+
+  <!-- Note box -->
+  <path d="M350,220 L480,220 L480,320 L350,320 Z" class="draw" stroke="#d32f2f" fill="#fffafa" />
+  <text x="360" y="245" class="text" fill="#d32f2f">CRITICAL FLAW:</text>
+  <text x="360" y="270" class="text" style="font-size:10px">System ignores</text>
+  <text x="360" y="285" class="text" style="font-size:10px">Emergency Vehicles</text>
+  <text x="360" y="300" class="text" style="font-size:10px">and Traffic Density!</text>
+</svg>

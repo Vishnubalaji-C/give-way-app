@@ -1,0 +1,8 @@
+node_modules
+mobile
+client/node_modules
+.git
+.gemini
+*.apk
+build/
+dist/

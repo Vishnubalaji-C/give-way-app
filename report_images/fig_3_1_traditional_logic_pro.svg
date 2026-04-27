@@ -1,0 +1,57 @@
+<svg viewBox="0 0 500 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <style>
+    .text { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 13px; font-weight: 600; fill: #1e293b; }
+    .title { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; fill: #ffffff; text-transform: uppercase; letter-spacing: 1px; }
+    .subtitle { font-size: 10px; font-weight: 400; fill: #64748b; }
+    .box { stroke: #e2e8f0; stroke-width: 1; }
+    .arrow { stroke: #94a3b8; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+  </marker>
+
+  <rect x="175" y="30" width="150" height="40" rx="20" fill="#1e293b" class="box" />
+  <text x="250" y="55" text-anchor="middle" class="title">START CYCLE</text>
+
+  <path d="M250 70 L250 110" class="arrow" />
+
+  <rect x="125" y="110" width="250" height="60" rx="8" fill="#f8fafc" class="box" />
+  <text x="250" y="135" text-anchor="middle" class="text">PHASE A: LANE 1 GREEN</text>
+  <text x="250" y="153" text-anchor="middle" class="subtitle">DURATION: FIXED 60 SECONDS</text>
+
+  <path d="M250 170 L250 210" class="arrow" />
+
+  <rect x="125" y="210" width="250" height="60" rx="8" fill="#fffbeb" class="box" />
+  <text x="250" y="235" text-anchor="middle" class="text">PHASE B: LANE 1 YELLOW</text>
+  <text x="250" y="253" text-anchor="middle" class="subtitle">DURATION: FIXED 5 SECONDS</text>
+
+  <path d="M250 270 L250 310" class="arrow" />
+
+  <rect x="125" y="310" width="250" height="60" rx="8" fill="#f8fafc" class="box" />
+  <text x="250" y="335" text-anchor="middle" class="text">PHASE C: LANE 2 GREEN</text>
+  <text x="250" y="353" text-anchor="middle" class="subtitle">DURATION: FIXED 60 SECONDS</text>
+
+  <path d="M250 370 L250 410" class="arrow" />
+
+  <rect x="125" y="410" width="250" height="60" rx="8" fill="#fffbeb" class="box" />
+  <text x="250" y="435" text-anchor="middle" class="text">PHASE D: LANE 2 YELLOW</text>
+  <text x="250" y="453" text-anchor="middle" class="subtitle">DURATION: FIXED 5 SECONDS</text>
+
+  <path d="M250 470 L250 510" class="arrow" />
+
+  <path d="M250 510 L350 560 L250 610 L150 560 Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2" />
+  <text x="250" y="555" text-anchor="middle" class="text">TIMER</text>
+  <text x="250" y="575" text-anchor="middle" class="text">ELAPSED?</text>
+
+  <path d="M350 560 L420 560 L420 140 L375 140" class="arrow" />
+  <text x="380" y="550" class="text">NO</text>
+
+  <path d="M250 610 L250 660" class="arrow" />
+  <text x="265" y="635" class="text">YES</text>
+
+  <rect x="125" y="660" width="250" height="60" rx="8" fill="#1e293b" class="box" />
+  <text x="250" y="695" text-anchor="middle" class="title">RESET CYCLE</text>
+
+  <path d="M125 690 L80 690 L80 50 L175 50" class="arrow" stroke-dasharray="5,5" />
+</svg>
