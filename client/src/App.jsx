@@ -129,6 +129,7 @@ export default function App() {
         <span className="text-sm opacity-50 mt-4 block text-white/40">All lanes set to RED — GiveWay AI control suspended</span>
       </div>
     ),
+    monitor:    CameraFeedPage,
     incidents: () => (
       <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse font-mono tracking-widest">
         GHOST LANE TRACKER: SCANNING FOR BLOCKAGES...

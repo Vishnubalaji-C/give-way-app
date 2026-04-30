@@ -190,9 +190,9 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
           <div className="flex items-center gap-2 flex-wrap">
             {[
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Live Monitor' },
-
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
               { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
+              { id: 'monitor', label: 'Signal Monitor', icon: <Activity size={18} /> },
               { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
