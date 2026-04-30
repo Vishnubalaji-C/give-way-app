@@ -5,9 +5,11 @@ export default function AppTutorial() {
   const [run, setRun] = useState(false);
 
   useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('giveway_tutorial_completed');
+    const hasSeenTutorial = localStorage.getItem('giveway_v5_tutorial_locked');
     if (!hasSeenTutorial) {
       setRun(true);
+      // Pre-emptively mark as seen to avoid loops
+      localStorage.setItem('giveway_v5_tutorial_locked', 'true');
     }
   }, []);
 
