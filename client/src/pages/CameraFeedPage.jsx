@@ -1,6 +1,6 @@
 import { useWs } from '../context/WsContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Zap, Play, Square, Crosshair, Radio } from 'lucide-react';
+import { Zap, Play, Square, Camera, Radio, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
@@ -9,18 +9,16 @@ const COCO_MAP = { car: 'car', bus: 'bus', truck: 'truck', motorcycle: 'motorcyc
 export default function CameraFeedPage() {
   const { state } = useWs();
   const lanes = state?.lanes || {};
-  
   const [modelLoaded, setModelLoaded] = useState(false);
+  const modelRef = useRef(null);
+
+  // Master Camera State
   const [isDetecting, setIsDetecting] = useState(false);
   const [targetLane, setTargetLane] = useState('1');
-  const [hardwareMode, setHardwareMode] = useState(false);
-  
-  const modelRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
 
-  // Load TensorFlow Model
   useEffect(() => {
     const load = async () => {
       const tf = await import('@tensorflow/tfjs');
@@ -32,7 +30,6 @@ export default function CameraFeedPage() {
     load();
   }, []);
 
-  // Master Camera Logic
   const startVision = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -40,13 +37,14 @@ export default function CameraFeedPage() {
       });
       if (videoRef.current) videoRef.current.srcObject = stream;
       setIsDetecting(true);
-    } catch (e) {
+    } catch (e) { 
+      console.warn('Environment camera failed, falling back to default.');
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (videoRef.current) videoRef.current.srcObject = fallbackStream;
         setIsDetecting(true);
       } catch (err) {
-        console.error('Camera access failed:', err);
+        console.error('All camera access failed:', err);
       }
     }
   };
@@ -59,7 +57,6 @@ export default function CameraFeedPage() {
     }
   };
 
-  // The AI Detection Loop
   const runDetection = useCallback(async () => {
     if (!modelRef.current || !isDetecting || !videoRef.current) return;
     
@@ -78,8 +75,8 @@ export default function CameraFeedPage() {
       }
     });
 
-    if (preds.length >= 0) {
-      // Send data to the TARGETED lane
+    if (preds.length > 0) {
+      // Send data ONLY to the currently targeted lane
       fetch(`${API_BASE_URL}/api/edge-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,22 +87,8 @@ export default function CameraFeedPage() {
           vehicles: { car: counts.car, bus: counts.bus, lorry: counts.truck, bike: counts.motorcycle, ambulance: 0 }
         })
       }).catch(() => {});
-
-      // Clear the other lanes automatically for a smooth demo
-      ['1', '2', '3'].filter(id => id !== targetLane).forEach(otherLane => {
-          fetch(`${API_BASE_URL}/api/edge-data`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              laneId: otherLane,
-              junctionId: 'JN-001',
-              secret: 'GIVEWAY_NODE_KEY',
-              vehicles: { car: 0, bus: 0, lorry: 0, bike: 0, ambulance: 0 }
-            })
-          }).catch(() => {});
-      });
     }
-
+    
     rafRef.current = requestAnimationFrame(runDetection);
   }, [isDetecting, targetLane, modelRef]);
 
@@ -114,96 +97,76 @@ export default function CameraFeedPage() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [isDetecting, runDetection]);
 
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-32">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Master AI Sensor</h1>
-          <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Automated Single-Device Demonstration Mode</p>
-        </div>
-        <button 
-          onClick={() => {
-             stopVision();
-             setHardwareMode(!hardwareMode);
-          }}
-          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${hardwareMode ? 'bg-cyan-500 text-black' : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'}`}
-        >
-          <Radio size={14} /> Hardware ESP32 Mode
-        </button>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Signal Monitoring System</h1>
+        <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Master AI Sensor Mode Active</p>
       </div>
 
-      {/* MASTER CAMERA VIEW */}
-      {!hardwareMode && (
-        <div className="bg-glass-card border border-white/10 rounded-[2.5rem] p-6 shadow-2xl flex flex-col lg:flex-row gap-6">
-          {/* Camera Frame */}
-          <div className="relative aspect-video lg:w-2/3 bg-[#050505] rounded-[2rem] border border-white/5 overflow-hidden shadow-inner group">
-            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-60" />
-            <canvas ref={canvasRef} width={1280} height={720} className="absolute inset-0 w-full h-full pointer-events-none" />
-            
-            {!isDetecting ? (
-               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
-                 <Zap size={32} className="text-white/20 mb-4" />
-                 <button 
-                   onClick={startVision} 
-                   disabled={!modelLoaded}
-                   className="px-8 py-4 bg-cyan-500 text-black font-black text-xs rounded-2xl shadow-xl hover:scale-105 transition-all uppercase tracking-widest flex items-center gap-3 disabled:opacity-50"
-                 >
-                    {modelLoaded ? <><Play size={16}/> Start Master Sensor</> : 'Loading AI Engine...'}
-                 </button>
-               </div>
+      {/* ── MASTER CAMERA MODULE ── */}
+      <div className="bg-glass-card border border-cyan-500/30 rounded-[2.5rem] p-6 shadow-[0_0_50px_rgba(6,182,212,0.1)] relative overflow-hidden">
+         <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+               <Camera className="text-cyan-400" />
+               <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Master AI Sensor</h2>
+            </div>
+            {isDetecting ? (
+               <button onClick={stopVision} className="px-6 py-2 bg-red-500/20 text-red-500 border border-red-500/50 rounded-xl font-black text-xs uppercase flex items-center gap-2 hover:bg-red-500/40 transition-all">
+                  <Square size={14} fill="currentColor" /> Stop Sensor
+               </button>
             ) : (
-               <button onClick={stopVision} className="absolute top-4 right-4 p-3 bg-red-500 text-black rounded-2xl hover:scale-110 transition-all shadow-lg z-10">
-                  <Square size={16} fill="currentColor" />
+               <button onClick={startVision} disabled={!modelLoaded} className="px-6 py-2 bg-cyan-500 text-black rounded-xl font-black text-xs uppercase flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-cyan-500/20 disabled:opacity-50">
+                  <Play size={14} fill="currentColor" /> Enable Master AI
                </button>
             )}
-          </div>
+         </div>
 
-          {/* Target Selectors */}
-          <div className="lg:w-1/3 flex flex-col gap-4">
-             <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Select Target Lane</div>
-             {['1', '2', '3'].map(id => (
-                <button
-                  key={id}
-                  onClick={() => setTargetLane(id)}
-                  disabled={!isDetecting}
-                  className={`relative p-5 rounded-2xl border transition-all text-left flex items-center justify-between ${
-                    targetLane === id && isDetecting
-                      ? 'bg-cyan-500/10 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.2)]' 
-                      : 'bg-white/5 border-white/10 hover:border-white/20'
-                  } ${!isDetecting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div>
-                     <div className={`text-xs font-black uppercase tracking-widest ${targetLane === id && isDetecting ? 'text-cyan-400' : 'text-white'}`}>Feed to Lane {id}</div>
-                     <div className="text-[10px] font-medium text-white/40 mt-1">Directs camera logic to Node {id}</div>
-                  </div>
-                  {targetLane === id && isDetecting && (
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center animate-pulse">
-                      <Crosshair size={16} className="text-cyan-400" />
-                    </div>
-                  )}
-                </button>
-             ))}
-          </div>
-        </div>
-      )}
+         <div className="relative aspect-video max-h-[400px] w-full bg-[#050505] rounded-[2rem] border border-white/10 overflow-hidden shadow-inner mb-6 mx-auto">
+            {isDetecting ? (
+               <>
+                 <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-80" />
+                 <canvas ref={canvasRef} width={1280} height={720} className="absolute inset-0 w-full h-full pointer-events-none" />
+               </>
+            ) : (
+               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-cyan-950/20 to-black text-center border-dashed border-2 border-white/5 m-4 rounded-3xl" style={{ width: 'calc(100% - 2rem)', height: 'calc(100% - 2rem)' }}>
+                  <Zap size={48} className="text-cyan-500/20 mb-4 animate-pulse" />
+                  <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">Sensor Offline</span>
+                  <p className="text-[10px] text-white/30 mt-2 max-w-sm">Click 'Enable Master AI' to start the continuous object detection engine for the presentation.</p>
+               </div>
+            )}
+         </div>
 
-      {hardwareMode && (
-        <div className="bg-glass-card border border-cyan-500/20 rounded-[2.5rem] p-10 shadow-2xl flex flex-col items-center text-center">
-           <Radio size={48} className="text-cyan-500 mb-6 animate-pulse" />
-           <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">ESP32-CAM Mode Active</h2>
-           <p className="text-white/40 max-w-lg mb-8">The system is currently listening exclusively to real hardware ESP32 cameras over the network. Laptop/Phone camera is disabled.</p>
-        </div>
-      )}
+         <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest text-center mb-4 flex items-center justify-center gap-2">
+               <Target size={14} className="text-cyan-500" /> Select Target Lane to Feed AI Data
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+               {['1', '2', '3'].map(id => (
+                  <button
+                     key={id}
+                     onClick={() => setTargetLane(id)}
+                     className={`py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                        targetLane === id 
+                           ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-105' 
+                           : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
+                     }`}
+                  >
+                     Target Lane {id}
+                  </button>
+               ))}
+            </div>
+         </div>
+      </div>
 
-      {/* LANE STATUS CARDS (Display Only) */}
+      {/* ── HARDWARE STATUS CARDS ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {['1', '2', '3'].map(id => (
           <LaneStatusCard 
             key={id} 
             id={id} 
             lane={lanes[id]} 
-            isActiveTarget={targetLane === id && isDetecting && !hardwareMode}
+            isTarget={targetLane === id}
           />
         ))}
       </div>
@@ -211,38 +174,33 @@ export default function CameraFeedPage() {
   );
 }
 
-function LaneStatusCard({ id, lane, isActiveTarget }) {
+function LaneStatusCard({ id, lane, isTarget }) {
   const sig = lane?.signal || 'red';
 
   return (
-    <div className={`glass-card bg-black/60 border rounded-[2.5rem] p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden transition-all ${isActiveTarget ? 'border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.1)]' : 'border-white/5'}`}>
-      
-      {isActiveTarget && (
-        <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500 animate-pulse" />
-      )}
-
+    <div className={`glass-card bg-black/60 border rounded-[2.5rem] p-6 flex flex-col gap-5 shadow-2xl transition-all ${isTarget ? 'border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.1)]' : 'border-white/5'}`}>
       <div className="flex justify-between items-center">
-         <h2 className="text-xl font-black text-white uppercase tracking-tighter">LANE {id} NODE</h2>
-         {isActiveTarget && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse flex items-center gap-2"><Crosshair size={12}/> Receiving Data</span>}
+         <h2 className="text-2xl font-black text-white uppercase tracking-tighter">LANE {id}</h2>
+         {isTarget && <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse border border-cyan-500/30">Receiving Data</span>}
       </div>
 
-      <div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-[2rem] border border-white/5 shadow-inner mt-4">
+      <div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-[2rem] border border-white/5 shadow-inner mt-2">
          <div className="flex gap-4">
-            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'red' ? 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.6)]' : 'bg-red-950/20'}`} />
-            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'yellow' ? 'bg-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.6)]' : 'bg-yellow-950/20'}`} />
-            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'green' ? 'bg-green-500 shadow-[0_0_30px_rgba(34,197,94,0.6)]' : 'bg-green-950/20'}`} />
+            <div className={`w-9 h-9 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'red' ? 'bg-red-500 shadow-[0_0_25px_rgba(239,68,68,0.6)]' : 'bg-red-950/20'}`} />
+            <div className={`w-9 h-9 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'yellow' ? 'bg-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.6)]' : 'bg-yellow-950/20'}`} />
+            <div className={`w-9 h-9 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'green' ? 'bg-green-500 shadow-[0_0_25px_rgba(34,197,94,0.6)]' : 'bg-green-950/20'}`} />
          </div>
-         <div className={`text-sm font-black uppercase tracking-widest ${sig === 'green' ? 'text-green-400' : 'text-cyan-400'}`}>{sig}</div>
+         <div className={`text-xs font-black uppercase tracking-widest ${sig === 'green' ? 'text-green-400' : 'text-cyan-400'}`}>{sig}</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mt-2">
+      <div className="grid grid-cols-2 gap-3 mt-auto">
          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center">
-            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">PCE Density</div>
-            <div className="text-2xl font-black text-white tabular-nums">{Math.round(lane?.density || 0)}</div>
+            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">PCE Score</div>
+            <div className="text-xl font-black text-white tabular-nums">{Math.round(lane?.pceScore || 0)}</div>
          </div>
          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center">
             <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">Signal Wait</div>
-            <div className="text-2xl font-black text-white tabular-nums">{lane?.waitTime || 0}s</div>
+            <div className="text-xl font-black text-white tabular-nums">{lane?.waitTime || 0}s</div>
          </div>
       </div>
     </div>
