@@ -1,7 +1,9 @@
-// ─── GIVEWAY: Simplified Hardware Sync (v5.5 - Power Optimized) ──────────
-// MATCHES YOUR WIRING: CAMs(14-19), LEDs(22-30)
-// REMOVED: Buzzer and RFID Readers (To save power & pins)
-// Optimized for: Arduino Mega 2560
+// ─── GIVEWAY: Simplified Hardware Sync (v5.6 - Custom Pins) ──────────
+// WIRING:
+// Lane 1: Red=2, Yellow=3, Green=4
+// Lane 2: Red=5, Yellow=6, Green=7
+// Lane 3: Red=8, Yellow=9, Green=10
+// REMOVED: ESP32-CAM UART logic to simplify hardware setup.
 
 #include <Arduino.h>
 
@@ -10,22 +12,17 @@ unsigned long lastHeartbeat = 0;
 void setup() {
   // 115200 is standard for GiveWay Backend
   Serial.begin(115200);   
-  
-  // Hardware UARTs for ESP32-CAMs (Lane 1, 2, 3)
-  Serial1.begin(115200);  
-  Serial2.begin(115200);  
-  Serial3.begin(115200);  
 
-  // Set Signal Pins as OUTPUT
-  for(int i=22; i<=30; i++) {
+  // Set Signal Pins as OUTPUT (Pins 2 to 10)
+  for(int i=2; i<=10; i++) {
     pinMode(i, OUTPUT);
     digitalWrite(i, LOW);
   }
   
   // INITIAL TEST: Blink all LEDs for 1 second to verify power
-  for(int i=22; i<=30; i++) digitalWrite(i, HIGH);
+  for(int i=2; i<=10; i++) digitalWrite(i, HIGH);
   delay(1000);
-  for(int i=22; i<=30; i++) digitalWrite(i, LOW);
+  for(int i=2; i<=10; i++) digitalWrite(i, LOW);
 
   // Default state: ALL RED
   setSignal('1', 'R'); setSignal('2', 'R'); setSignal('3', 'R');
@@ -40,7 +37,7 @@ void loop() {
     lastHeartbeat = millis();
   }
 
-  // 2. PC COMMANDS (Signal Controls)
+  // 2. PC COMMANDS (Signal Controls from Web/Mobile Dashboard)
   if (Serial.available() > 0) {
     char lane = Serial.read();
     
@@ -48,43 +45,32 @@ void loop() {
     if (lane == '?') {
       Serial.println("GIVEWAY_ALIVE");
     }
+    // Receive Lane ID (1, 2, or 3)
     else if (lane == '1' || lane == '2' || lane == '3') {
       while (Serial.available() == 0); // Wait for color byte
       char color = Serial.read();
       setSignal(lane, color);
     }
   }
-
-  // 3. CAM POLL (Forwarding density data from ESP32-CAMs to Server)
-  if (Serial1.available()) {
-    String data = Serial1.readStringUntil('\n');
-    data.trim();
-    if (data.length() > 0) Serial.println("HW_CAM:1:" + data);
-  }
-  
-  if (Serial2.available()) {
-    String data = Serial2.readStringUntil('\n');
-    data.trim();
-    if (data.length() > 0) Serial.println("HW_CAM:2:" + data);
-  }
-  
-  if (Serial3.available()) {
-    String data = Serial3.readStringUntil('\n');
-    data.trim();
-    if (data.length() > 0) Serial.println("HW_CAM:3:" + data);
-  }
 }
 
+// Function to control specific lane colors based on PC commands
 void setSignal(char lane, char color) {
-  int startPin = 22 + (lane - '1') * 3; // Lane 1: 22, Lane 2: 25, Lane 3: 28
+  int startPin = 0;
   
-  // Reset all 3 LEDs for this lane
-  digitalWrite(startPin,   LOW);
-  digitalWrite(startPin+1, LOW);
-  digitalWrite(startPin+2, LOW);
+  // Map Lane to its starting RED pin based on your configuration
+  if (lane == '1') startPin = 2;       // Lane 1 starts at 2
+  else if (lane == '2') startPin = 5;  // Lane 2 starts at 5
+  else if (lane == '3') startPin = 8;  // Lane 3 starts at 8
+  else return; // Safety exit
+  
+  // Reset all 3 LEDs for this lane to LOW
+  digitalWrite(startPin,   LOW); // Red
+  digitalWrite(startPin+1, LOW); // Yellow
+  digitalWrite(startPin+2, LOW); // Green
 
-  // Set the specific color
+  // Set the requested color to HIGH
   if (color == 'R') digitalWrite(startPin,   HIGH);
-  if (color == 'Y') digitalWrite(startPin+1, HIGH);
-  if (color == 'G') digitalWrite(startPin+2, HIGH);
+  else if (color == 'Y') digitalWrite(startPin+1, HIGH);
+  else if (color == 'G') digitalWrite(startPin+2, HIGH);
 }

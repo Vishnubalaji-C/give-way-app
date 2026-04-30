@@ -55,10 +55,22 @@ function LaneControlCard({ id, lane, modelRef, modelLoaded }) {
   const startVision = async () => {
     if (source === 'demo') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" } 
+        });
         if (videoRef.current) videoRef.current.srcObject = stream;
         setIsDetecting(true);
-      } catch (e) { console.warn('Cam access denied'); }
+      } catch (e) { 
+        console.warn('Cam access denied or environment camera not found, falling back to default camera.');
+        try {
+          // Fallback for older laptops/devices that might reject facingMode
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          if (videoRef.current) videoRef.current.srcObject = fallbackStream;
+          setIsDetecting(true);
+        } catch (err) {
+          console.error('All camera access failed:', err);
+        }
+      }
     } else {
       setIsDetecting(true);
     }
