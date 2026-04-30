@@ -244,11 +244,11 @@ const junctions = {
     lat: 10.3673,
     lng: 77.9803,
     poleId: 'DI-MEGA-01',
-    address: 'Dindigul-Natham Main Rd, Dindigul',
+    address: 'Natham Rd, near Collectorate, Dindigul, Tamil Nadu 624004',
     status: 'online',
     lastPing: Date.now(),
     deployedAt: '2026-04-21',
-    cameraNodes: 1,
+    cameraNodes: 3,
   },
 };
 

@@ -53,7 +53,11 @@ export default function AuthPage({ onLogin }) {
         return;
       }
 
-      onLogin({ ...data.user, token: data.token });
+      if (data && data.user) {
+        onLogin({ ...data.user, token: data.token });
+      } else {
+        throw new Error('Identity object missing from secure response.');
+      }
 
     } catch (err) {
       setError(err.message);
