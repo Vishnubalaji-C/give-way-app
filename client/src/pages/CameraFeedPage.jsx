@@ -137,12 +137,10 @@ export default function CameraFeedPage() {
          </div>
 
          <div className="relative aspect-video max-h-[400px] w-full bg-[#050505] rounded-[2rem] border border-white/10 overflow-hidden shadow-inner mb-6 mx-auto group">
-            {isDetecting ? (
-               <>
-                 <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-80" />
-                 <canvas ref={canvasRef} width={1280} height={720} className="absolute inset-0 w-full h-full pointer-events-none" />
-                 
-                 {/* Live Data HUD */}
+             <video ref={videoRef} autoPlay muted playsInline className={`w-full h-full object-cover opacity-80 ${!isDetecting ? 'hidden' : ''}`} />
+             <canvas ref={canvasRef} width={1280} height={720} className={`absolute inset-0 w-full h-full pointer-events-none ${!isDetecting ? 'hidden' : ''}`} />
+             
+             {isDetecting && (
                  <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md border border-cyan-500/50 rounded-xl p-3 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
                     <div className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-2">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /> Live Feed
@@ -156,14 +154,15 @@ export default function CameraFeedPage() {
                       </div>
                     )}
                  </div>
-               </>
-            ) : (
-               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-cyan-950/20 to-black text-center border-dashed border-2 border-white/5 m-4 rounded-3xl" style={{ width: 'calc(100% - 2rem)', height: 'calc(100% - 2rem)' }}>
+             )}
+
+             {!isDetecting && (
+               <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-cyan-950/20 to-black text-center border-dashed border-2 border-white/5 m-4 rounded-3xl" style={{ width: 'calc(100% - 2rem)', height: 'calc(100% - 2rem)' }}>
                   <Zap size={48} className="text-cyan-500/20 mb-4 animate-pulse" />
                   <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">Sensor Offline</span>
                   <p className="text-[10px] text-white/30 mt-2 max-w-sm">Click 'Enable Master AI' to start the continuous object detection engine for the presentation.</p>
                </div>
-            )}
+             )}
          </div>
 
          <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
