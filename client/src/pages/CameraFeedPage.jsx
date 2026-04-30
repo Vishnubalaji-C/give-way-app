@@ -63,4 +63,3 @@ function SignalLight({ color, active }) {
   return <div className={`w-20 h-20 rounded-full transition-all duration-300 border-4 border-black/40 ${colors[color]}`} />;
 }
 
-}
