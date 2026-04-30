@@ -176,42 +176,31 @@ export default function DashboardPage({ user }) {
              </div>
            </div>
 
-           <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-black/40 rounded-3xl border border-white/5">
-              {/* The "Roads" */}
-              <div className="absolute w-[120px] h-full bg-slate-900/50" /> {/* Vertical Road */}
-              <div className="absolute w-full h-[120px] bg-slate-900/50" /> {/* Horizontal Road (Right side) */}
-              
-              {/* Lane 1: SOUTH (Coming Up) */}
-              <JunctionLane 
-                id="1" 
-                lane={state?.lanes?.['1']} 
-                className="bottom-4" 
-                pos="south" 
-              />
-
-              {/* Lane 2: EAST (Coming from Right) */}
-              <JunctionLane 
-                id="2" 
-                lane={state?.lanes?.['2']} 
-                className="right-4" 
-                pos="east" 
-              />
-
-              {/* Lane 3: WEST (Coming from Left) */}
-              <JunctionLane 
-                id="3" 
-                lane={state?.lanes?.['3']} 
-                className="left-4" 
-                pos="west" 
-              />
-
-              {/* Center Matrix */}
-              <div className="z-10 w-24 h-24 bg-black border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
-                 <div className="text-[10px] font-black text-cyan-500/40 uppercase text-center leading-tight">
-                    PCE<br/>MATRIX
-                 </div>
-              </div>
-           </div>
+            <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-[#02050a] rounded-[2.5rem] border border-white/5 shadow-inner">
+               <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+               <div className="absolute w-full h-[140px] bg-slate-900/40 border-y border-white/5 flex flex-col justify-center gap-1.5">
+                  <div className="w-full h-px bg-white/5 border-t border-dashed border-white/10" />
+                  {state?.lanes?.['2']?.signal === 'green' && <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-cyan-500/5 animate-pulse" />}
+                  {state?.lanes?.['3']?.signal === 'green' && <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-cyan-500/5 animate-pulse" />}
+               </div>
+               <div className="absolute w-[140px] h-1/2 bottom-0 bg-slate-900/40 border-x border-white/5 flex justify-center">
+                  <div className="h-full w-px bg-white/5 border-l border-dashed border-white/10" />
+                  {state?.lanes?.['1']?.signal === 'green' && <div className="absolute inset-0 bg-cyan-500/5 animate-pulse" />}
+               </div>
+               <JunctionLane id="1" lane={state?.lanes?.['1']} className="bottom-6" pos="south" />
+               <JunctionLane id="2" lane={state?.lanes?.['2']} className="right-6" pos="east" />
+               <JunctionLane id="3" lane={state?.lanes?.['3']} className="left-6" pos="west" />
+               <div className="z-20 w-28 h-28 bg-[#0a0a0a] border-2 border-white/10 rounded-[2rem] flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] relative">
+                  <div className="absolute inset-0 bg-cyan-500/5 rounded-[2rem] animate-pulse" />
+                  <div className="relative text-center">
+                     <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Logic</div>
+                     <div className="text-[12px] font-black text-cyan-400 uppercase leading-none">PCE<br/>MATRIX</div>
+                  </div>
+               </div>
+               <div className="absolute bottom-[140px] w-[140px] h-6 flex justify-around px-2 opacity-30">
+                  {[...Array(6)].map((_, i) => <div key={i} className="w-3 h-full bg-white rounded-sm" />)}
+               </div>
+            </div>
         </motion.div>
 
         {/* ── Lane Details Sidebar ──────────────────────────── */}
