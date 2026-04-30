@@ -232,9 +232,9 @@ export default function AnalyticsPage() {
 }
 
 function WaitVsPriorityChart({ state }) {
-  const lanes = ['N','S','E','W'];
+  const lanes = ['1', '2', '3'];
   const data = lanes.map(id => ({
-    lane: id,
+    lane: `Node ${id}`,
     waitTime: state?.lanes?.[id]?.waitTime ?? 0,
     priority: Math.round(state?.lanes?.[id]?.finalPriority ?? 0),
   }));

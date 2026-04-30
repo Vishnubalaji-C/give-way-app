@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software & Communication Stack</title>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ 
+          startOnLoad: true, 
+          theme: 'default',
+          flowchart: { curve: 'basis' }
+      });
+    </script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f7fa;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center; color: #003366;">GiveWay Software & Communication Stack</h2>
+    <div class="mermaid">
+        flowchart TD
+            subgraph Frontend [Application Interface Layer]
+                direction LR
+                React[React.js Web Dashboard<br/><i>Modular & Rapid UI</i>]
+                Flutter[Dart / Flutter Mobile App<br/><i>Cross-platform Monitoring</i>]
+            end
+
+            subgraph Comms [Communication Protocols]
+                direction LR
+                REST[RESTful APIs<br/><i>State Configuration</i>]
+                WS[WebSockets / Serial<br/><i>Low-latency Telemetry</i>]
+            end
+
+            subgraph Backend [Backend Infrastructure]
+                Node[Node.js & Express<br/><i>Non-blocking / Concurrent</i>]
+            end
+
+            React <-->|WebSocket / REST| Comms
+            Flutter <-->|WebSocket / REST| Comms
+            Comms <--> Node
+            
+            style Frontend fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000
+            style Backend fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+            style Comms fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+            
+            style React fill:#fff,stroke:#0288d1
+            style Flutter fill:#fff,stroke:#0288d1
+            style Node fill:#fff,stroke:#388e3c
+            style REST fill:#fff,stroke:#f57c00
+            style WS fill:#fff,stroke:#f57c00
+    </div>
+</div>
+
+</body>
+</html>

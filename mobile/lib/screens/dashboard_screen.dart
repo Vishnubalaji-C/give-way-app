@@ -150,9 +150,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           index: _tabIndex,
           children: [
             DashboardTab(state: _state, alerts: _alerts, ws: _ws, userName: widget.user['name'] ?? 'Operator'),
-          CameraScreen(state: _state),
-          CommandScreen(state: _state, ws: _ws, alerts: _alerts),
-          AnalyticsScreen(analytics: _analytics, state: _state),
+            CommandScreen(state: _state, ws: _ws, alerts: _alerts),
+            AnalyticsScreen(analytics: _analytics, state: _state),
           ],
         ),
       ),
@@ -160,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         data: Theme.of(context).copyWith(canvasColor: const Color(0xFF030712)),
         child: Showcase(
           key: _keyNav,
-          description: 'Use the bottom navigation to switch between the Matrix, Sensor Streams, Command Control, and Intel views.',
+          description: 'Use the bottom navigation to switch between the Matrix, Command Control, and Intel views.',
           child: NavigationBar(
             height: 65,
             backgroundColor: const Color(0xFF030712),
@@ -169,10 +168,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onDestinationSelected: (i) => setState(() => _tabIndex = i),
             destinations: const [
               NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'HOME'),
-              NavigationDestination(icon: Icon(Icons.videocam_rounded, size: 20), label: 'LENS'),
               NavigationDestination(icon: Icon(Icons.bolt_rounded, size: 20), label: 'CONTROL'),
               NavigationDestination(icon: Icon(Icons.analytics_rounded, size: 20), label: 'INTEL'),
-
             ],
           ),
         ),

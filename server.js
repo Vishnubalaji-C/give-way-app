@@ -51,8 +51,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve Production React PWA (client/dist) FIRST — before any API routes
+app.use(express.static(path.join(__dirname, 'client/dist')));
+
 // ─── Status & Connectivity Monitoring ──────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     system: 'GiveWay-ATES-Master',
@@ -71,9 +74,6 @@ app.get(['/health', '/api/health'], (req, res) => {
     uptime: process.uptime()
   });
 });
-
-// Serve Production React PWA (client/dist) unconditionally
-app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // ─── Zero-Cost File-Sync Persistence Layer ─────────────────────────────────────
 const DB_FILE = path.join(__dirname, 'db.json');
@@ -291,6 +291,31 @@ app.get('/api/sync/token', (req, res) => {
   });
 });
 
+// ─── Visual Sensor AI Data Endpoint (NEW) ──────────────────────────────────────
+// Receives AI inference counts from CameraFeedPage (Laptop/Mobile Cameras)
+app.post('/api/edge-data', (req, res) => {
+  const { laneId, vehicles, secret, pedestrian } = req.body;
+  
+  // Security check: only authorized nodes can feed data
+  if (secret !== (process.env.GIVEWAY_NODE_KEY || 'GIVEWAY_NODE_KEY')) {
+    return res.status(403).json({ success: false, error: 'Unauthorized Edge Node Access.' });
+  }
+
+  if (state.lanes[laneId]) {
+    // Inject hardware data into the decision engine
+    processEdgeData(laneId, vehicles);
+    
+    // If pedestrian detected, trigger alert
+    if (pedestrian && !state.lanes[laneId].isPedestrian) {
+       addAlert('ghost', `🚶‍♂️ Visual Sensor: Pedestrian on Lane ${laneId}`, laneId);
+    }
+    
+    return res.json({ success: true, timestamp: Date.now() });
+  }
+  
+  res.status(404).json({ success: false, error: 'Lane not found.' });
+});
+
 let state = buildInitialState(db.analytics);
 let auditLog = db.auditLog;
 let worldTimer       = null;
@@ -300,75 +325,106 @@ let weatherPollTimer = null;
 // ─── Arduino Physical Bridge ───────────────────────────────────────────────────
 // ─── Arduino Physical Bridge ───────────────────────────────────────────────────
 
+let isScanning = false;
 async function connectArduino() {
+  if (isScanning || (arduinoPort && arduinoPort.isOpen)) return;
+  isScanning = true;
+
   try {
     const ports = await SerialPort.list();
-    // Auto-detect Arduino boards based on manufacturer or known USB chips
-    const portInfo = ports.find(p => p.manufacturer?.includes('Arduino') || p.manufacturer?.includes('CH340') || p.manufacturer?.includes('FTDI')) || ports[0];
+    // More lenient filtering: Only exclude obvious Bluetooth ports, allow generic ones
+    const candidates = ports.filter(p => !p.friendlyName?.toLowerCase().includes('bluetooth') && !p.path?.includes('BTHENUM'));
     
-    if (portInfo) {
-      arduinoPort = new SerialPort({ path: portInfo.path, baudRate: 115200 });
-      const parser = arduinoPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+    console.log(`🔌 [HARDWARE] Active-Probing ${candidates.length} ports...`);
 
-      console.log(`🔌 [HARDWARE] Physical Bridge Active on ${portInfo.path}`);
-      
-      parser.on('data', (data) => {
-        const line = data.trim();
-        if (!line) return;
-
-        // --- Handle Physical RFID Scans (Lanes 1 & 2) ---
-        if (line.startsWith('HW_RFID:')) {
-          const parts = line.split(':');
-          const laneId = parts[1];
-          const tagId = parts[2];
+    for (const portInfo of candidates) {
+      const found = await new Promise((resolve) => {
+        let tempPort;
+        try {
+          tempPort = new SerialPort({ path: portInfo.path, baudRate: 115200 });
+          const tempParser = tempPort.pipe(new ReadlineParser({ delimiter: '\n' }));
           
-          if (state.lanes[laneId]) {
-            state.lanes[laneId].priorityTrigger = true;
-            addAlert('emergency', `📇 [HARDWARE RFID] Priority Tag Scanned: ${tagId} on Lane ${laneId}!`, laneId);
-            computePriorities();
-            broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
-            
-            // Auto-reset trigger after 10s if not already cleared
-            setTimeout(() => {
-              if (state.lanes[laneId]) state.lanes[laneId].priorityTrigger = false;
-            }, 10000);
-          }
-        }
+          const timeout = setTimeout(() => {
+            if (tempPort && tempPort.isOpen) tempPort.close(() => resolve(false));
+            else resolve(false);
+          }, 3500);
 
-        // --- Handle Physical ESP32 Pulses (Lane 3) ---
-        if (line.startsWith('HW_PULSE:')) {
-          const parts = line.split(':');
-          const laneId = parts[1];
-          const density = parseInt(parts[2]);
+          tempPort.on('open', () => {
+             // Send an Active Ping to the Arduino
+             setTimeout(() => { 
+               if (tempPort.isOpen) tempPort.write('?\n'); 
+             }, 1500); // Wait for bootloader
+          });
 
-          if (state.lanes[laneId]) {
-            // Map pulse to vehicle counts for Lane 3
-            // 5 = Low, 15 = Med, 30 = High
-            const mockVehicles = {
-               ambulance: 0,
-               bus: density > 20 ? 2 : (density > 10 ? 1 : 0),
-               car: Math.floor(density / 2),
-               bike: Math.floor(density / 3),
-               lorry: 0
-            };
-            processEdgeData(laneId, mockVehicles);
-          }
-        }
+          tempParser.on('data', (data) => {
+            if (data.includes('GIVEWAY')) {
+              clearTimeout(timeout);
+              arduinoPort = tempPort;
+              parser = tempParser;
+              console.log(`✅ [HARDWARE] Active Uplink on ${portInfo.path}`);
+              setupSerialListeners();
+              resolve(true);
+            }
+          });
+
+          tempPort.on('error', () => resolve(false));
+        } catch (e) { resolve(false); }
       });
-
-      arduinoPort.on('error', err => console.log('Arduino Error: ', err.message));
-    } else {
-      console.log('🔌 [HARDWARE] No Arduino detected. Running in software-only mode.');
+      if (found) break;
     }
   } catch (err) {
-    console.log('🔌 [HARDWARE] Serial probe failed:', err.message);
+    console.log('🔌 [HARDWARE] Probe failed:', err.message);
+  } finally {
+    isScanning = false;
+    if (!arduinoPort) setTimeout(connectArduino, 15000);
   }
 }
+
+function setupSerialListeners() {
+  if (!parser || !arduinoPort) return;
+  
+  // Clean up old listeners to prevent memory leaks (Fixes MaxListenersExceededWarning)
+  parser.removeAllListeners('data');
+  arduinoPort.removeAllListeners('error');
+
+  parser.on('data', (data) => {
+    const line = data.trim();
+    if (!line) return;
+
+    // --- Handle Physical ESP32-CAM UART Streams ---
+    if (line.startsWith('HW_CAM:')) {
+      const parts = line.split(':');
+      const laneId = parts[1];
+      const density = parseInt(parts[2]);
+      if (state.lanes[laneId] && !isNaN(density)) {
+        // Map camera density value to vehicle counts for the PCE engine
+        const mockVehicles = { 
+          ambulance: 0, 
+          bus: density > 20 ? 2 : (density > 10 ? 1 : 0), 
+          car: Math.floor(density / 2), 
+          bike: Math.floor(density / 3), 
+          lorry: 0 
+        };
+        processEdgeData(laneId, mockVehicles);
+      }
+    }
+    
+    // Note: RFID logic removed from Arduino side to save power, but kept server-side as no-op for compatibility
+  });
+
+  arduinoPort.on('error', err => {
+    console.log('❌ [HARDWARE] Link Lost:', err.message);
+    arduinoPort = null;
+    setTimeout(connectArduino, 5000);
+  });
+}
+
 connectArduino();
 
 function sendToArduino(laneId, action) {
   if (arduinoPort && arduinoPort.isOpen) {
-    arduinoPort.write(`${laneId}${action}\n`); // e.g., "1G", "2Y", "3R"
+    // Only send Signal commands (Buzzer logic removed)
+    arduinoPort.write(`${laneId}${action}\n`);
   }
 }
 
@@ -652,13 +708,9 @@ async function fetchLiveTrafficData() {
     }
 
     if (!resolved) {
-      // Time-of-day pattern engine: deterministic ratio derived from hour + lane variance
-      const hour  = new Date().getHours();
-      const base  = 0.40 + (getTimeOfDayMultiplier() * 0.45);
-      const noise = (Math.sin(Date.now() / 30000 + i) + 1) / 2 * 0.15; // slow drift
-      const patternRatio = Math.min(1, base + noise);
-      processEdgeData(laneId, speedRatioToVehicles(patternRatio, multiplier, i));
-      dataSource = 'pattern';
+      // Hardware-Strict Mode: Simulation disabled after Recording
+      processEdgeData(laneId, { ambulance: 0, bus: 0, car: 0, bike: 0, pedestrian: false });
+      dataSource = 'waiting';
       apiStatus.lastFetch = Date.now();
     }
   }
@@ -772,8 +824,7 @@ function tick() {
         if (staticDuration >= 10 && !lane.ghostFlag) {
            lane.ghostFlag = true;
            addAlert('ghost', `👻 ACCIDENT DETECTED: Lane ${id} static for 10s on GREEN. Possible blockage!`, id);
-           // Trigger Physical Buzzer Alert
-           if (arduinoPort && arduinoPort.isOpen) arduinoPort.write('B\n');
+            // Physical Buzzer Alert removed for power optimization
         }
       }
     }
@@ -861,27 +912,21 @@ function handleClientMessage(msg) {
       if (!simulationRunning) {
         simulationRunning = true;
         dataSource = TOMTOM_KEY ? 'live' : 'pattern';
-        clearInterval(snapTimer);
         clearInterval(worldTimer);
-        clearInterval(weatherPollTimer);
-        fetchLiveTrafficData();
-        snapTimer        = setInterval(fetchLiveTrafficData, SNAP_INTERVAL);
-        worldTimer       = setInterval(tick, TICK_INTERVAL);
+        worldTimer = setInterval(tick, TICK_INTERVAL);
+        clearInterval(snapTimer);
+        snapTimer = setInterval(fetchLiveTrafficData, SNAP_INTERVAL);
         fetchWeatherData();
-        weatherPollTimer = setInterval(fetchWeatherData, 600000); // every 10 min
-        addAlert('info', TOMTOM_KEY
-          ? '📡 Live feed active — GiveWay connected to TomTom traffic network.'
-          : '🕐 Pattern engine active — time-of-day traffic modeling engaged.', null);
+        clearInterval(weatherPollTimer);
+        weatherPollTimer = setInterval(fetchWeatherData, 600000);
+        addAlert('info', '🤖 GiveWay AI engine and data feeds synchronized.', null);
       }
       break;
 
     case 'STOP_SIM':
-      simulationRunning = false;
-      dataSource = 'paused';
       clearInterval(snapTimer);
-      clearInterval(worldTimer);
-      clearInterval(weatherPollTimer);
-      addAlert('info', '⏸ Live feed paused.', null);
+      dataSource = 'hardware';
+      addAlert('info', '⏸ Demo data paused. System is now running EXCLUSIVELY on Hardware & Camera feeds.', null);
       break;
 
     case 'RESET_SIM':

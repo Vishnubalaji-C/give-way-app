@@ -79,16 +79,7 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
 
 
 
-          <button onClick={() => setTab('camera')} className={`nav-camera flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 md:hover:shadow-lg relative overflow-hidden group ${tab === 'camera' ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-slate-800/50 hover:bg-slate-800 hover:border-cyan-500/30 border-transparent'}`}>
-            <div className="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            {state?.junction?.cameraNodes > 0 && (
-              <div className="absolute top-1 left-1 bg-cyan-500 text-[#02050a] text-[9px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.8)] z-20 group-hover:scale-110 transition-transform">
-                {state.junction.cameraNodes}
-              </div>
-            )}
-            <Video size={18} className={`relative z-10 ${tab === 'camera' ? 'text-cyan-400 group-hover:scale-110' : 'text-slate-400'} transition-transform`} />
-            <span className={`text-[10px] font-black mt-1 relative z-10 ${tab === 'camera' ? 'text-cyan-300' : 'text-slate-300'}`}>LIVE FEED</span>
-          </button>
+          {/* Camera tab removed */}
           
           <button onClick={() => setTab('control')} className={`nav-control flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all md:hover:-translate-y-1 relative overflow-hidden group ${tab === 'control' ? 'bg-red-500/30 border-red-500 text-red-400 shadow-lg' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500'}`}>
             <div className="absolute inset-0 bg-red-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
@@ -200,7 +191,6 @@ export default function Navbar({ tab, setTab, user, onLogout, theme, onChangeThe
             {[
               { id:'dashboard', icon: <LayoutGrid size={16}/>, label: 'Live Monitor' },
 
-              { id:'camera', icon: <Video size={16}/>, label: 'Node Feeds' },
               { id:'analytics', icon: <FileBarChart size={16}/>, label: 'Analytics' },
               { id:'control', icon: <AlertTriangle size={16}/>, label: 'Override' },
               { id:'incidents', icon: <Siren size={16}/>, label: 'Incidents' },

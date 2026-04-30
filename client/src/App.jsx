@@ -120,8 +120,6 @@ export default function App() {
 
   const PAGES = {
     dashboard:  DashboardPage,
-
-    camera:     CameraFeedPage,
     analytics:  AnalyticsPage,
     control:    ControlRoomPage,
     override:   () => (

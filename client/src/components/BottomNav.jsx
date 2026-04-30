@@ -4,7 +4,6 @@ import { Home, AlertTriangle, Camera, BarChart2, Settings, Map as MapIcon } from
 const TABS = [
   { id: 'dashboard',  icon: Home,      label: 'Home' },
   { id: 'control',    icon: AlertTriangle, label: 'Override' },
-  { id: 'camera',     icon: Camera,    label: 'Cameras' },
   { id: 'analytics',  icon: BarChart2, label: 'Analytics' },
   { id: 'settings',   icon: Settings,  label: 'Settings' },
 ];

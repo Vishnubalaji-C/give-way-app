@@ -2,9 +2,9 @@
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 
 const getBaseUrl = () => {
-  // Local Development
+  // Local Development -> Use relative paths to avoid hostname mismatches
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:4000';
+    return '';
   }
   
   // Vercel Deployment -> Detect Correct Render Backend
