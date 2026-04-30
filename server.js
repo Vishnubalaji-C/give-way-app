@@ -717,13 +717,44 @@ async function fetchLiveTrafficData() {
     }
 
     if (!resolved) {
-      // Hardware-Strict Mode: Simulation disabled after Recording
-      processEdgeData(laneId, { ambulance: 0, bus: 0, car: 0, bike: 0, pedestrian: false });
-      dataSource = 'waiting';
+      // No TomTom data, relying on local Edge AI or Hybrid Simulator
       apiStatus.lastFetch = Date.now();
     }
   }
 }
+
+// ─── HYBRID BASELINE SIMULATOR (DEFENSE MODE) ──────────────────────────────────
+// Automatically generates background traffic for lanes NOT currently targeted by the camera
+setInterval(() => {
+  if (!simulationRunning) return;
+  LANES.forEach(laneId => {
+    const lane = state.lanes[laneId];
+    // If this lane hasn't received live AI camera data in the last 4 seconds...
+    if (Date.now() - lane.lastHardwareUpdate > 4000) {
+      // Inject random baseline traffic
+      const baseTraffic = {
+        ambulance: 0,
+        bus: Math.random() > 0.85 ? 1 : 0,
+        car: Math.floor(Math.random() * 3), // 0-2 cars
+        bike: Math.floor(Math.random() * 4), // 0-3 bikes
+        lorry: 0
+      };
+      
+      const newDensity = baseTraffic.ambulance * PCE.ambulance + 
+                         baseTraffic.bus * PCE.bus + 
+                         baseTraffic.car * PCE.car + 
+                         baseTraffic.bike * PCE.bike + 
+                         (baseTraffic.lorry || 0) * PCE.lorry;
+      
+      lane.previousDensity = newDensity;
+      lane.density = newDensity;
+      lane.vehicles = baseTraffic;
+      
+      computePriorities();
+      broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+    }
+  });
+}, 3500);
 
 // ─── OpenWeatherMap Auto Weather-Mode Sync ─────────────────────────────────────
 async function fetchWeatherData() {
