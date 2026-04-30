@@ -15,6 +15,7 @@ export default function CameraFeedPage() {
   // Master Camera State
   const [isDetecting, setIsDetecting] = useState(false);
   const [targetLane, setTargetLane] = useState('1');
+  const [liveDetections, setLiveDetections] = useState(0);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
@@ -51,6 +52,7 @@ export default function CameraFeedPage() {
 
   const stopVision = () => {
     setIsDetecting(false);
+    setLiveDetections(0);
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(t => t.stop());
       videoRef.current.srcObject = null;
@@ -65,15 +67,27 @@ export default function CameraFeedPage() {
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     
     let counts = { car: 0, bus: 0, truck: 0, motorcycle: 0 };
+    let totalFound = 0;
+
     preds.forEach(p => {
       if (COCO_MAP[p.class]) {
         counts[COCO_MAP[p.class]]++;
+        totalFound++;
         const [x, y, w, h] = p.bbox;
         ctx.strokeStyle = '#00E5FF';
         ctx.lineWidth = 4;
         ctx.strokeRect(x, y, w, h);
+        
+        // Explicit Visual Feedback: Draw Text Label
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x, y > 20 ? y - 20 : y, 120, 20);
+        ctx.fillStyle = '#00E5FF';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText(`${p.class.toUpperCase()} ${Math.round(p.score * 100)}%`, x + 4, y > 20 ? y - 6 : y + 14);
       }
     });
+
+    setLiveDetections(totalFound);
 
     if (preds.length > 0) {
       // Send data ONLY to the currently targeted lane
@@ -122,23 +136,29 @@ export default function CameraFeedPage() {
             )}
          </div>
 
-         <div className="relative aspect-video max-h-[400px] w-full bg-[#050505] rounded-[2rem] border border-white/10 overflow-hidden shadow-inner mb-6 mx-auto">
-            <video 
-               ref={videoRef} 
-               autoPlay 
-               muted 
-               playsInline 
-               className={`w-full h-full object-cover opacity-80 transition-opacity ${isDetecting ? 'block' : 'hidden'}`} 
-            />
-            <canvas 
-               ref={canvasRef} 
-               width={1280} 
-               height={720} 
-               className={`absolute inset-0 w-full h-full pointer-events-none ${isDetecting ? 'block' : 'hidden'}`} 
-            />
-
-            {!isDetecting && (
-               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-cyan-950/20 to-black text-center border-dashed border-2 border-white/5 m-4 rounded-3xl">
+         <div className="relative aspect-video max-h-[400px] w-full bg-[#050505] rounded-[2rem] border border-white/10 overflow-hidden shadow-inner mb-6 mx-auto group">
+            {isDetecting ? (
+               <>
+                 <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-80" />
+                 <canvas ref={canvasRef} width={1280} height={720} className="absolute inset-0 w-full h-full pointer-events-none" />
+                 
+                 {/* Live Data HUD */}
+                 <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md border border-cyan-500/50 rounded-xl p-3 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                    <div className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /> Live Feed
+                    </div>
+                    <div className="text-white font-mono text-sm">
+                      Detections: <span className="font-black text-2xl text-cyan-400">{liveDetections}</span>
+                    </div>
+                    {liveDetections > 0 && (
+                      <div className="text-[8px] font-black text-green-400 uppercase tracking-widest mt-1">
+                        Sending data to Lane {targetLane}...
+                      </div>
+                    )}
+                 </div>
+               </>
+            ) : (
+               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-cyan-950/20 to-black text-center border-dashed border-2 border-white/5 m-4 rounded-3xl" style={{ width: 'calc(100% - 2rem)', height: 'calc(100% - 2rem)' }}>
                   <Zap size={48} className="text-cyan-500/20 mb-4 animate-pulse" />
                   <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">Sensor Offline</span>
                   <p className="text-[10px] text-white/30 mt-2 max-w-sm">Click 'Enable Master AI' to start the continuous object detection engine for the presentation.</p>
