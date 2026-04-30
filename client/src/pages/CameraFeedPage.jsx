@@ -1,247 +1,189 @@
 import { useWs } from '../context/WsContext';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, Zap, Activity, Cpu, ShieldCheck, Play, Square, Settings, Radio } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, Play, Square, Camera, Radio } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
-// Pre-trained weights for the AI brain
-const PCE_WEIGHTS = { car: 1, bus: 15, truck: 8, motorcycle: 0.5, ambulance: 500 };
+// Pre-trained AI Logic
 const COCO_MAP = { car: 'car', bus: 'bus', truck: 'truck', motorcycle: 'motorcycle' };
 
 export default function CameraFeedPage() {
-  const { state, send } = useWs();
+  const { state } = useWs();
   const lanes = state?.lanes || {};
-
-  // --- AI & Stream State ---
-  const [visionMode, setVisionMode] = useState('demo'); // 'demo' (laptop) or 'hardware' (esp32)
-  const [esp32Ip, setEsp32Ip] = useState('192.168.1.10');
   const [modelLoaded, setModelLoaded] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [activeLane, setActiveLane] = useState('1');
-  const [fps, setFps] = useState(0);
-
-  // --- Refs for TF.js ---
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
   const modelRef = useRef(null);
-  const streamRef = useRef(null);
-  const rafRef = useRef(null);
 
-  // --- Load AI Brain (Pre-trained COCO-SSD) ---
-  const loadModel = async () => {
-    try {
+  // Load the AI "Brain" once for the whole page
+  useEffect(() => {
+    const load = async () => {
       const tf = await import('@tensorflow/tfjs');
       await tf.ready();
       const coco = await import('@tensorflow-models/coco-ssd');
       modelRef.current = await coco.load();
       setModelLoaded(true);
-    } catch (e) {
-      console.error('AI Model failed to load:', e);
+    };
+    load();
+  }, []);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-32">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Vision Signal Terminal</h1>
+        <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Hardware Signal Replication · 3-Node Matrix</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {['1', '2', '3'].map(id => (
+          <LaneControlCard 
+            key={id} 
+            id={id} 
+            lane={lanes[id]} 
+            modelRef={modelRef} 
+            modelLoaded={modelLoaded} 
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function LaneControlCard({ id, lane, modelRef, modelLoaded }) {
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [source, setSource] = useState('demo'); // 'demo' or 'esp32'
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+
+  const startVision = async () => {
+    if (source === 'demo') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (videoRef.current) videoRef.current.srcObject = stream;
+        setIsDetecting(true);
+      } catch (e) { alert('Camera access denied'); }
+    } else {
+      setIsDetecting(true);
     }
   };
 
-  useEffect(() => { loadModel(); }, []);
-
-  // --- Start Camera (Plan B: Laptop) ---
-  const startDemoCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch (e) { alert('Camera denied'); }
+  const stopVision = () => {
+    setIsDetecting(false);
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+    }
   };
 
-  // --- AI Detection Loop ---
   const runDetection = useCallback(async () => {
     if (!modelRef.current || !videoRef.current || !isDetecting) return;
     
-    const predictions = await modelRef.current.detect(videoRef.current);
-    
-    // Draw Bounding Boxes
+    const preds = await modelRef.current.detect(videoRef.current);
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     
     let counts = { car: 0, bus: 0, truck: 0, motorcycle: 0 };
-    
-    predictions.forEach(p => {
+    preds.forEach(p => {
       if (COCO_MAP[p.class]) {
         counts[COCO_MAP[p.class]]++;
         const [x, y, w, h] = p.bbox;
         ctx.strokeStyle = '#00E5FF';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.strokeRect(x, y, w, h);
-        ctx.fillStyle = '#00E5FF';
-        ctx.fillText(`${p.class} ${(p.score * 100).toFixed(0)}%`, x, y > 10 ? y - 5 : 10);
       }
     });
 
-    // Send AI Data to Hardware (Arduino Mega)
-    if (predictions.length > 0) {
+    if (preds.length > 0) {
       fetch(`${API_BASE_URL}/api/edge-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          laneId: activeLane,
+          laneId: id,
           junctionId: 'JN-001',
           secret: 'GIVEWAY_NODE_KEY',
-          vehicles: {
-            car: counts.car,
-            bus: counts.bus,
-            lorry: counts.truck,
-            bike: counts.motorcycle,
-            ambulance: 0
-          }
+          vehicles: { car: counts.car, bus: counts.bus, lorry: counts.truck, bike: counts.motorcycle, ambulance: 0 }
         })
       }).catch(() => {});
     }
-
     rafRef.current = requestAnimationFrame(runDetection);
-  }, [isDetecting, activeLane]);
+  }, [isDetecting, id, modelRef]);
 
   useEffect(() => {
     if (isDetecting) runDetection();
-    else if (rafRef.current) cancelAnimationFrame(rafRef.current);
     return () => cancelAnimationFrame(rafRef.current);
   }, [isDetecting, runDetection]);
 
+  const sig = lane?.signal || 'red';
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-32">
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-end gap-4">
-        <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">AI Evidence Terminal</h1>
-          <p className="text-white/40 mt-1 text-sm font-bold uppercase tracking-widest">
-            <span className="text-cyan-400">Inference Engine</span> · Hardware Loop Sync
-          </p>
-        </div>
-        <div className="flex gap-2">
-           <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 text-[10px] font-black ${modelLoaded ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-white/5 border-white/5 text-white/20'}`}>
-              <Activity size={14} className={modelLoaded ? 'animate-pulse' : ''} />
-              AI BRAIN: {modelLoaded ? 'READY' : 'LOADING...'}
-           </div>
-        </div>
+    <div className="glass-card bg-black/60 border border-white/5 rounded-[2.5rem] p-6 flex flex-col gap-6 shadow-2xl relative overflow-hidden group">
+      <div className="flex justify-between items-center">
+         <div>
+            <span className="text-[9px] font-black text-cyan-400/40 uppercase tracking-widest">Approach Node</span>
+            <h2 className="text-2xl font-black text-white">LANE {id}</h2>
+         </div>
+         <div className="flex gap-1">
+            <button onClick={() => setSource('demo')} className={`p-1.5 rounded-lg border transition-all ${source === 'demo' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/20'}`}><Camera size={14}/></button>
+            <button onClick={() => setSource('esp32')} className={`p-1.5 rounded-lg border transition-all ${source === 'esp32' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 border-white/10 text-white/20'}`}><Radio size={14}/></button>
+         </div>
       </div>
 
-      <div className="grid xl:grid-cols-[1fr_400px] gap-6">
-        
-        {/* --- Main Vision Feed --- */}
-        <div className="glass-card bg-black border border-white/5 rounded-3xl overflow-hidden flex flex-col">
-           <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-              <div className="flex gap-2">
-                 <button 
-                   onClick={() => { setVisionMode('demo'); startDemoCamera(); }}
-                   className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${visionMode === 'demo' ? 'bg-cyan-500 text-black' : 'bg-white/5 text-white/40'}`}
-                 >
-                    PLAN B: LAPTOP CAM
-                 </button>
-                 <button 
-                   onClick={() => setVisionMode('hardware')}
-                   className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${visionMode === 'hardware' ? 'bg-cyan-500 text-black' : 'bg-white/5 text-white/40'}`}
-                 >
-                    PLAN A: ESP32-CAM
-                 </button>
-              </div>
-              <div className="flex items-center gap-2">
-                 <Settings size={14} className="text-white/20" />
-                 <select 
-                   value={activeLane} 
-                   onChange={(e) => setActiveLane(e.target.value)}
-                   className="bg-transparent text-[10px] font-black text-cyan-400 outline-none"
-                 >
-                    <option value="1">LANE 1 (SOUTH)</option>
-                    <option value="2">LANE 2 (EAST)</option>
-                    <option value="3">LANE 3 (WEST)</option>
-                 </select>
-              </div>
-           </div>
+      {/* Vision Window */}
+      <div className="relative aspect-square bg-[#050505] rounded-3xl border border-white/5 overflow-hidden shadow-inner">
+         {source === 'demo' ? (
+            <>
+              <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-60" />
+              <canvas ref={canvasRef} width={640} height={640} className="absolute inset-0 w-full h-full pointer-events-none" />
+            </>
+         ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+               <Radio size={32} className="text-white/10 mb-2" />
+               <span className="text-[10px] font-black text-white/20 uppercase">ESP32-CAM Stream</span>
+               <span className="text-[8px] text-cyan-500/40 font-mono mt-1">IP_ADDR_LINKED</span>
+            </div>
+         )}
+         
+         {!isDetecting && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+               <button 
+                 onClick={startVision} 
+                 disabled={!modelLoaded}
+                 className="px-6 py-3 bg-cyan-500 text-black font-black text-[10px] rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+               >
+                  Start Sense
+               </button>
+            </div>
+         )}
 
-           <div className="relative aspect-video bg-slate-900 overflow-hidden">
-              {visionMode === 'demo' ? (
-                <>
-                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                  <canvas ref={canvasRef} width={1280} height={720} className="absolute inset-0 w-full h-full pointer-events-none" />
-                </>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                   <div className="text-center p-8 border-2 border-dashed border-white/10 rounded-3xl">
-                      <Radio size={48} className="text-white/10 mx-auto mb-4" />
-                      <h3 className="text-white font-black text-sm uppercase">ESP32-CAM Link Required</h3>
-                      <p className="text-[10px] text-white/30 max-w-xs mt-2">To stream your ESP32-CAM, enter its IP address below. Ensure it is running the "CameraWebServer" example from Arduino IDE.</p>
-                      <input 
-                        type="text" 
-                        value={esp32Ip} 
-                        onChange={(e) => setEsp32Ip(e.target.value)}
-                        className="mt-4 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-cyan-400 text-center font-mono text-xs w-full"
-                      />
-                   </div>
-                   <button className="px-8 py-3 bg-cyan-500 text-black font-black text-xs rounded-xl shadow-xl hover:scale-105 transition-all">CONNECT STREAM</button>
-                </div>
-              )}
-
-              {/* Status HUD */}
-              <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                 <div className="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${isDetecting ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                    Inference: {isDetecting ? 'ACTIVE' : 'IDLE'}
-                 </div>
-              </div>
-           </div>
-
-           <div className="p-6 bg-white/5 flex gap-4">
-              <button 
-                onClick={() => setIsDetecting(!isDetecting)}
-                disabled={!modelLoaded}
-                className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isDetecting ? 'bg-red-500 text-black shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.3)]'}`}
-              >
-                 {isDetecting ? <><Square size={16} /> Stop AI Vision</> : <><Play size={16} /> Start AI Sense</>}
-              </button>
-           </div>
-        </div>
-
-        {/* --- Side Panel: Signal Replication --- */}
-        <div className="space-y-6">
-           <div className="glass-card p-6 bg-black border border-white/5 rounded-3xl">
-              <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-6">Hardware Signal Link</h3>
-              
-              <div className="grid grid-cols-3 gap-4">
-                 {['1', '2', '3'].map(id => (
-                    <div key={id} className="flex flex-col items-center gap-4">
-                       <div className="text-[10px] font-black text-white/30">LANE {id}</div>
-                       <div className="bg-[#111] p-3 rounded-2xl border border-white/5 flex flex-col gap-2">
-                          <div className={`w-3 h-3 rounded-full ${lanes[id]?.signal === 'red' ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-red-950/20'}`} />
-                          <div className={`w-3 h-3 rounded-full ${lanes[id]?.signal === 'yellow' ? 'bg-yellow-500 shadow-[0_0_10px_#eab308]' : 'bg-yellow-950/20'}`} />
-                          <div className={`w-3 h-3 rounded-full ${lanes[id]?.signal === 'green' ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-green-950/20'}`} />
-                       </div>
-                       <div className={`text-[10px] font-black ${lanes[id]?.signal === 'green' ? 'text-green-400' : 'text-white/20'}`}>
-                          {lanes[id]?.signal?.toUpperCase() || 'RED'}
-                       </div>
-                    </div>
-                 ))}
-              </div>
-           </div>
-
-           <div className="glass-card p-6 bg-cyan-500/5 border border-cyan-500/10 rounded-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                 <ShieldCheck size={18} className="text-cyan-400" />
-                 <h3 className="text-xs font-black text-white uppercase tracking-widest">Logic Evidence</h3>
-              </div>
-              <p className="text-[10px] text-white/40 leading-relaxed italic mb-4">
-                 "Whenever the AI detects a car in the active lane, it calculates the PCE weight and sends a priority packet to the Arduino Mega. This overrides the timer and forces a Green signal to clear traffic."
-              </p>
-              <div className="space-y-2">
-                 <div className="flex justify-between text-[9px] font-black text-white/20 uppercase">
-                    <span>Target Lane</span>
-                    <span className="text-cyan-400">{activeLane}</span>
-                 </div>
-                 <div className="flex justify-between text-[9px] font-black text-white/20 uppercase">
-                    <span>Processing Device</span>
-                    <span className="text-white/60">LOCAL_EDGE_AI</span>
-                 </div>
-              </div>
-           </div>
-        </div>
-
+         {isDetecting && (
+            <button onClick={stopVision} className="absolute bottom-4 right-4 p-3 bg-red-500/20 border border-red-500/40 text-red-500 rounded-2xl hover:bg-red-500 hover:text-black transition-all">
+               <Square size={16} fill="currentColor" />
+            </button>
+         )}
       </div>
-    </motion.div>
+
+      {/* Hardware Replication Lights */}
+      <div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-3xl border border-white/5">
+         <div className="flex gap-3">
+            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'red' ? 'bg-red-500 shadow-[0_0_25px_rgba(239,68,68,0.6)]' : 'bg-red-950/20'}`} />
+            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'yellow' ? 'bg-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.6)]' : 'bg-yellow-950/20'}`} />
+            <div className={`w-10 h-10 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'green' ? 'bg-green-500 shadow-[0_0_25px_rgba(34,197,94,0.6)]' : 'bg-green-950/20'}`} />
+         </div>
+         <div className="text-right">
+            <div className="text-[9px] font-black text-white/20 uppercase tracking-widest">Signal Status</div>
+            <div className={`text-sm font-black uppercase tracking-tighter ${sig === 'green' ? 'text-green-400' : 'text-cyan-400'}`}>{sig}</div>
+         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+         <div className="bg-white/5 rounded-2xl p-3 border border-white/5">
+            <div className="text-[8px] font-black text-white/30 uppercase tracking-widest">Density</div>
+            <div className="text-lg font-black text-white tabular-nums">{Math.round(lane?.pceScore || 0)}</div>
+         </div>
+         <div className="bg-white/5 rounded-2xl p-3 border border-white/5">
+            <div className="text-[8px] font-black text-white/30 uppercase tracking-widest">Wait Time</div>
+            <div className="text-lg font-black text-white tabular-nums">{lane?.waitTime || 0}s</div>
+         </div>
+      </div>
+    </div>
   );
 }
