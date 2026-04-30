@@ -4,7 +4,12 @@ import { Zap, Play, Square, Camera, Radio, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
-const COCO_MAP = { car: 'car', bus: 'bus', truck: 'truck', motorcycle: 'motorcycle' };
+const COCO_MAP = { 
+  'car': 'car', 'bus': 'bus', 'truck': 'truck', 'motorcycle': 'motorcycle',
+  // Toy Car / Demo Fallbacks (Maps anything you hold to a 'Car' for the demo)
+  'cell phone': 'car', 'mouse': 'car', 'remote': 'car', 'bottle': 'car', 
+  'person': 'car', 'book': 'car', 'cup': 'car', 'apple': 'car', 'teddy bear': 'car'
+};
 
 export default function CameraFeedPage() {
   const { state } = useWs();
@@ -62,7 +67,8 @@ export default function CameraFeedPage() {
   const runDetection = useCallback(async () => {
     if (!modelRef.current || !isDetecting || !videoRef.current) return;
     
-    const preds = await modelRef.current.detect(videoRef.current);
+    // Lower threshold to 20% for Toy Cars during demo
+    const preds = await modelRef.current.detect(videoRef.current, 20, 0.20);
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     

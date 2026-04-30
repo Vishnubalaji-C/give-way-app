@@ -634,6 +634,15 @@ function processEdgeData(laneId, vehicles) {
     }
     lane.isPedestrian = vehicles.pedestrian || false;
 
+    // --- DEMO FAST-TRACK TRIGGER ---
+    // If the AI spots a car on a Red lane, force the current Green light to wrap up immediately!
+    if (newDensity > 0 && laneId !== state.activeLane) {
+       if (state.phaseTimer > 3 && !state.isSwitching) {
+          state.phaseTimer = 3; // Cut the timer short to 3 seconds!
+          console.log(`🚀 [DEMO FAST-TRACK] Car detected on Lane ${laneId}. Forcing light change!`);
+       }
+    }
+
     computePriorities();
     broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 }
