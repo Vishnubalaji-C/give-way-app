@@ -229,7 +229,7 @@ function LaneStatusCard({ id, lane, isTarget }) {
 
       <div className="grid grid-cols-2 gap-3 mt-auto">
          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center">
-            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">PCE Score</div>
+            <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">Traffic Density</div>
             <div className="text-xl font-black text-white tabular-nums">{Math.round(lane?.pceScore || 0)}</div>
          </div>
          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center">

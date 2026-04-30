@@ -224,7 +224,7 @@ const YELLOW_TIME   = 3;      // seconds (5 in Rain Mode)
 const ALL_RED_TIME  = 2;      // professional safety clearance (NEW)
 const PHASE_GREEN   = 10;     // base green phase duration (shorter for faster rotation)
 
-const PCE = { ambulance: 500, bus: 15, car: 1, bike: 0.5, lorry: 8 };
+const PCE = { ambulance: 500, bus: 1, car: 1, bike: 1, lorry: 1 }; // Pure Traffic Density Approach
 
 // ─── External API Keys & Data Source State ────────────────────────────────────
 const TOMTOM_KEY = process.env.TOMTOM_API_KEY || '';
