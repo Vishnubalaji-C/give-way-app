@@ -18,6 +18,7 @@ export default function CameraFeedPage() {
   const modelRef = useRef(null);
 
   // Master Camera State
+  const [sourceMode, setSourceMode] = useState('demo'); // 'demo' or 'hardware'
   const [isDetecting, setIsDetecting] = useState(false);
   const [targetLane, setTargetLane] = useState('1');
   const [liveDetections, setLiveDetections] = useState(0);
@@ -119,13 +120,26 @@ export default function CameraFeedPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-32">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 mb-4">
         <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Signal Monitoring System</h1>
-        <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">Master AI Sensor Mode Active</p>
+        <p className="text-[10px] font-black text-cyan-400 tracking-[0.4em] uppercase">
+          {sourceMode === 'demo' ? 'Master AI Sensor Mode Active' : 'Wireless Hardware Bridge Active'}
+        </p>
       </div>
 
-      {/* ── MASTER CAMERA MODULE ── */}
-      <div className="bg-glass-card border border-cyan-500/30 rounded-[2.5rem] p-6 shadow-[0_0_50px_rgba(6,182,212,0.1)] relative overflow-hidden">
+      {/* Mode Toggle */}
+      <div className="flex bg-black/40 p-1 rounded-2xl border border-white/5 w-fit mb-6 shadow-inner">
+         <button onClick={() => { setSourceMode('demo'); }} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${sourceMode === 'demo' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'text-white/40 hover:text-white/80'}`}>
+            <Camera size={14} /> Single Device Demo
+         </button>
+         <button onClick={() => { setSourceMode('hardware'); stopVision(); }} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${sourceMode === 'hardware' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'text-white/40 hover:text-white/80'}`}>
+            <Radio size={14} /> 3x ESP32-CAMs
+         </button>
+      </div>
+
+      {/* ── MASTER CAMERA MODULE (Hidden in Hardware Mode) ── */}
+      {sourceMode === 'demo' && (
+        <div className="bg-glass-card border border-cyan-500/30 rounded-[2.5rem] p-6 shadow-[0_0_50px_rgba(6,182,212,0.1)] relative overflow-hidden">
          <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
                <Camera className="text-cyan-400" />
@@ -191,7 +205,7 @@ export default function CameraFeedPage() {
                ))}
             </div>
          </div>
-      </div>
+      )}
 
       {/* ── HARDWARE STATUS CARDS ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -200,7 +214,8 @@ export default function CameraFeedPage() {
             key={id} 
             id={id} 
             lane={lanes[id]} 
-            isTarget={targetLane === id}
+            isTarget={sourceMode === 'demo' && targetLane === id}
+            sourceMode={sourceMode}
           />
         ))}
       </div>
@@ -208,17 +223,31 @@ export default function CameraFeedPage() {
   );
 }
 
-function LaneStatusCard({ id, lane, isTarget }) {
+function LaneStatusCard({ id, lane, isTarget, sourceMode }) {
   const sig = lane?.signal || 'red';
 
   return (
-    <div className={`glass-card bg-black/60 border rounded-[2.5rem] p-6 flex flex-col gap-5 shadow-2xl transition-all ${isTarget ? 'border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.1)]' : 'border-white/5'}`}>
-      <div className="flex justify-between items-center">
+    <div className={`glass-card bg-black/60 border rounded-[2.5rem] p-6 flex flex-col gap-5 shadow-2xl transition-all relative overflow-hidden ${isTarget ? 'border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.1)]' : 'border-white/5'}`}>
+      
+      {/* Hardware Video Stream Background */}
+      {sourceMode === 'hardware' && (
+         <div className="absolute inset-0 w-full h-full opacity-30 pointer-events-none mix-blend-screen">
+            <img 
+               src={`http://localhost:5000/stream/${id}`} 
+               alt={`Lane ${id} Stream`}
+               className="w-full h-full object-cover"
+               onError={(e) => { e.target.style.display = 'none'; }}
+            />
+         </div>
+      )}
+
+      <div className="flex justify-between items-center relative z-10">
          <h2 className="text-2xl font-black text-white uppercase tracking-tighter">LANE {id}</h2>
          {isTarget && <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse border border-cyan-500/30">Receiving Data</span>}
+         {sourceMode === 'hardware' && <span className="text-[10px] bg-green-500/20 text-green-400 px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse border border-green-500/30 flex items-center gap-1"><Radio size={10}/> Live</span>}
       </div>
 
-      <div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-[2rem] border border-white/5 shadow-inner mt-2">
+      <div className="flex justify-between items-center bg-[#0a0a0a]/80 backdrop-blur-md p-4 rounded-[2rem] border border-white/5 shadow-inner mt-2 relative z-10">
          <div className="flex gap-4">
             <div className={`w-9 h-9 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'red' ? 'bg-red-500 shadow-[0_0_25px_rgba(239,68,68,0.6)]' : 'bg-red-950/20'}`} />
             <div className={`w-9 h-9 rounded-full border-4 border-black/40 transition-all duration-300 ${sig === 'yellow' ? 'bg-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.6)]' : 'bg-yellow-950/20'}`} />

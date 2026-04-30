@@ -149,7 +149,19 @@ def detect_from_hardware():
         _, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         LATEST_FRAMES[lane_id] = buffer.tobytes()
 
-        # Return format the ESP32 parser and Arduino Master expect
+        # Send data directly to Node.js backend (Wireless Bridge)
+        import requests
+        try:
+            requests.post('http://localhost:4000/api/edge-data', json={
+                "laneId": lane_id,
+                "junctionId": 'JN-001',
+                "secret": 'GIVEWAY_NODE_KEY',
+                "vehicles": counts
+            }, timeout=1)
+        except Exception as e:
+            print(f"[SYNC ERROR] Failed to send Lane {lane_id} to Node.js:", e)
+
+        # Return format the ESP32 parser expects
         return jsonify({
             "ambulance": counts.get("ambulance", 0),
             "bus":       counts.get("bus", 0),
