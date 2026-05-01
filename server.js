@@ -612,11 +612,12 @@ function processEdgeData(laneId, vehicles) {
    const lane = state.lanes[laneId];
    
    // Apply Antigravity Ghost Lane Logic
-   const newDensity = vehicles.ambulance * PCE.ambulance + 
-                      vehicles.bus * PCE.bus + 
-                      vehicles.car * PCE.car + 
-                      vehicles.bike * PCE.bike + 
-                      (vehicles.lorry || 0) * PCE.lorry;
+   // Pure Density Logic: Sum of all detected vehicles
+   const newDensity = (vehicles.car || 0) + 
+                      (vehicles.bus || 0) + 
+                      (vehicles.bike || 0) + 
+                      (vehicles.lorry || 0) + 
+                      (vehicles.ambulance || 0);
    
     // Intelligence Resilience Update
     lane.lastHardwareUpdate = Date.now();
