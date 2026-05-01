@@ -502,10 +502,11 @@ function computePriorities() {
        penalty = lane.waitTime * 1.5;
     }
 
-    // --- EMERGENCY PRIORITY BOOST ---
-    // If an ambulance is detected, give it a massive priority score (+1000)
+    // --- EMERGENCY PRIORITY BOOST (Ambulance, Fire Truck, Police) ---
+    // If ANY emergency vehicle is detected, give it a massive priority score (+1000)
     // to ensure it jumps to the top of the queue immediately.
-    const emergencyBoost = (lane.vehicles.ambulance > 0) ? 1000 : 0;
+    const hasEmergency = (lane.vehicles.emergency > 0 || lane.vehicles.ambulance > 0);
+    const emergencyBoost = hasEmergency ? 1000 : 0;
 
     // Final priority = Raw Density + Wait Time + Emergency Boost
     lane.finalPriority = (rawDensity + penalty + emergencyBoost) * (lane.ghostFlag ? 0.3 : 1.0);
@@ -620,6 +621,7 @@ function processEdgeData(laneId, vehicles) {
                       (vehicles.bus || 0) + 
                       (vehicles.bike || 0) + 
                       (vehicles.lorry || 0) + 
+                      (vehicles.emergency || 0) + 
                       (vehicles.ambulance || 0);
    
     // Intelligence Resilience Update
@@ -631,7 +633,7 @@ function processEdgeData(laneId, vehicles) {
     lane.previousDensity = lane.density;
     lane.density = newDensity;
     lane.vehicles = vehicles;
-    lane.isEmergency = (vehicles.ambulance > 0);
+    lane.isEmergency = (vehicles.emergency > 0 || vehicles.ambulance > 0);
     
     // Store Pedestrian & Priority state
     if (vehicles.pedestrian && !lane.isPedestrian) {
