@@ -833,24 +833,8 @@ function tick() {
     switchLane(nextLane);
   }
 
-  // Analytics accumulators (every 5 ticks)
-  if (state.tick % 5 === 0) {
-    const served = Object.values(state.lanes).reduce((acc, l) => acc + l.vehicles.car + l.vehicles.bus + l.vehicles.bike + l.vehicles.ambulance, 0);
-    state.totalVehiclesServed += served;
-    state.totalAmbulances += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.ambulance || 0), 0);
-    state.totalCars += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.car || 0), 0);
-    state.totalBikes += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.bike || 0), 0);
-    state.totalLorry += Object.values(state.lanes).reduce((acc, l) => acc + (l.vehicles.lorry || 0), 0);
-    
-    // Sync to persistent DB store
-    db.analytics.totalServed = state.totalVehiclesServed;
-    db.analytics.vehicleMix = {
-      ambulance: state.totalAmbulances,
-      bus: state.totalBuses,
-      car: state.totalCars,
-      bike: state.totalBikes,
-      lorry: state.totalLorry
-    };
+  // Periodic Database Sync (every 60 seconds)
+  if (state.tick % 60 === 0) {
     saveToDisk();
   }
 

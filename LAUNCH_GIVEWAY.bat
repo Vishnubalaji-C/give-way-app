@@ -12,8 +12,8 @@ start /b cmd /c "npm start"
 echo ⏳ Waiting for system to boot...
 timeout /t 5 /nobreak >nul
 
-echo 🌐 Opening Dashboard...
-start http://localhost:4000
+echo 🌐 Opening GiveWay in Professional App Mode...
+start chrome --app=http://localhost:4000
 
 echo.
 echo ✅ System is running! 
