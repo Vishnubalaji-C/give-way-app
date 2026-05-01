@@ -533,15 +533,20 @@ function selectNextLane() {
     return LANES[nextIndex];
   }
 
-  // ADAPTIVE PRIORITY: Select the "Top Traffic" lane based on PCE and Wait Time
+  // ADAPTIVE PRIORITY: Select the "Top Traffic" lane
+  // We filter out the active lane, and prioritize lanes with ACTUAL traffic.
   const candidates = LANES.filter(id => id !== state.activeLane);
   
-  // Sort by finalPriority (Density + Wait Time Penalty)
-  // This ensures we give priority to heavy lanes but also prevents starving quiet ones
-  candidates.sort((a, b) => state.lanes[b].finalPriority - state.lanes[a].finalPriority);
+  // If there is traffic somewhere, skip empty lanes (unless they've waited > 60s)
+  const lanesWithTraffic = candidates.filter(id => state.lanes[id].density > 0 || state.lanes[id].finalPriority > 1000);
   
-  const winner = candidates[0];
-  console.log(`🤖 [AI] Next Priority Selection: Lane ${winner} (Score: ${Math.round(state.lanes[winner].finalPriority)})`);
+  const pool = lanesWithTraffic.length > 0 ? lanesWithTraffic : candidates;
+
+  // Sort by finalPriority (Density)
+  pool.sort((a, b) => state.lanes[b].finalPriority - state.lanes[a].finalPriority);
+  
+  const winner = pool[0];
+  console.log(`🤖 [AI] Traffic-First Selection: Lane ${winner} (Score: ${Math.round(state.lanes[winner].finalPriority)})`);
   
   return winner;
 }
