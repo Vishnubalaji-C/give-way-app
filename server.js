@@ -500,12 +500,15 @@ function computePriorities() {
     const rawDensity = Object.values(lane.vehicles).reduce((acc, val) => acc + val, 0);
     lane.density = rawDensity;
 
-    // STRICT DENSITY LOGIC:
-    // We remove the wait-time penalty so that the lane with the 
-    // HIGHEST number of vehicles ALWAYS gets the next Green light.
+    // 60-SECOND HARD LIMIT:
+    // If a lane has been waiting for more than 60 seconds, 
+    // give it a massive priority boost (+2000) so it MUST go next.
+    const waitLimitBoost = (lane.waitTime > 60) ? 2000 : 0;
+    
     const hasEmergency = (lane.vehicles.emergency > 0 || lane.vehicles.ambulance > 0);
-    const emergencyBoost = hasEmergency ? 1000 : 0;
-    lane.finalPriority = rawDensity + emergencyBoost;
+    const emergencyBoost = hasEmergency ? 3000 : 0; // Emergency still beats wait limit
+    
+    lane.finalPriority = rawDensity + waitLimitBoost + emergencyBoost;
     
     lane.pceScore = rawDensity;
   });
