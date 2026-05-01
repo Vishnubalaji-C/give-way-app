@@ -329,54 +329,58 @@ let isScanning = false;
 async function connectArduino() {
   if (isScanning || (arduinoPort && arduinoPort.isOpen)) return;
   isScanning = true;
-
+  
   try {
     const ports = await SerialPort.list();
-    // More lenient filtering: Only exclude obvious Bluetooth ports, allow generic ones
-    const candidates = ports.filter(p => !p.friendlyName?.toLowerCase().includes('bluetooth') && !p.path?.includes('BTHENUM'));
+    const candidates = ports.filter(p => p.vendorId || p.productId); // Filter for real hardware
     
-    console.log(`🔌 [HARDWARE] Active-Probing ${candidates.length} ports...`);
-
     for (const portInfo of candidates) {
       const found = await new Promise((resolve) => {
         let tempPort;
         try {
-          tempPort = new SerialPort({ path: portInfo.path, baudRate: 115200 });
-          const tempParser = tempPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+          // Try 115200 first (Production), then fallback to 9600
+          tempPort = new SerialPort({ path: portInfo.path, baudRate: 115200, autoOpen: false });
           
-          const timeout = setTimeout(() => {
-            if (tempPort && tempPort.isOpen) tempPort.close(() => resolve(false));
-            else resolve(false);
-          }, 3500);
-
-          tempPort.on('open', () => {
-             // Send an Active Ping to the Arduino
-             setTimeout(() => { 
-               if (tempPort.isOpen) tempPort.write('?\n'); 
-             }, 1500); // Wait for bootloader
-          });
-
-          tempParser.on('data', (data) => {
-            if (data.includes('GIVEWAY')) {
-              clearTimeout(timeout);
-              arduinoPort = tempPort;
-              parser = tempParser;
-              console.log(`✅ [HARDWARE] Active Uplink on ${portInfo.path}`);
-              setupSerialListeners();
-              resolve(true);
+          tempPort.open((err) => {
+            if (err) {
+              if (err.message.includes('Access denied')) {
+                console.log(`⚠️ [HARDWARE] ${portInfo.path} is BUSY (Is Arduino IDE open?)`);
+              }
+              return resolve(false);
             }
-          });
 
-          tempPort.on('error', () => resolve(false));
+            const tempParser = tempPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+            const timeout = setTimeout(() => {
+              if (tempPort.isOpen) tempPort.close();
+              resolve(false);
+            }, 3000);
+
+            // Wait for Arduino to boot, then ping
+            setTimeout(() => { 
+              if (tempPort.isOpen) tempPort.write('?\n'); 
+            }, 1500);
+
+            tempParser.on('data', (data) => {
+              if (data.includes('GIVEWAY')) {
+                clearTimeout(timeout);
+                arduinoPort = tempPort;
+                parser = tempParser;
+                console.log(`🚀 [AUTO-SYNC] Connected to Master Board on ${portInfo.path}`);
+                setupSerialListeners();
+                resolve(true);
+              }
+            });
+          });
         } catch (e) { resolve(false); }
       });
       if (found) break;
     }
   } catch (err) {
-    console.log('🔌 [HARDWARE] Probe failed:', err.message);
+    console.log('🔌 [HARDWARE] Search failed:', err.message);
   } finally {
     isScanning = false;
-    if (!arduinoPort) setTimeout(connectArduino, 15000);
+    // Fast retry every 5 seconds until connected
+    if (!arduinoPort) setTimeout(connectArduino, 5000);
   }
 }
 

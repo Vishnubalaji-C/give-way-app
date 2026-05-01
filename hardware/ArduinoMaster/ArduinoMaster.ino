@@ -1,29 +1,24 @@
 /*
- * GiveWay ATES — Master Traffic Controller (v2.6 Sync Edition)
+ * GiveWay ATES — Master AI Bridge (Dynamic Sync v3.0)
  * 
+ * This code allows the Node.js AI to control the lights dynamically.
  * PIN MAPPING:
  * Lane 1: Red=2, Yellow=3, Green=4
  * Lane 2: Red=5, Yellow=6, Green=7
  * Lane 3: Red=8, Yellow=9, Green=10
- * Buzzer: Pin 13
+ * Status LED: Pin 13 (Blinks when AI is talking)
  */
 
-const int BUZZER_PIN = 13;
-
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); // High speed for AI sync
+  
   for (int i = 2; i <= 10; i++) {
     pinMode(i, OUTPUT);
     digitalWrite(i, LOW);
   }
-  pinMode(BUZZER_PIN, OUTPUT);
-  
-  // Power-on Self Test
-  for (int i = 2; i <= 10; i++) digitalWrite(i, HIGH);
-  delay(300);
-  for (int i = 2; i <= 10; i++) digitalWrite(i, LOW);
-  
-  // Start in Safety Mode (All Red)
+  pinMode(13, OUTPUT);
+
+  // Initial Safety State: All Red
   setSignal(1, 'R');
   setSignal(2, 'R');
   setSignal(3, 'R');
@@ -35,32 +30,37 @@ void loop() {
     command.trim();
     if (command.length() == 0) return;
 
-    // --- Auto-Discovery ---
-    if (command == "?") { Serial.println("GIVEWAY"); return; }
+    // Pulse the Status LED to show AI activity
+    digitalWrite(13, HIGH);
 
-    // --- Handle System Modes (M:AUT, M:EMG, M:VIP, M:FES) ---
-    if (command.startsWith("M:")) {
+    // --- Auto-Discovery Ping ---
+    if (command == "?") { 
+      Serial.println("GIVEWAY"); 
+    } 
+
+    // --- Handle System Modes (M:EMG, M:VIP, M:FES) ---
+    else if (command.startsWith("M:")) {
       String mode = command.substring(2);
       if (mode == "EMG") {
         setSignal(1, 'R'); setSignal(2, 'R'); setSignal(3, 'R');
-        triggerBuzzer(3); // Long alert for emergency
       } else if (mode == "FES") {
-        blinkAll('Y'); // Yellow confirmation for Festival
+        blinkAll('Y');
       } else if (mode == "VIP") {
-        blinkAll('G'); // Green confirmation for VIP
+        blinkAll('G');
       }
-      return;
     }
 
-    // --- Handle Lane Signals (1G, 2R, etc.) ---
-    if (command.length() >= 2) {
+    // --- Handle Dynamic AI Signal Changes (e.g., "1G", "2R") ---
+    else if (command.length() >= 2) {
       int lane = command.charAt(0) - '0';
       char action = command.charAt(1);
       if (lane >= 1 && lane <= 3) {
-        if (action == 'B') triggerBuzzer(1);
-        else setSignal(lane, action);
+        setSignal(lane, action);
       }
     }
+    
+    delay(10);
+    digitalWrite(13, LOW);
   }
 }
 
@@ -83,12 +83,5 @@ void blinkAll(char color) {
     delay(200);
     setSignal(1, 'R'); setSignal(2, 'R'); setSignal(3, 'R');
     delay(200);
-  }
-}
-
-void triggerBuzzer(int count) {
-  for(int i=0; i<count; i++) {
-    digitalWrite(BUZZER_PIN, HIGH); delay(100);
-    digitalWrite(BUZZER_PIN, LOW); delay(100);
   }
 }
