@@ -717,44 +717,13 @@ async function fetchLiveTrafficData() {
     }
 
     if (!resolved) {
-      // No TomTom data, relying on local Edge AI or Hybrid Simulator
+      // Hardware-Strict Mode: Simulation disabled after Recording
+      processEdgeData(laneId, { ambulance: 0, bus: 0, car: 0, bike: 0, pedestrian: false });
+      dataSource = 'waiting';
       apiStatus.lastFetch = Date.now();
     }
   }
 }
-
-// ─── HYBRID BASELINE SIMULATOR (DEFENSE MODE) ──────────────────────────────────
-// Automatically generates background traffic for lanes NOT currently targeted by the camera
-setInterval(() => {
-  if (!simulationRunning) return;
-  LANES.forEach(laneId => {
-    const lane = state.lanes[laneId];
-    // If this lane hasn't received live AI camera data in the last 4 seconds...
-    if (Date.now() - lane.lastHardwareUpdate > 4000) {
-      // Inject random baseline traffic
-      const baseTraffic = {
-        ambulance: 0,
-        bus: Math.random() > 0.85 ? 1 : 0,
-        car: Math.floor(Math.random() * 3), // 0-2 cars
-        bike: Math.floor(Math.random() * 4), // 0-3 bikes
-        lorry: 0
-      };
-      
-      const newDensity = baseTraffic.ambulance * PCE.ambulance + 
-                         baseTraffic.bus * PCE.bus + 
-                         baseTraffic.car * PCE.car + 
-                         baseTraffic.bike * PCE.bike + 
-                         (baseTraffic.lorry || 0) * PCE.lorry;
-      
-      lane.previousDensity = newDensity;
-      lane.density = newDensity;
-      lane.vehicles = baseTraffic;
-      
-      computePriorities();
-      broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
-    }
-  });
-}, 3500);
 
 // ─── OpenWeatherMap Auto Weather-Mode Sync ─────────────────────────────────────
 async function fetchWeatherData() {
@@ -850,8 +819,8 @@ function tick() {
     const lane = state.lanes[id];
 
     // 1. Predictive Ghost Lane Detection (10s Static Window)
-    if (simulationRunning && lane.signal === 'green' && lane.density > 10) {
-      const densityChanged = Math.abs(lane.density - (lane.previousDensity || 0)) > 2;
+    if (simulationRunning && lane.signal === 'green' && lane.density > 0) {
+      const densityChanged = Math.abs(lane.density - (lane.previousDensity || 0)) > 1;
       
       if (densityChanged) {
         lane.densityLastChangedAt = NOW;
@@ -864,26 +833,34 @@ function tick() {
         if (staticDuration >= 10 && !lane.ghostFlag) {
            lane.ghostFlag = true;
            addAlert('ghost', `👻 ACCIDENT DETECTED: Lane ${id} static for 10s on GREEN. Possible blockage!`, id);
-            // Physical Buzzer Alert removed for power optimization
+           // Trigger Arduino Buzzer Alert
+           sendToArduino(id, 'B');
         }
       }
     }
 
-    // 2. Virtual Sync Fallback (30s Silence Detection)
+    // 2. Camera Input Failure Handling
     const hardwareSilence = (NOW - lane.lastHardwareUpdate) / 1000;
-    if (simulationRunning && hardwareSilence >= 30) {
+    
+    // Stage A: 5s silence — freeze last valid state (do nothing, keep current data)
+    if (simulationRunning && hardwareSilence >= 5 && hardwareSilence < 10) {
+       // Frozen — retain last known vehicle counts, no action needed
+    }
+    
+    // Stage B: 10s silence — activate round-robin fallback
+    if (simulationRunning && hardwareSilence >= 10) {
        if (!lane.fallbackActive) {
           lane.fallbackActive = true;
-          addAlert('warning', `📡 NODE OFFLINE: Lane ${id} hardware silent. Activating Virtual Sync fallback...`, id);
-       }
-       // Only trigger fallback if simulation is in 'live' mode and we have a key
-       if (TOMTOM_KEY) {
-          fetchTomTomFallback(id);
+          addAlert('warning', `📡 NODE OFFLINE: Lane ${id} camera silent for 10s. Round-Robin fallback active.`, id);
+          // Force festival/round-robin mode as safety fallback
+          if (overrideMode === 'auto') {
+             console.log(`🔄 [FALLBACK] No camera input. Switching to Round-Robin safety mode.`);
+          }
        }
     } else if (lane.fallbackActive && hardwareSilence < 5) {
-       // Hardware has resumed
+       // Camera has resumed sending data
        lane.fallbackActive = false;
-       addAlert('success', `🔌 NODE RESTORED: Lane ${id} hardware uplink re-established. Control handed back to Edge.`, id);
+       addAlert('success', `🔌 NODE RESTORED: Lane ${id} camera uplink re-established.`, id);
     }
   });
 
