@@ -4,7 +4,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WsService {
-  static String _serverUrl = 'give-way-app.onrender.com';
+  static String _serverUrl = 'http://10.141.138.118:4000';
 
   static String get baseUrl => _serverUrl.startsWith('http') ? _serverUrl : 'https://$_serverUrl';
   static String get wsUrl   => baseUrl.replaceFirst('http', 'ws');
@@ -17,7 +17,7 @@ class WsService {
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _serverUrl = prefs.getString('server_url') ?? 'give-way-app.onrender.com';
+    _serverUrl = prefs.getString('server_url') ?? 'http://10.141.138.118:4000';
   }
 
   WebSocketChannel? _channel;
