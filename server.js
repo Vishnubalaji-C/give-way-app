@@ -500,20 +500,12 @@ function computePriorities() {
     const rawDensity = Object.values(lane.vehicles).reduce((acc, val) => acc + val, 0);
     lane.density = rawDensity;
 
-    // Wait-Time Penalty (WTP)
-    let penalty = 0;
-    if (lane.signal === 'red' || lane.signal === 'yellow') {
-       penalty = lane.waitTime * 1.5;
-    }
-
-    // --- EMERGENCY PRIORITY BOOST (Ambulance, Fire Truck, Police) ---
-    // If ANY emergency vehicle is detected, give it a massive priority score (+1000)
-    // to ensure it jumps to the top of the queue immediately.
+    // STRICT DENSITY LOGIC:
+    // We remove the wait-time penalty so that the lane with the 
+    // HIGHEST number of vehicles ALWAYS gets the next Green light.
     const hasEmergency = (lane.vehicles.emergency > 0 || lane.vehicles.ambulance > 0);
     const emergencyBoost = hasEmergency ? 1000 : 0;
-
-    // Final priority = Raw Density + Wait Time + Emergency Boost
-    lane.finalPriority = (rawDensity + penalty + emergencyBoost) * (lane.ghostFlag ? 0.3 : 1.0);
+    lane.finalPriority = rawDensity + emergencyBoost;
     
     lane.pceScore = rawDensity;
   });
