@@ -491,10 +491,10 @@ function getLocalIp() {
 function computePriorities() {
   LANES.forEach(id => {
     const lane = state.lanes[id];
-    const { ambulance, bus, car, bike, lorry } = lane.vehicles;
     
-    // PCE density score
-    lane.density = ambulance * PCE.ambulance + bus * PCE.bus + car * PCE.car + bike * PCE.bike + (lorry || 0) * PCE.lorry;
+    // Pure Density (Sum of vehicles)
+    const rawDensity = Object.values(lane.vehicles).reduce((acc, val) => acc + val, 0);
+    lane.density = rawDensity;
 
     // Wait-Time Penalty (WTP)
     let penalty = 0;
@@ -502,12 +502,15 @@ function computePriorities() {
        penalty = lane.waitTime * 1.5;
     }
 
-    // --- CORNER-TO-CORNER FIX: GHOST LANE RECOVERY ---
-    // Penalize priority by 50% if an accident (Ghost Lane) is detected
-    // This stops the system from staying green on a blocked lane
-    lane.finalPriority = (lane.density + penalty) * (lane.ghostFlag ? 0.3 : 1.0);
+    // --- EMERGENCY PRIORITY BOOST ---
+    // If an ambulance is detected, give it a massive priority score (+1000)
+    // to ensure it jumps to the top of the queue immediately.
+    const emergencyBoost = (lane.vehicles.ambulance > 0) ? 1000 : 0;
+
+    // Final priority = Raw Density + Wait Time + Emergency Boost
+    lane.finalPriority = (rawDensity + penalty + emergencyBoost) * (lane.ghostFlag ? 0.3 : 1.0);
     
-    lane.pceScore = lane.density;
+    lane.pceScore = rawDensity;
   });
 
   // Global Congestion Detection (Threshold: 30 PCE)
@@ -636,12 +639,13 @@ function processEdgeData(laneId, vehicles) {
     }
     lane.isPedestrian = vehicles.pedestrian || false;
 
-    // --- DEMO FAST-TRACK TRIGGER ---
-    // If the AI spots a car on a Red lane, force the current Green light to wrap up immediately!
-    if (newDensity > 0 && laneId !== state.activeLane) {
+    // --- EMERGENCY & DEMO FAST-TRACK TRIGGER ---
+    // If an Ambulance is detected on a Red lane, OR a car is on a Red lane,
+    // force the current Green light to wrap up immediately!
+    if ((lane.isEmergency || newDensity > 0) && laneId !== state.activeLane) {
        if (state.phaseTimer > 3 && !state.isSwitching) {
-          state.phaseTimer = 3; // Cut the timer short to 3 seconds!
-          console.log(`🚀 [DEMO FAST-TRACK] Car detected on Lane ${laneId}. Forcing light change!`);
+          state.phaseTimer = lane.isEmergency ? 1 : 3; // Ambulances cut the timer even shorter (1s)!
+          console.log(`🚑 [EMERGENCY PREEMPTION] Ambulance/Traffic detected on Lane ${laneId}. Forcing light change!`);
        }
     }
 
