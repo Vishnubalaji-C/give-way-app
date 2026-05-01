@@ -985,6 +985,7 @@ function handleClientMessage(msg) {
       const { laneId } = msg.payload;
       state.lanes[laneId].signal = 'red';
       state.lanes[laneId].phase  = 'red';
+      sendToArduino(laneId, 'R');
       logAudit('FORCE_RED', `Lane ${laneId} forced RED by operator.`);
       broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
       break;
@@ -1036,6 +1037,7 @@ function handleClientMessage(msg) {
       LANES.forEach(id => {
         state.lanes[id].signal = 'red';
         state.lanes[id].phase = 'red';
+        sendToArduino(id, 'R');
       });
       broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 
