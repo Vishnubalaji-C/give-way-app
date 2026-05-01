@@ -717,9 +717,9 @@ async function fetchLiveTrafficData() {
     }
 
     if (!resolved) {
-      // Hardware-Strict Mode: Simulation disabled after Recording
-      processEdgeData(laneId, { ambulance: 0, bus: 0, car: 0, bike: 0, pedestrian: false });
-      dataSource = 'waiting';
+      // Camera-Only Mode: Do NOT reset lanes to zero.
+      // Just wait for real camera data from the AI Detection Engine.
+      dataSource = 'camera';
       apiStatus.lastFetch = Date.now();
     }
   }
