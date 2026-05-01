@@ -624,7 +624,8 @@ function processEdgeData(laneId, vehicles) {
        lane.densityLastChangedAt = Date.now();
     }
 
-    lane.previousDensity = newDensity;
+    lane.previousDensity = lane.density;
+    lane.density = newDensity;
     lane.vehicles = vehicles;
     lane.isEmergency = (vehicles.ambulance > 0);
     
