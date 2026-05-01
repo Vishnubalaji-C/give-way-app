@@ -645,13 +645,24 @@ function processEdgeData(laneId, vehicles) {
     }
     lane.isPedestrian = vehicles.pedestrian || false;
 
+    // --- INSTANT-EMPTY-SWITCH TRIGGER ---
+    // If the CURRENT GREEN LANE is empty, but others have cars, 
+    // END the green phase immediately!
+    if (laneId === state.activeLane && newDensity === 0) {
+       const otherTraffic = LANES.some(id => id !== laneId && state.lanes[id].density > 0);
+       if (otherTraffic && !state.isSwitching) {
+          state.phaseTimer = state.lanes[laneId].isEmergency ? 1 : 2; 
+          console.log(`🌀 [AI OPTIMIZATION] Lane ${laneId} is empty. Switching to busy lanes immediately!`);
+       }
+    }
+
     // --- EMERGENCY & DEMO FAST-TRACK TRIGGER ---
     // If an Ambulance is detected on a Red lane, OR a car is on a Red lane,
     // force the current Green light to wrap up immediately!
     if ((lane.isEmergency || newDensity > 0) && laneId !== state.activeLane) {
        if (state.phaseTimer > 3 && !state.isSwitching) {
-          state.phaseTimer = lane.isEmergency ? 1 : 3; // Ambulances cut the timer even shorter (1s)!
-          console.log(`🚑 [EMERGENCY PREEMPTION] Ambulance/Traffic detected on Lane ${laneId}. Forcing light change!`);
+          state.phaseTimer = lane.isEmergency ? 1 : 3; 
+          console.log(`🚑 [EMERGENCY PREEMPTION] Traffic detected on Lane ${laneId}. Forcing light change!`);
        }
     }
 
