@@ -125,39 +125,37 @@ export default function CameraFeedPage() {
   };
 
   // ── ROI ZONE MAPPING ──
-  function getZoneForPosition(y, frameHeight) {
-    const third = frameHeight / 3;
-    if (y < third) return '1';
-    if (y < third * 2) return '2';
+  // ── ROI ZONE MAPPING (Vertical Lanes: Left, Center, Right) ──
+  function getZoneForPosition(x, frameWidth) {
+    const third = frameWidth / 3;
+    if (x < third) return '1';
+    if (x < third * 2) return '2';
     return '3';
   }
 
   // ── DRAW ZONE OVERLAYS ──
   function drawZoneOverlays(ctx, w, h) {
-    const third = h / 3;
+    const third = w / 3;
     ['1', '2', '3'].forEach((id, i) => {
       const zone = ZONE_COLORS[id];
-      const y = i * third;
-      // Fill zone
+      const x = i * third;
       ctx.fillStyle = zone.fill;
-      ctx.fillRect(0, y, w, third);
-      // Zone border
+      ctx.fillRect(x, 0, third, h);
       ctx.strokeStyle = zone.stroke;
       ctx.lineWidth = 2;
-      ctx.setLineDash([8, 4]);
-      ctx.strokeRect(2, y + 2, w - 4, third - 4);
-      ctx.setLineDash([]);
+      ctx.strokeRect(x, 0, third, h);
+      
       // Zone label
       ctx.fillStyle = zone.label;
       ctx.font = 'bold 16px monospace';
-      ctx.fillText(`LANE ${id} ZONE`, 10, y + 22);
+      ctx.fillText(`LANE ${id} ZONE`, x + 10, 30);
     });
   }
 
   // ── SINGLE FRAME DETECTION (for images) ──
   const runSingleDetection = async (source, w, h) => {
     if (!modelRef.current) return;
-    const preds = await modelRef.current.detect(source, 20, 0.50);
+    const preds = await modelRef.current.detect(source, 20, 0.35); // Higher sensitivity
     const canvas = canvasRef.current;
     canvas.width = w;
     canvas.height = h;
@@ -232,7 +230,7 @@ export default function CameraFeedPage() {
     // Draw zone overlays
     drawZoneOverlays(ctx, w, h);
 
-    const preds = await modelRef.current.detect(source, 20, 0.50);
+    const preds = await modelRef.current.detect(source, 20, 0.35); // Higher sensitivity
 
     const counts = {
       '1': { car: 0, bus: 0, truck: 0, motorcycle: 0, total: 0 },
@@ -243,8 +241,8 @@ export default function CameraFeedPage() {
     preds.forEach(p => {
       if (!VEHICLE_CLASSES.has(p.class)) return;
       const [x, y, bw, bh] = p.bbox;
-      const centerY = y + bh / 2;
-      const laneId = getZoneForPosition(centerY, h);
+      const centerX = x + bw / 2;
+      const laneId = getZoneForPosition(centerX, w);
       const vType = p.class === 'bicycle' ? 'motorcycle' : (p.class === 'truck' ? 'truck' : p.class);
       if (counts[laneId][vType] !== undefined) counts[laneId][vType]++;
       counts[laneId].total++;
