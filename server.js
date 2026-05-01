@@ -651,6 +651,26 @@ function processEdgeData(laneId, vehicles) {
     }
 
     computePriorities();
+    
+    // --- PERSISTENT ANALYTICS UPDATE ---
+    // Every time the AI identifies vehicles, we update the cumulative session stats
+    state.totalCars += (vehicles.car || 0);
+    state.totalBuses += (vehicles.bus || 0);
+    state.totalBikes += (vehicles.bike || 0);
+    state.totalLorry += (vehicles.lorry || 0);
+    state.totalAmbulances += (vehicles.ambulance || 0) + (vehicles.emergency || 0);
+    state.totalVehiclesServed = state.totalCars + state.totalBuses + state.totalBikes + state.totalLorry + state.totalAmbulances;
+
+    // Environmental Impact Calculation (Based on idling time avoided)
+    state.fuelSaved += (newDensity * 0.005); // Approx 5ml per vehicle cycle
+    state.co2Reduced += (newDensity * 0.012); // Approx 12g per vehicle cycle
+    
+    // Save these stats to the database immediately
+    db.analytics.totalServed = state.totalVehiclesServed;
+    db.analytics.fuelSaved = state.fuelSaved;
+    db.analytics.co2Reduced = state.co2Reduced;
+    saveToDisk();
+
     broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
 }
 
