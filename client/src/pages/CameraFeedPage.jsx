@@ -329,13 +329,13 @@ export default function CameraFeedPage() {
         <div className="relative w-full bg-[#050505] rounded-[2rem] border border-white/10 overflow-hidden shadow-inner mb-6" style={{ minHeight: '300px' }}>
           
           {/* Live camera video (hidden when not live mode) */}
-          <video ref={videoRef} autoPlay muted playsInline className={`w-full h-full object-contain ${inputMode !== 'live' || !isDetecting ? 'hidden' : ''}`} />
+          <video ref={videoRef} autoPlay muted playsInline style={{ transform: 'scaleX(-1)' }} className={`w-full h-full object-contain ${inputMode !== 'live' || !isDetecting ? 'hidden' : ''}`} />
           
           {/* Uploaded video (hidden when not video mode) */}
           <video ref={uploadVideoRef} muted playsInline loop className={`w-full h-full object-contain ${inputMode !== 'video' || !isDetecting ? 'hidden' : ''}`} />
           
           {/* Detection canvas overlay */}
-          <canvas ref={canvasRef} className={`${inputMode === 'live' || inputMode === 'video' ? 'absolute inset-0' : ''} w-full h-full object-contain ${!isDetecting && inputMode !== 'image' ? 'hidden' : ''}`} />
+          <canvas ref={canvasRef} style={{ transform: inputMode === 'live' ? 'scaleX(-1)' : 'none' }} className={`${inputMode === 'live' || inputMode === 'video' ? 'absolute inset-0' : ''} w-full h-full object-contain ${!isDetecting && inputMode !== 'image' ? 'hidden' : ''}`} />
 
           {/* Live HUD */}
           {(isDetecting || inputMode === 'image') && (
