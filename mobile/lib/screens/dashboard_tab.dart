@@ -232,6 +232,114 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
+          const SizedBox(height: 24),
+          _buildModeSwitcher(context, accent),
+          const SizedBox(height: 24),
+          _buildTacticalHub(context, accent),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeSwitcher(BuildContext context, Color accent) {
+    final activeMode = state['overrideMode'] ?? 'auto';
+    final activeLane = state['activeLane'] ?? '1';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('SYSTEM OPERATIONAL MODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white24, letterSpacing: 2)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _modeBtn(context, 'auto', '🤖 AI', activeMode == 'auto'),
+                  const SizedBox(width: 8),
+                  _modeBtn(context, 'vip', '👑 VIP', activeMode == 'vip'),
+                  const SizedBox(width: 8),
+                  _modeBtn(context, 'festival', '🎉 FEST', activeMode == 'festival'),
+                  const SizedBox(width: 8),
+                  _modeBtn(context, 'all_stop', '🚨 STOP', activeMode == 'all_stop'),
+                ],
+              ),
+              if (activeMode == 'vip') ...[
+                const SizedBox(height: 20),
+                const Divider(color: Colors.white10),
+                const SizedBox(height: 16),
+                const Text('SELECT VIP ESCORT ROUTE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 1)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _vipLaneBtn(context, '1', 'PRIMARY', activeLane == '1'),
+                    const SizedBox(width: 8),
+                    _vipLaneBtn(context, '2', 'SECOND', activeLane == '2'),
+                    const SizedBox(width: 8),
+                    _vipLaneBtn(context, '3', 'TRANSV', activeLane == '3'),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _modeBtn(BuildContext context, String mode, String label, bool isActive) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          ws.send('SET_OVERRIDE', {'mode': mode});
+          _showStatus(context, '${label.toUpperCase()} MODE ACTIVE', isActive ? Colors.white : Colors.cyanAccent);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.cyanAccent.withOpacity(0.15) : Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isActive ? Colors.cyanAccent.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(color: isActive ? Colors.cyanAccent : Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _vipLaneBtn(BuildContext context, String id, String label, bool isActive) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.heavyImpact();
+          ws.send('SET_OVERRIDE', {'mode': 'vip', 'targetLane': id});
+          _showStatus(context, 'LANE $id LOCKED FOR VIP', Colors.cyanAccent);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.cyanAccent : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isActive ? Colors.cyanAccent : Colors.white.withOpacity(0.1)),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(color: isActive ? Colors.black : Colors.white70, fontSize: 9, fontWeight: FontWeight.w900)),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTacticalHub(BuildContext context, Color accent) {
     return Container(
       padding: const EdgeInsets.all(28),
