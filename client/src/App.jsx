@@ -122,13 +122,6 @@ export default function App() {
     dashboard:  DashboardPage,
     analytics:  AnalyticsPage,
     control:    ControlRoomPage,
-    override:   () => (
-      <div className="text-center mt-20 text-red-500 font-black text-2xl animate-pulse">
-        Emergency Override Active
-        <br />
-        <span className="text-sm opacity-50 mt-4 block text-white/40">All lanes set to RED — GiveWay AI control suspended</span>
-      </div>
-    ),
     monitor:    CameraFeedPage,
     incidents: () => (
       <div className="text-center mt-20 text-amber-500 font-black text-2xl animate-pulse font-mono tracking-widest">
