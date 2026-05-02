@@ -141,7 +141,7 @@ export default function DashboardPage({ user }) {
             {OVERRIDE_MODES.map(m => (
               <button 
                 key={m.id}
-                onClick={() => send('SET_OVERRIDE_MODE', { mode: m.id })}
+                onClick={() => send('SET_OVERRIDE', { mode: m.id })}
                 className={`p-4 rounded-2xl border transition-all text-left flex flex-col gap-2 ${
                   activeMode === m.id 
                     ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' 
@@ -161,6 +161,36 @@ export default function DashboardPage({ user }) {
               </button>
             ))}
          </div>
+
+         {activeMode === 'vip' && (
+           <motion.div 
+             initial={{ opacity: 0, y: 10 }} 
+             animate={{ opacity: 1, y: 0 }}
+             className="mt-6 p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/20"
+           >
+             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+               <div>
+                 <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] mb-1">Manual Escort Route</h4>
+                 <p className="text-[10px] text-white/30 font-bold uppercase">Click a lane to lock it to permanent green</p>
+               </div>
+               <div className="flex gap-2">
+                 {['1', '2', '3'].map(id => (
+                   <button 
+                     key={id} 
+                     onClick={() => send('SET_OVERRIDE', { mode: 'vip', targetLane: id })}
+                     className={`px-6 py-2 rounded-xl text-[10px] font-black transition-all border ${
+                       state?.activeLane === id 
+                         ? 'bg-cyan-500 text-black border-cyan-400 shadow-lg shadow-cyan-500/40' 
+                         : 'bg-white/5 text-white/40 border-white/10 hover:border-white/30'
+                     }`}
+                   >
+                     LANE {id}
+                   </button>
+                 ))}
+               </div>
+             </div>
+           </motion.div>
+         )}
       </motion.div>
 
       {/* ── Physical Junction View (Perfect Replication) ────── */}

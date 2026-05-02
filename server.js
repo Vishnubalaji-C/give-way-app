@@ -952,6 +952,33 @@ wss.on('connection', (ws) => {
 
 function handleClientMessage(msg) {
   switch (msg.type) {
+    case 'SET_OVERRIDE':
+      const { mode, targetLane } = msg.payload;
+      overrideMode = mode;
+      
+      if (mode === 'vip') {
+        const laneId = targetLane || '1';
+        // Force specific lane to green, others to red
+        LANES.forEach(id => {
+          state.lanes[id].signal = (id === laneId) ? 'green' : 'red';
+          state.lanes[id].phase  = (id === laneId) ? 'green' : 'red';
+          sendToArduino(id, (id === laneId) ? 'G' : 'R');
+        });
+        state.activeLane = laneId;
+        state.isSwitching = false;
+        addAlert('priority', `👑 VIP Corridor locked on Lane ${laneId}`, laneId);
+      } else if (mode === 'all_stop') {
+        LANES.forEach(id => {
+          state.lanes[id].signal = 'red';
+          state.lanes[id].phase  = 'red';
+          sendToArduino(id, 'R');
+        });
+        addAlert('warning', '🛑 EMERGENCY: All-Stop Gridlock triggered!', null);
+      }
+      
+      broadcast({ type: 'STATE_UPDATE', payload: sanitizeState() });
+      break;
+
     case 'START_SIM':
       if (!simulationRunning) {
         simulationRunning = true;

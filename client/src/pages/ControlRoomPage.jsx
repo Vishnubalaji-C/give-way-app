@@ -17,7 +17,7 @@ export default function ControlRoomPage({ user }) {
 
   const switchMode = (mode) => {
     setActiveMode(mode);
-    send('SET_OVERRIDE_MODE', { mode });
+    send('SET_OVERRIDE', { mode });
   };
 
   const triggerGhost = () => {
@@ -109,7 +109,7 @@ export default function ControlRoomPage({ user }) {
 
           {/* System Mode Selector */}
           <div className="text-xs text-slate-500 font-mono uppercase tracking-widest mb-3">System Mode</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 mb-4">
             {OVERRIDE_MODES.map(m => (
               <button key={m.id} onClick={() => switchMode(m.id)}
                 className={`text-left p-3 rounded-xl border transition-all text-sm ${
@@ -122,6 +122,24 @@ export default function ControlRoomPage({ user }) {
               </button>
             ))}
           </div>
+
+          {activeMode === 'vip' && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="text-[10px] text-cyan-400/60 font-mono uppercase tracking-[0.2em] mb-2 px-1">Select VIP Lane</div>
+              <div className="flex gap-2">
+                {LANES.map(id => (
+                  <button key={id} onClick={() => send('SET_OVERRIDE', { mode: 'vip', targetLane: id })}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
+                      state?.activeLane === id
+                        ? 'bg-cyan-500 text-white border-cyan-400 shadow-lg shadow-cyan-500/30'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                    }`}>
+                    {LANE_LABELS[id]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Alerts + Ghost Detection ─────────────────────────── */}
