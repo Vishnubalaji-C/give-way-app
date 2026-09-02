@@ -7,6 +7,7 @@ client/dist/
 
 # Environment variables
 .env
+.env*
 client/.env
 
 # Local database
