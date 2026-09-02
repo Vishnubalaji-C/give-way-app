@@ -33,3 +33,6 @@ jobs:
 
       - name: Build GiveWay application
         run: npm run build
+
+      - name: Run automated tests
+        run: npm test
