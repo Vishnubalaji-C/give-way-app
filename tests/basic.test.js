@@ -4,5 +4,5 @@ const assert = require('node:assert');
 test('GiveWay CI CD pipeline test', () => {
   const appName = 'GiveWay';
 
-  assert.strictEqual(appName, 'GiveWay');
+  assert.strictEqual(appName, 'WrongApplication');
 });
